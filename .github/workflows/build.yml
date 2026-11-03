@@ -1,5 +1,5 @@
 
-name: Build Prodigy Creatures
+name: Build Stegosaurus for ROR
 
 on:
   workflow_dispatch:
@@ -31,6 +31,6 @@ jobs:
       - name: Guardar archivo JAR
         uses: actions/upload-artifact@v4
         with:
-          name: prodigy-creatures-forge-1.20.1
+          name: Stegosaurus-for-ROR
           path: build/libs/*.jar
           if-no-files-found: error
