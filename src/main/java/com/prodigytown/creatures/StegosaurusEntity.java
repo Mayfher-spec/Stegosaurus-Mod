@@ -42,7 +42,9 @@ import org.jetbrains.annotations.Nullable;
 public class StegosaurusEntity extends TamableAnimal {
     private static final EntityDataAccessor<Integer> VARIANT = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.INT);
     private static final ResourceLocation SALAD_ID = new ResourceLocation("ror", "redwood_salad");
-    public static final int NORMAL = 0, ALBINO = 1, MAGMA = 2;
+    // Preserve previously saved NBT variant numbers: 0 -> cyber, 1 -> golden, 2 -> magma.
+    public static final int CYBERNETIC = 0, GOLDEN = 1, MAGMA = 2, GLACIAL = 3;
+    public static final int NORMAL = CYBERNETIC, ALBINO = GOLDEN; // deprecated aliases
 
     public StegosaurusEntity(EntityType<? extends StegosaurusEntity> type, Level level) {
         super(type, level);
@@ -61,11 +63,11 @@ public class StegosaurusEntity extends TamableAnimal {
 
     @Override protected void defineSynchedData() {
         super.defineSynchedData();
-        this.entityData.define(VARIANT, NORMAL);
+        this.entityData.define(VARIANT, CYBERNETIC);
     }
 
     public int getVariant() { return this.entityData.get(VARIANT); }
-    public void setVariant(int variant) { this.entityData.set(VARIANT, Math.max(0, Math.min(MAGMA, variant))); }
+    public void setVariant(int variant) { this.entityData.set(VARIANT, Math.max(0, Math.min(GLACIAL, variant))); }
 
     @Override public void addAdditionalSaveData(CompoundTag tag) {
         super.addAdditionalSaveData(tag);
@@ -81,7 +83,7 @@ public class StegosaurusEntity extends TamableAnimal {
             MobSpawnType reason, @Nullable SpawnGroupData previous, @Nullable CompoundTag tag) {
         SpawnGroupData result = super.finalizeSpawn(level, difficulty, reason, previous, tag);
         int chance = this.random.nextInt(100);
-        setVariant(chance < 3 ? MAGMA : chance < 12 ? ALBINO : NORMAL); // 88/9/3
+        setVariant(chance < 3 ? MAGMA : chance < 12 ? GOLDEN : chance < 17 ? GLACIAL : CYBERNETIC); // 83 / 9 / 3 / 5
         return result;
     }
 

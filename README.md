@@ -1,43 +1,36 @@
-# Prodigy Creatures v0.1.0 — Stegosaurus (prototipo jugable)
+# Stegosaurus for ROR v2.0.0
 
-Para Minecraft **1.20.1 / Forge 47.x / Java 17**. Proyecto **independiente** del mod Prodigy Blueprints. **Requiere Raxiores Of Raxiore (modid `ror`)**, y funciona por ID de su ítem, sin importar/copiar clases o recursos de ROR.
+Un mod independiente para **Minecraft Forge 1.20.1** que requiere **Raxiores of Raxiore** (`ror`).
 
-## Lo que incluye este primer prototipo
+## Modelo v2.0
 
-- Estegosaurio con **modelo cúbico original y articulado (borrador visual)**; no es todavía un modelo final al nivel de ROR.
-- 3 **texturas originales**: normal (88 %), albino (9 %), magma (3 %).
-- Huevo de aparición (creativo): `/give @p prodigycreatures:stegosaurus_spawn_egg`.
-- Vida 270, armadura 14, daño de cola 27, velocidad 0.19, resistencia al empuje 0.85.
-- Los salvajes se defienden al ser atacados; domesticados protegen al dueño.
-- Se domestica con **1 Redwood Salad** (`ror:redwood_salad`) con probabilidad 100%; se consume en supervivencia.
-- La misma ensalada cura **40 puntos de vida** a un ejemplar domesticado del que eres dueño.
-- Clic derecho vacío con dueño: alternar entre quedarse sentado y seguirlo.
-- Variante magma inmune al daño etiquetado como fuego; su textura incluye grietas/cicatrices volcánicas.
-- Animación inicial de patas, cabeza y cola; sonidos provisionales nativos de Minecraft.
-- **No hay aparición natural**, huevos/incubación, cría, montura ni ataques de área todavía (por seguridad y por etapas).
+Rehecho desde cero: cuerpo articulado y musculoso, cabeza estrecha, cuello conectado, patas con garras, once placas dorsales escalonadas unidas al cuerpo y cuatro púas de cola con varias articulaciones. La geometría **no procede** de ROR ni se extrajo de las ilustraciones. Las imágenes facilitadas se utilizan como **referencias visuales**, no como texturas listas para utilizar.
 
-## Comprobación de la ensalada (hecha con el JAR beta del usuario)
+**Variantes visuales (4)**:
 
-Dentro de `ror-0.71(1).jar` está `data/ror/recipes/redwood_salad.json`: receta sin forma de 9 ingredientes:
+- **Cibernético (83 %):** negro azulado, líneas turquesas y placas luminosas en apariencia (sin luz dinámica).
+- **Albino dorado (9 %):** piel marfil, patrones dorados y placas color oro.
+- **Magma superviviente (3 %):** piel de carbón, lava en placas, cicatrices y resistencia al fuego.
+- **Cristal glacial (5 %):** escamas azul noche y placas de hielo turquesa y blanco.
 
-`ror:great_horsetail`, `ror:gold_mushroom`, `ror:snow_flower`, `ror:stream_violet`, `ror:brown_mushroom`, `ror:trillium`, `ror:resin`, `minecraft:bowl` y `ror:redwood_pinecone`.
+Los colores evocan los conceptos que elegimos, pero son nuevas texturas pixeladas originales. Por ahora **las placas no emiten luz real ni animación de brillo**.
 
-El objeto y su receta existen en esa compilación; algunas plantas e ingredientes pueden ser difíciles de obtener según el mundo. El addon **no modifica** esa receta.
+**Conservamos**: 270 HP, daño base 27, armadura 14, velocidad 0.19, defensa a su dueño, domesticación usando `ror:redwood_salad` con éxito garantizado. No hay cría/montura natural en v2.0; esto es una gran revisión **visual** del prototipo, no una expansión de mecánicas.
 
-## Cómo compilar
+## Compatibilidad con mundos existentes
 
-1. Crea un repositorio nuevo **`Prodigy-Creatures`** en GitHub (no subas esto a Prodigy Blueprints).
-2. Sube todos los archivos y carpetas **de la raíz de este proyecto**, incluida `.github`.
-3. En Actions, selecciona `Build Prodigy Creatures`, luego `Run workflow`.
-4. Descarga el artifact ZIP; dentro encontrarás un `.jar` si la compilación pasa.
-5. Prueba en un mundo de test: instala este mod **junto a ROR**, nunca en lugar de él.
+El nombre público es **Stegosaurus for ROR** y el nombre del archivo compilado `Stegosaurus-for-ROR-2.0.0.jar`. El identificador técnico sigue siendo **`prodigycreatures`**, y el ID de entidad `prodigycreatures:stegosaurus`: así no desaparecen los estegosaurios de una partida existente. Los valores antiguos de NBT `SkinVariant` se conservan: 0 ahora cibernético, 1 albino dorado, 2 magma; el nuevo valor 3 es cristal glacial.
 
-**Estado:** código fuente prototipo. No se ha compilado con Gradle/Forge en este entorno; podrían requerirse correcciones de API. No es todavía un `.jar` listo para jugar.
+El huevo aparece en **Huevos de aparición** en creativo y se puede obtener con:
+`/give @p prodigycreatures:stegosaurus_spawn_egg`.
 
-## Objetivos próximos
+## Compilación
 
-- **v0.2**: rediseñar modelo en Blockbench con geometría más fiel al estilo de ROR y animaciones completas (incluido golpe de cola).
-- **v0.3**: crecimiento, huevos, crianza, domesticación avanzada y aparición natural equilibrada.
-- **v0.4**: montura, armadura, ataques en arco y configuración de IA por órdenes.
+1. La automatización de GitHub Actions ejecuta `python3 generate_textures.py` (solo biblioteca estándar de Python; sin paquetes externos).
+2. Después usa Java 17 y Gradle 8.8 para compilar.
+3. Descarga el artefacto desde **Actions** y extrae `Stegosaurus-for-ROR-2.0.0.jar`.
+4. Instálalo junto a ROR, sustituyendo el JAR viejo. No instales dos versiones del mismo mod a la vez.
 
-**Copyright:** modelo, animaciones y texturas originales. No contiene recursos del mod ROR. Referencia de compatibilidad y balance únicamente.
+Las texturas son generadas por `generate_textures.py`. Al compilar **localmente** desde el repositorio, ejecuta ese script antes de Gradle; el ZIP del proyecto también incluye las cuatro texturas ya generadas.
+
+**Estado:** código nuevo listo para compilar en GitHub Actions y verificar en mundo de pruebas; aún no es una garantía de que el render final sea exactamente igual a las imágenes ni de que funcionen todos los shaders. Haz copia de tu mundo antes de probar.
