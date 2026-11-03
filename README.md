@@ -1,4 +1,4 @@
-# Prodigy Creatures v0.1.0 — Stegosaurus (prototipo jugable)
+# Stegosaurus for ROR v0.1.1 — Prototipo
 
 Para Minecraft **1.20.1 / Forge 47.x / Java 17**. Proyecto **independiente** del mod Prodigy Blueprints. **Requiere Raxiores Of Raxiore (modid `ror`)**, y funciona por ID de su ítem, sin importar/copiar clases o recursos de ROR.
 
@@ -26,9 +26,9 @@ El objeto y su receta existen en esa compilación; algunas plantas e ingrediente
 
 ## Cómo compilar
 
-1. Crea un repositorio nuevo **`Prodigy-Creatures`** en GitHub (no subas esto a Prodigy Blueprints).
+1. Usa el repositorio **`Mayfher-spec/Stegosaurus-Mod`** (separado de Prodigy Blueprints).
 2. Sube todos los archivos y carpetas **de la raíz de este proyecto**, incluida `.github`.
-3. En Actions, selecciona `Build Prodigy Creatures`, luego `Run workflow`.
+3. En Actions, selecciona `Build Stegosaurus for ROR`, luego `Run workflow`.
 4. Descarga el artifact ZIP; dentro encontrarás un `.jar` si la compilación pasa.
 5. Prueba en un mundo de test: instala este mod **junto a ROR**, nunca en lugar de él.
 
@@ -41,3 +41,9 @@ El objeto y su receta existen en esa compilación; algunas plantas e ingrediente
 - **v0.4**: montura, armadura, ataques en arco y configuración de IA por órdenes.
 
 **Copyright:** modelo, animaciones y texturas originales. No contiene recursos del mod ROR. Referencia de compatibilidad y balance únicamente.
+
+## v0.1.1
+- Nombre publico: **Stegosaurus for ROR** (el ID interno `prodigycreatures` permanece para compatibilidad).
+- Huevo de Stegosaurus visible en la pestana **Huevos de aparicion** del inventario creativo.
+- Archivo generado: `Stegosaurus-for-ROR-0.1.1.jar`.
+- Comando alternativo: `/give @p prodigycreatures:stegosaurus_spawn_egg`.
