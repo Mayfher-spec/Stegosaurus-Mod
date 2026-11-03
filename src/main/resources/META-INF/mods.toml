@@ -1,0 +1,27 @@
+modLoader="javafml"
+loaderVersion="[47,)"
+license="MIT"
+[[mods]]
+modId="prodigycreatures"
+version="${file.jarVersion}"
+displayName="Prodigy Creatures"
+authors="The Prodigy Town"
+description="Original Stegosaurus companion with ROR Redwood Salad taming and three skin variants."
+[[dependencies.prodigycreatures]]
+modId="forge"
+mandatory=true
+versionRange="[47,)"
+ordering="NONE"
+side="BOTH"
+[[dependencies.prodigycreatures]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.20.1,1.20.2)"
+ordering="NONE"
+side="BOTH"
+[[dependencies.prodigycreatures]]
+modId="ror"
+mandatory=true
+versionRange="[0,)"
+ordering="AFTER"
+side="BOTH"
