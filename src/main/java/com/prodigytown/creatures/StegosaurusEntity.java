@@ -36,13 +36,40 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
+import software.bernie.geckolib.animatable.GeoEntity;
+import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.core.animation.AnimationController;
+import software.bernie.geckolib.core.animation.RawAnimation;
+import software.bernie.geckolib.core.object.PlayState;
+import software.bernie.geckolib.util.GeckoLibUtil;
 import org.jetbrains.annotations.Nullable;
 
 /** Original Stegosaurus; does not import, modify or redistribute ROR code or artwork. */
-public class StegosaurusEntity extends TamableAnimal {
+public class StegosaurusEntity extends TamableAnimal implements GeoEntity {
+    private final AnimatableInstanceCache geoCache = GeckoLibUtil.createInstanceCache(this);
+    private static final RawAnimation IDLE = RawAnimation.begin().thenLoop("animation.stegosaurus.idle");
+    private static final RawAnimation WALK = RawAnimation.begin().thenLoop("animation.stegosaurus.walk");
+    private static final RawAnimation SIT = RawAnimation.begin().thenPlayAndHold("animation.stegosaurus.sit");
+    private static final RawAnimation TAIL_STRIKE = RawAnimation.begin().thenPlay("animation.stegosaurus.attack");
+
+    @Override public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
+        controllers.add(new AnimationController<>(this, "movement", 6, state -> {
+            if (this.isOrderedToSit()) return state.setAndContinue(SIT);
+            if (state.isMoving()) return state.setAndContinue(WALK);
+            return state.setAndContinue(IDLE);
+        }));
+        controllers.add(new AnimationController<>(this, "attack_controller", 0, state -> PlayState.STOP)
+            .triggerableAnim("strike", TAIL_STRIKE));
+    }
+
+    @Override public AnimatableInstanceCache getAnimatableInstanceCache() { return this.geoCache; }
+
     private static final EntityDataAccessor<Integer> VARIANT = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.INT);
     private static final ResourceLocation SALAD_ID = new ResourceLocation("ror", "redwood_salad");
-    public static final int NORMAL = 0, ALBINO = 1, MAGMA = 2;
+    // Preserve previously saved NBT variant numbers: 0 -> cyber, 1 -> golden, 2 -> magma.
+    public static final int CYBERNETIC = 0, GOLDEN = 1, MAGMA = 2, GLACIAL = 3;
+    public static final int NORMAL = CYBERNETIC, ALBINO = GOLDEN; // deprecated aliases
 
     public StegosaurusEntity(EntityType<? extends StegosaurusEntity> type, Level level) {
         super(type, level);
@@ -61,11 +88,11 @@ public class StegosaurusEntity extends TamableAnimal {
 
     @Override protected void defineSynchedData() {
         super.defineSynchedData();
-        this.entityData.define(VARIANT, NORMAL);
+        this.entityData.define(VARIANT, CYBERNETIC);
     }
 
     public int getVariant() { return this.entityData.get(VARIANT); }
-    public void setVariant(int variant) { this.entityData.set(VARIANT, Math.max(0, Math.min(MAGMA, variant))); }
+    public void setVariant(int variant) { this.entityData.set(VARIANT, Math.max(0, Math.min(GLACIAL, variant))); }
 
     @Override public void addAdditionalSaveData(CompoundTag tag) {
         super.addAdditionalSaveData(tag);
@@ -81,7 +108,7 @@ public class StegosaurusEntity extends TamableAnimal {
             MobSpawnType reason, @Nullable SpawnGroupData previous, @Nullable CompoundTag tag) {
         SpawnGroupData result = super.finalizeSpawn(level, difficulty, reason, previous, tag);
         int chance = this.random.nextInt(100);
-        setVariant(chance < 3 ? MAGMA : chance < 12 ? ALBINO : NORMAL); // 88/9/3
+        setVariant(chance < 3 ? MAGMA : chance < 12 ? GOLDEN : chance < 17 ? GLACIAL : CYBERNETIC); // 83 / 9 / 3 / 5
         return result;
     }
 
@@ -139,6 +166,7 @@ public class StegosaurusEntity extends TamableAnimal {
         // Defensive tail strike: slower than a rex, but heavy impact.
         boolean hit = entity.hurt(this.damageSources().mobAttack(this), damage);
         if (hit) {
+            if (!this.level().isClientSide) this.triggerAnim("attack_controller", "strike");
             living.knockback(1.9, this.getX()-entity.getX(), this.getZ()-entity.getZ());
         }
         return hit;

@@ -6,7 +6,7 @@ plugins {
 }
 version = mod_version
 group = 'com.prodigytown.creatures'
-base { archivesName = mod_id }
+base { archivesName = 'Stegosaurus-for-ROR' }
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 minecraft {
     mappings channel: 'official', version: minecraft_version
@@ -21,6 +21,23 @@ minecraft {
         server {}
     }
 }
-repositories { mavenCentral() }
-dependencies { minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}" }
+repositories {
+    mavenCentral()
+    maven {
+        name = 'GeckoLib'
+        url = 'https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/'
+        content { includeGroup 'software.bernie.geckolib' }
+    }
+}
+dependencies {
+    minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+    implementation fg.deobf("software.bernie.geckolib:geckolib-forge-${minecraft_version}:4.8.4")
+}
 tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
+
+processResources {
+    inputs.property 'mod_version', mod_version
+    filesMatching('META-INF/mods.toml') {
+        expand(mod_version: mod_version)
+    }
+}
