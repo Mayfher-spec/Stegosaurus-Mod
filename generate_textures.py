@@ -155,6 +155,7 @@ def draw_theme(name,colors):
    atlas.line([(x+3,y+1),(x+11,y+2)],palette['light'],1)
  atlas.save(OUT/f'stegosaurus_{name}.png')
  mask.save(OUT/f'stegosaurus_{name}_emissive.png')
+ mask.save(OUT/f'stegosaurus_{name}_glowmask.png')
  print(name,'-> base + emissive')
 
 if __name__=='__main__':

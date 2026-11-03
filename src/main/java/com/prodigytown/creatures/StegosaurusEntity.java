@@ -36,10 +36,35 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
+import software.bernie.geckolib.animatable.GeoEntity;
+import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.core.animation.AnimationController;
+import software.bernie.geckolib.core.animation.RawAnimation;
+import software.bernie.geckolib.core.object.PlayState;
+import software.bernie.geckolib.util.GeckoLibUtil;
 import org.jetbrains.annotations.Nullable;
 
 /** Original Stegosaurus; does not import, modify or redistribute ROR code or artwork. */
-public class StegosaurusEntity extends TamableAnimal {
+public class StegosaurusEntity extends TamableAnimal implements GeoEntity {
+    private final AnimatableInstanceCache geoCache = GeckoLibUtil.createInstanceCache(this);
+    private static final RawAnimation IDLE = RawAnimation.begin().thenLoop("animation.stegosaurus.idle");
+    private static final RawAnimation WALK = RawAnimation.begin().thenLoop("animation.stegosaurus.walk");
+    private static final RawAnimation SIT = RawAnimation.begin().thenPlayAndHold("animation.stegosaurus.sit");
+    private static final RawAnimation TAIL_STRIKE = RawAnimation.begin().thenPlay("animation.stegosaurus.attack");
+
+    @Override public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
+        controllers.add(new AnimationController<>(this, "movement", 6, state -> {
+            if (this.isOrderedToSit()) return state.setAndContinue(SIT);
+            if (state.isMoving()) return state.setAndContinue(WALK);
+            return state.setAndContinue(IDLE);
+        }));
+        controllers.add(new AnimationController<>(this, "attack_controller", 0, state -> PlayState.STOP)
+            .triggerableAnim("strike", TAIL_STRIKE));
+    }
+
+    @Override public AnimatableInstanceCache getAnimatableInstanceCache() { return this.geoCache; }
+
     private static final EntityDataAccessor<Integer> VARIANT = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.INT);
     private static final ResourceLocation SALAD_ID = new ResourceLocation("ror", "redwood_salad");
     // Preserve previously saved NBT variant numbers: 0 -> cyber, 1 -> golden, 2 -> magma.
@@ -141,6 +166,7 @@ public class StegosaurusEntity extends TamableAnimal {
         // Defensive tail strike: slower than a rex, but heavy impact.
         boolean hit = entity.hurt(this.damageSources().mobAttack(this), damage);
         if (hit) {
+            if (!this.level().isClientSide) this.triggerAnim("attack_controller", "strike");
             living.knockback(1.9, this.getX()-entity.getX(), this.getZ()-entity.getZ());
         }
         return hit;

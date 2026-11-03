@@ -25,3 +25,10 @@ mandatory=true
 versionRange="[0,)"
 ordering="AFTER"
 side="BOTH"
+
+[[dependencies.prodigycreatures]]
+modId="geckolib"
+mandatory=true
+versionRange="[4.8.4,)"
+ordering="AFTER"
+side="BOTH"

@@ -1,5 +1,6 @@
 package com.prodigytown.creatures;
 
+import software.bernie.geckolib.GeckoLib;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.item.Item;
@@ -28,6 +29,7 @@ public class ProdigyCreatures {
         new ForgeSpawnEggItem(STEGOSAURUS, 0x43533c, 0x9d4b34, new Item.Properties()));
 
     public ProdigyCreatures() {
+        GeckoLib.initialize();
         var bus = FMLJavaModLoadingContext.get().getModEventBus();
         ENTITIES.register(bus);
         ITEMS.register(bus);

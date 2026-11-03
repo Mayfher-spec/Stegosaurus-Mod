@@ -11,7 +11,5 @@ public class ClientModEvents {
     @SubscribeEvent public static void renderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(ProdigyCreatures.STEGOSAURUS.get(),StegosaurusRenderer::new);
     }
-    @SubscribeEvent public static void layers(EntityRenderersEvent.RegisterLayerDefinitions event) {
-        event.registerLayerDefinition(StegosaurusModel.LAYER,StegosaurusModel::createBodyLayer);
-    }
+    // GeckoLib reads the model hierarchy from geo/stegosaurus.geo.json automatically.
 }
