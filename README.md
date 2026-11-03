@@ -35,3 +35,9 @@ La geometría se puede abrir en Blockbench. Los PNG son texturas pixel-art origi
 - Group: 1–2 individuals
 - Ground-based natural spawning on solid blocks (including terracotta and red sand); standard CREATURE spawn cap.
 - No changes to skin, tame, behavior or saved entity IDs. The local v3.4.0 source ZIP preserves the newer 3.3.0 artwork.
+
+
+## v3.5.0 — Badlands and Savanna natural spawning
+- Natural spawns: `#minecraft:is_badlands` and `#minecraft:is_savanna` only
+- Relative spawn weight 2; group 1–2
+- No changes to textures, animations, taming, or combat. The local v3.5.0 source package retains the custom v3.3.0 models/textures.
