@@ -1,19 +1,15 @@
 package com.prodigytown.creatures.client;
 
-import com.prodigytown.creatures.ProdigyCreatures;
 import com.prodigytown.creatures.StegosaurusEntity;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
-import net.minecraft.client.renderer.entity.MobRenderer;
-import net.minecraft.resources.ResourceLocation;
+import software.bernie.geckolib.renderer.GeoEntityRenderer;
+import software.bernie.geckolib.renderer.layer.AutoGlowingGeoLayer;
 
-public class StegosaurusRenderer extends MobRenderer<StegosaurusEntity,StegosaurusModel> {
-    private static final ResourceLocation NORMAL = new ResourceLocation(ProdigyCreatures.MODID,"textures/entity/stegosaurus_normal.png");
-    private static final ResourceLocation ALBINO = new ResourceLocation(ProdigyCreatures.MODID,"textures/entity/stegosaurus_albino.png");
-    private static final ResourceLocation MAGMA = new ResourceLocation(ProdigyCreatures.MODID,"textures/entity/stegosaurus_magma.png");
+/** The GeckoLib renderer animates geometry bones and adds masked glow on every variant. */
+public final class StegosaurusRenderer extends GeoEntityRenderer<StegosaurusEntity> {
     public StegosaurusRenderer(EntityRendererProvider.Context context) {
-        super(context,new StegosaurusModel(context.bakeLayer(StegosaurusModel.LAYER)),1.5f);
-    }
-    @Override public ResourceLocation getTextureLocation(StegosaurusEntity entity) {
-        return switch (entity.getVariant()) {case StegosaurusEntity.ALBINO -> ALBINO; case StegosaurusEntity.MAGMA -> MAGMA; default -> NORMAL;};
+        super(context, new StegosaurusGeoModel());
+        this.shadowRadius = 1.85f;
+        addRenderLayer(new AutoGlowingGeoLayer<>(this));
     }
 }
