@@ -3,10 +3,10 @@ loaderVersion="[47,)"
 license="MIT"
 [[mods]]
 modId="prodigycreatures"
-version="${file.jarVersion}"
-displayName="Prodigy Creatures"
+version="${mod_version}"
+displayName="Stegosaurus for ROR"
 authors="The Prodigy Town"
-description="Original Stegosaurus companion with ROR Redwood Salad taming and three skin variants."
+description="Original Stegosaurus companion with ROR Redwood Salad taming, rebuilt articulated model and four original skin variants."
 [[dependencies.prodigycreatures]]
 modId="forge"
 mandatory=true

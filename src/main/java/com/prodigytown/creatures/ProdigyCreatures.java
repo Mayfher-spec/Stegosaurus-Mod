@@ -3,8 +3,10 @@ package com.prodigytown.creatures;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraftforge.common.ForgeSpawnEggItem;
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
+import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
@@ -20,7 +22,7 @@ public class ProdigyCreatures {
 
     public static final RegistryObject<EntityType<StegosaurusEntity>> STEGOSAURUS = ENTITIES.register("stegosaurus", () ->
         EntityType.Builder.of(StegosaurusEntity::new, MobCategory.CREATURE)
-            .sized(2.9f, 2.8f).clientTrackingRange(12).build(MODID + ":stegosaurus"));
+            .sized(3.6f, 3.4f).clientTrackingRange(12).build(MODID + ":stegosaurus"));
 
     public static final RegistryObject<Item> STEGOSAURUS_EGG = ITEMS.register("stegosaurus_spawn_egg", () ->
         new ForgeSpawnEggItem(STEGOSAURUS, 0x43533c, 0x9d4b34, new Item.Properties()));
@@ -33,6 +35,13 @@ public class ProdigyCreatures {
 
     @Mod.EventBusSubscriber(modid = MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
     public static class ModEvents {
+        @SubscribeEvent
+        public static void registerCreativeTab(BuildCreativeModeTabContentsEvent event) {
+            if (event.getTabKey() == CreativeModeTabs.SPAWN_EGGS) {
+                event.accept(STEGOSAURUS_EGG.get());
+            }
+        }
+
         @SubscribeEvent
         public static void registerAttributes(EntityAttributeCreationEvent event) {
             event.put(STEGOSAURUS.get(), StegosaurusEntity.createAttributes().build());
