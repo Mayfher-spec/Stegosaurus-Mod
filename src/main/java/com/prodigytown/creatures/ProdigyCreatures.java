@@ -3,10 +3,15 @@ package com.prodigytown.creatures;
 import software.bernie.geckolib.GeckoLib;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.SpawnPlacements;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraftforge.common.ForgeSpawnEggItem;
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
+import net.minecraftforge.event.entity.SpawnPlacementRegisterEvent;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -42,6 +47,20 @@ public class ProdigyCreatures {
             if (event.getTabKey() == CreativeModeTabs.SPAWN_EGGS) {
                 event.accept(STEGOSAURUS_EGG.get());
             }
+        }
+
+        @SubscribeEvent
+        public static void registerSpawnPlacement(SpawnPlacementRegisterEvent event) {
+            // Badlands has red sand/terracotta, not just grass like default animal rules.
+            event.register(
+                STEGOSAURUS.get(),
+                SpawnPlacements.Type.ON_GROUND,
+                Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+                (type, level, reason, pos, random) ->
+                    level.getBlockState(pos.below()).isFaceSturdy(level, pos.below(), Direction.UP)
+                    && Mob.checkMobSpawnRules(type, level, reason, pos, random),
+                SpawnPlacementRegisterEvent.Operation.REPLACE
+            );
         }
 
         @SubscribeEvent

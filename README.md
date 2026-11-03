@@ -27,3 +27,11 @@ Mod original para **Minecraft 1.20.1, Forge 47.4.0 y GeckoLib 4.8.4**, integrado
 La geometría se puede abrir en Blockbench. Los PNG son texturas pixel-art originales; los artes de referencia solo guían la apariencia. No se copian recursos de ROR.
 
 **Notas:** La integración necesita pruebas visuales dentro de Minecraft; que compile no garantiza que las animaciones, pivotes o brillos funcionen con cada shader. La animación de comer se incluye como recurso para futuras mejoras de IA y aún no se activa de forma automática.
+
+
+## v3.4.0 — Badlands natural spawn
+- Biomes: `#minecraft:is_badlands` (badlands, eroded_badlands, wooded_badlands)
+- Weight: 2 (relative weight, NOT a 2% probability)
+- Group: 1–2 individuals
+- Ground-based natural spawning on solid blocks (including terracotta and red sand); standard CREATURE spawn cap.
+- No changes to skin, tame, behavior or saved entity IDs. The local v3.4.0 source ZIP preserves the newer 3.3.0 artwork.
