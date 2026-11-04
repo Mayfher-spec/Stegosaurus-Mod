@@ -20,87 +20,111 @@ public final class StegosaurusModel<T extends StegosaurusEntity> extends Hierarc
   private final ModelPart root;
   public StegosaurusModel(ModelPart root) { this.root = root; }
   @Override public ModelPart root() { return root; }
-  @Override public void setupAnim(T entity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
+  /**
+   * Native adult movement designed around the chibi's responsive four-leg walk.
+   * Crucially does NOT run the old authored WALK/RUN root translation channels:
+   * they can move the body while feet are planted and create skating.
+   * Every real displacement drives all four leg bones from limbSwing.
+   */
+  @Override public void setupAnim(T entity, float limbSwing, float limbSwingAmount,
+                                  float ageInTicks, float netHeadYaw, float headPitch) {
     root.getAllParts().forEach(ModelPart::resetPose);
-    final boolean sitting = entity.isOrderedToSit();
-    final double hSpeed2 = entity.getDeltaMovement().horizontalDistanceSqr();
-    final boolean moving = !sitting && (limbSwingAmount > 0.055F || hSpeed2 > 0.0005D);
-    // Never overlay the full idle animation with a gait: shared bones cause stiffness
-    // and dorsal-plate intersections. The user-authored WALK and RUN clips remain intact.
-    if (!moving) this.animate(entity.idleAnimationState, StegosaurusAnimations.IDLE, ageInTicks);
-    else {
-      boolean sprint = hSpeed2 > 0.024D;
-      // The authored 2-second walk used to feel glacial. Faster playback retains
-      // weight in the gait without slowing physical movement.
-      this.animateWalk(sprint ? StegosaurusAnimations.RUN : StegosaurusAnimations.WALK,
-        limbSwing, limbSwingAmount, sprint ? 1.8F : 2.25F, 1.0F);
-    }
-    this.animate(entity.tailWhipAnimationState, StegosaurusAnimations.TAIL_WHIP, ageInTicks);
-    this.animate(entity.biteAnimationState, StegosaurusAnimations.BITE, ageInTicks);
-    this.animate(entity.roarAnimationState, StegosaurusAnimations.ROAR, ageInTicks);
-
-    // Adapt the 11 chibi-style behaviors to this adult's native skeleton.
-    // No GeckoLib, shared chibi bones, or independent dorsal rotations are introduced.
     ModelPart base = root.getChild("all");
-    ModelPart foreBody = base.getChild("body2");
-    ModelPart hindBody = base.getChild("body");
-    ModelPart neckBase = foreBody.getChild("neck2");
+    ModelPart fore = base.getChild("body2");
+    ModelPart hind = base.getChild("body");
+    ModelPart neckBase = fore.getChild("neck2");
     ModelPart neck = neckBase.getChild("neck");
     ModelPart head = neck.getChild("head");
     ModelPart jaw = head.getChild("jaw");
-    ModelPart tail = hindBody.getChild("tail");
+    ModelPart frontL = fore.getChild("arm_l");
+    ModelPart frontR = fore.getChild("arm_r");
+    // The hind legs are children of "all", NOT "body".
+    ModelPart backL = base.getChild("leg_l");
+    ModelPart backR = base.getChild("leg_r");
+    ModelPart tail = hind.getChild("tail");
     ModelPart tail2 = tail.getChild("tail2");
-    float motion = ageInTicks * 0.16F;
+
+    float horizontalSpeed = (float)Math.sqrt(entity.getDeltaMovement().horizontalDistanceSqr());
+    boolean resting = entity.isOrderedToSit();
+    boolean moving = !resting && (limbSwingAmount > 0.07F || horizontalSpeed > 0.035F);
+    boolean running = moving && (horizontalSpeed > 0.18F || limbSwingAmount > 0.85F);
+    float cycles = limbSwing * (running ? 1.45F : 1.18F);
+    float power = net.minecraft.util.Mth.clamp(Math.max(limbSwingAmount * 1.75F, horizontalSpeed * 2.3F), 0.0F, 1.0F);
+    float stride = (running ? 0.78F : 0.56F) * power;
+
     if (moving) {
-      // Walk/run: counterbalance the stride without sliding the root position.
-      foreBody.xRot += 0.014F * net.minecraft.util.Mth.sin(motion * 1.8F);
-      head.xRot += 0.022F * net.minecraft.util.Mth.sin(motion * 2.4F);
-      tail.yRot += 0.065F * net.minecraft.util.Mth.sin(motion * 1.5F);
-      tail2.yRot += 0.04F * net.minecraft.util.Mth.sin(motion * 1.5F + 0.4F);
-    } else if (sitting) {
-      // Sleep/rest: tuck the head, relax jaw and sway tail gently.
-      neckBase.xRot += 0.10F;
-      head.xRot += 0.14F;
-      jaw.xRot += 0.025F;
-      tail.yRot += 0.020F * net.minecraft.util.Mth.sin(ageInTicks * 0.045F);
+      // Four grounded legs. Alternating walk -> diagonal trot when running.
+      float hindLag = running ? 0.16F : 1.05F;
+      float fl = net.minecraft.util.Mth.sin(cycles);
+      float fr = net.minecraft.util.Mth.sin(cycles + (float)Math.PI);
+      float bl = net.minecraft.util.Mth.sin(cycles + (float)Math.PI + hindLag);
+      float br = net.minecraft.util.Mth.sin(cycles + hindLag);
+      frontL.xRot += fl * stride;
+      frontR.xRot += fr * stride;
+      backL.xRot += bl * stride * 0.86F;
+      backR.xRot += br * stride * 0.86F;
+
+      // In chibi style, toes flex slightly on foot lift; don't translate leg root.
+      frontL.getChild("hand_l").xRot += Math.max(0F, -fl) * stride * 0.17F;
+      frontR.getChild("hand_r").xRot += Math.max(0F, -fr) * stride * 0.17F;
+      backL.getChild("leg_l2").xRot += Math.max(0F, -bl) * stride * 0.20F;
+      backR.getChild("leg_r2").xRot += Math.max(0F, -br) * stride * 0.20F;
+
+      // Body mass comes from the stance and subtle bob, never a slow-motion gait.
+      base.y += 0.42F * power * (1F - Math.abs(net.minecraft.util.Mth.sin(cycles * 2F)));
+      neck.xRot += 0.027F * power * net.minecraft.util.Mth.sin(cycles + 0.4F);
+      head.xRot += 0.024F * power * net.minecraft.util.Mth.sin(cycles + 0.8F);
+      tail.yRot += 0.07F * power * net.minecraft.util.Mth.sin(cycles * 0.55F);
+      tail2.yRot += 0.04F * power * net.minecraft.util.Mth.sin(cycles * 0.55F + 0.35F);
+    } else if (resting) {
+      // Sleep: lower head, breathe, small tail motion. Dorsals stay still.
+      neckBase.xRot += 0.14F;
+      neck.xRot += 0.10F;
+      head.xRot += 0.10F + 0.012F * net.minecraft.util.Mth.sin(ageInTicks * 0.09F);
+      jaw.xRot += 0.018F;
+      tail.yRot += 0.018F * net.minecraft.util.Mth.sin(ageInTicks * 0.055F);
     } else {
-      float phase = ageInTicks % 640.0F;
-      // Look around - a slow scan with a short pause.
-      if (phase > 65.0F && phase < 135.0F) {
-        head.yRot += 0.18F * net.minecraft.util.Mth.sin((phase - 65.0F) * 0.045F);
+      // Idle, look around, sniff, startle, stomp, yawn, sleep, happy and tail swipe:
+      // same behavior vocabulary as the chibi but on native adult bones.
+      float phase = (ageInTicks + entity.getId() * 17F) % 700F;
+      neckBase.xRot += 0.012F * net.minecraft.util.Mth.sin(ageInTicks * 0.095F);
+      tail.yRot += 0.028F * net.minecraft.util.Mth.sin(ageInTicks * 0.065F);
+      if (phase >= 70F && phase < 138F) { // LOOK_AROUND
+        head.yRot += 0.16F * net.minecraft.util.Mth.sin((phase - 70F) * 0.045F);
       }
-      // Sniff: small synchronized head nod and jaw movements.
-      if (phase > 195.0F && phase < 240.0F) {
-        float v = net.minecraft.util.Mth.sin((phase - 195.0F) * 0.18F);
-        head.xRot += 0.055F * v;
-        jaw.xRot += 0.025F * Math.abs(v);
+      if (phase >= 184F && phase < 224F) { // SNIFF
+        float v = net.minecraft.util.Mth.sin((phase - 184F) * 0.20F);
+        head.xRot += v * 0.085F;
+        jaw.xRot += Math.abs(v) * 0.025F;
       }
-      // Yawn: only jaw/neck move, not the dorsal plates.
-      if (phase > 340.0F && phase < 391.0F) {
-        float v = Math.max(0F, net.minecraft.util.Mth.sin((phase - 340.0F) * (float)Math.PI / 51.0F));
-        jaw.xRot += 0.25F * v;
-        head.xRot -= 0.045F * v;
+      if (phase >= 300F && phase < 348F) { // YAWN
+        float v = Math.max(0F, net.minecraft.util.Mth.sin((phase - 300F) * (float)Math.PI / 48F));
+        head.xRot -= v * 0.035F;
+        jaw.xRot += v * 0.35F;
       }
-      // Happy: tamed stego greets with a subtle tail wag.
-      if (entity.isTame() && phase > 485.0F && phase < 541.0F) {
-        float v = net.minecraft.util.Mth.sin((phase - 485.0F) * 0.31F);
-        tail.yRot += 0.12F * v;
-        tail2.yRot += 0.08F * v;
+      if (entity.isTame() && phase >= 465F && phase < 518F) { // HAPPY
+        tail.yRot += net.minecraft.util.Mth.sin((phase - 465F) * 0.34F) * 0.13F;
+        tail2.yRot += net.minecraft.util.Mth.sin((phase - 465F) * 0.34F + 0.3F) * 0.09F;
       }
     }
-    // Startle (on damage) and stomp (when facing a target) are short overlays.
-    if (entity.hurtTime > 0) {
-      head.xRot -= 0.09F;
-      neck.xRot -= 0.03F;
-      tail.yRot += 0.05F;
+
+    if (entity.hurtTime > 0) { // STARTLE
+      head.xRot -= 0.10F;
+      tail.yRot += 0.07F;
     }
-    if (entity.getTarget() != null && !sitting && !moving) {
-      foreBody.xRot += 0.015F * net.minecraft.util.Mth.sin(ageInTicks * 0.38F);
-      foreBody.getChild("arm_r").xRot += 0.07F * net.minecraft.util.Mth.sin(ageInTicks * 0.48F);
+    if (!resting && entity.getTarget() != null) { // STOMP / territorial
+      float stomp = net.minecraft.util.Mth.sin(ageInTicks * 0.48F);
+      if (!moving) frontR.xRot += Math.max(0F, stomp) * 0.10F;
+      jaw.xRot += 0.018F * Math.abs(stomp);
     }
-    // Existing TAIL_WHIP clip provides the chibi-style tail swipe in combat.
-    head.yRot += netHeadYaw * ((float)Math.PI / 180.0F) * 0.35F;
-    head.xRot += headPitch * ((float)Math.PI / 180.0F) * 0.35F;
+
+    // Original bite, roar, tail-swipe animations remain; after locomotion so
+    // combat action can intentionally take priority over overlapping bones.
+    this.animate(entity.tailWhipAnimationState, StegosaurusAnimations.TAIL_WHIP, ageInTicks);
+    this.animate(entity.biteAnimationState, StegosaurusAnimations.BITE, ageInTicks);
+    this.animate(entity.roarAnimationState, StegosaurusAnimations.ROAR, ageInTicks);
+    head.yRot += netHeadYaw * ((float)Math.PI / 180F) * 0.35F;
+    head.xRot += headPitch * ((float)Math.PI / 180F) * 0.35F;
   }
   @Override public void renderToBuffer(PoseStack pose, VertexConsumer consumer, int light, int overlay,
     float red, float green, float blue, float alpha) {
