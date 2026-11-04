@@ -3,9 +3,9 @@ loaderVersion="[47,)"
 license="MIT"
 [[mods]]
 modId="prodigychibi"
-version="0.1.0-alpha.1"
-displayName="Prodigy Creatures Chibi Alpha"
-description="Alfa del Stegosaurus Chibi Natural: silla y movimiento de prueba."
+version="0.2.0-alpha.1"
+displayName="Prodigy Creatures Chibi Alpha 0.2"
+description="Baby Stegosaurus with four skins. Non-ridable."
 [[dependencies.prodigychibi]]
 modId="forge"
 mandatory=true
