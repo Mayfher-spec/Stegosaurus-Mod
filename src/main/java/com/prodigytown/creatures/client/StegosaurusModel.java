@@ -43,7 +43,7 @@ public final class StegosaurusModel<T extends StegosaurusEntity> extends Hierarc
   public static LayerDefinition createBodyLayer() {
     MeshDefinition mesh = new MeshDefinition();
     PartDefinition root = mesh.getRoot();
-    PartDefinition part_0 = root.addOrReplaceChild("all", CubeListBuilder.create(), PartPose.offset(0F, 0F, 0F));
+    PartDefinition part_0 = root.addOrReplaceChild("all", CubeListBuilder.create(), PartPose.offset(0F, 24F, 0F));
     PartDefinition part_1 = part_0.addOrReplaceChild("body2", CubeListBuilder.create()
       .mirror(false).texOffs(305, 119).addBox(-27.5F, -21.375F, -25.325F, 55F, 46F, 23F)
       .mirror(false).texOffs(0, 119).addBox(-27.5F, -25.25F, -3.325F, 55F, 50F, 25F), PartPose.offset(0F, -46F, -25.3F));
