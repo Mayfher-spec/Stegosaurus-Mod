@@ -1,0 +1,29 @@
+name: Build Prodigy Chibi Alpha 0.2 (Babies)
+on:
+  push:
+    branches: ['alpha/chibi-0.2-baby']
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.8'
+      - name: Generar cuatro texturas y modelo chibi
+        run: python3 chibi-alpha/generate_variants.py
+      - name: Build mod
+        run: gradle --no-daemon -p chibi-alpha build
+      - name: Inspect JAR contents
+        run: |
+          jar tf chibi-alpha/build/libs/Prodigy-Chibi-Forge-1.20.1-0.2.0-alpha.1.jar | grep -E 'geo/stegosaurus_chibi|textures/entity/stegosaurus_chibi|animations/stegosaurus_chibi'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Prodigy-Chibi-Alpha-0.2-Baby-Forge-1.20.1
+          path: chibi-alpha/build/libs/*.jar
+          if-no-files-found: error
