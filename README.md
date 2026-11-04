@@ -1,43 +1,27 @@
-# Prodigy Creatures v0.1.0 — Stegosaurus (prototipo jugable)
+# Stegosaurus for ROR — v4.1.0 (Forge 1.20.1)
 
-Para Minecraft **1.20.1 / Forge 47.x / Java 17**. Proyecto **independiente** del mod Prodigy Blueprints. **Requiere Raxiores Of Raxiore (modid `ror`)**, y funciona por ID de su ítem, sin importar/copiar clases o recursos de ROR.
+## What was updated
+- Uses the user's latest `estegosaurio_ror_variantes-2.zip` Blockbench *Modded Entity* geometry, **64 cubes and 63 named bone groups**, UV atlas 512×512.
+- Four newly authored textures: **Natural (green), Cybernetic, Magma, Golden** with separate emissive layers, copied byte-identically.
+- Retains **Glacial** as **legacy saved variant 3**, recolored from the new cyber texture because the user ZIP contains no new Glacial atlas.
+- Native Minecraft keyframe definitions converted directly from **six supplied Blockbench animations**: idle (4 s), walk (2 s), run (1 s), tail_whip (1.8 s), bite (1.2 s), roar (3 s).
+- `run` used for fast movement, `walk` for slower movement, `tail_whip` (80%)/`bite` (20%) triggered on a successful hit, `roar` occasionally while hostile. Combat timing and collision are the v4 rules and have **not** been visually verified in Minecraft.
+- **No GeckoLib**. Forge native `ModelPart`/`AnimationDefinition` preserved.
+- Variant IDs stable for old saves: `0=Cyb`, `1=Golden`, `2=Magma`, `3=Glacial`, **`4=Natural`**.
+- New natural spawn mix: Natural 65%, Cybernetic 20%, Golden 9%, Magma 3%, Glacial 3% across existing Badlands/Savanna spawn rules (weight=2, group 1–2).
+- Keeps existing entity ID, stats (270 HP, 27 attack), Redwood Salad taming, sounds and biome modifiers. ROR remains mandatory in mods.toml.
+- Source includes script `tools_generate_native.py` for regenerating native model and animations from the green .bbmodel.
 
-## Lo que incluye este primer prototipo
+## Test checklist
+1. Back up your save and remove the previous Stegosaurus JAR from `mods`.
+2. Use Minecraft 1.20.1, Forge 47.4.x, ROR beta 0.71. GeckoLib is not needed **by this mod**.
+3. Test each variant in a creative test world. Summon `prodigycreatures:stegosaurus` and specify NBT `SkinVariant` 0..4.
+4. Look from front/side/behind/above; especially zero-thickness dorsal plates which require double-sided alpha rendering. Test glowing textures during darkness.
+5. Check the jaw and head pitch, walk/run leg motion, tail attack, bite and occasional roar; animation-blend quality is not yet proven in-game.
+6. Test natural spawns in Badlands/Savanna and Redwood Salad tame. Check old saved cyber/gold/magma/glacial dinosaurs.
 
-- Estegosaurio con **modelo cúbico original y articulado (borrador visual)**; no es todavía un modelo final al nivel de ROR.
-- 3 **texturas originales**: normal (88 %), albino (9 %), magma (3 %).
-- Huevo de aparición (creativo): `/give @p prodigycreatures:stegosaurus_spawn_egg`.
-- Vida 270, armadura 14, daño de cola 27, velocidad 0.19, resistencia al empuje 0.85.
-- Los salvajes se defienden al ser atacados; domesticados protegen al dueño.
-- Se domestica con **1 Redwood Salad** (`ror:redwood_salad`) con probabilidad 100%; se consume en supervivencia.
-- La misma ensalada cura **40 puntos de vida** a un ejemplar domesticado del que eres dueño.
-- Clic derecho vacío con dueño: alternar entre quedarse sentado y seguirlo.
-- Variante magma inmune al daño etiquetado como fuego; su textura incluye grietas/cicatrices volcánicas.
-- Animación inicial de patas, cabeza y cola; sonidos provisionales nativos de Minecraft.
-- **No hay aparición natural**, huevos/incubación, cría, montura ni ataques de área todavía (por seguridad y por etapas).
-
-## Comprobación de la ensalada (hecha con el JAR beta del usuario)
-
-Dentro de `ror-0.71(1).jar` está `data/ror/recipes/redwood_salad.json`: receta sin forma de 9 ingredientes:
-
-`ror:great_horsetail`, `ror:gold_mushroom`, `ror:snow_flower`, `ror:stream_violet`, `ror:brown_mushroom`, `ror:trillium`, `ror:resin`, `minecraft:bowl` y `ror:redwood_pinecone`.
-
-El objeto y su receta existen en esa compilación; algunas plantas e ingredientes pueden ser difíciles de obtener según el mundo. El addon **no modifica** esa receta.
-
-## Cómo compilar
-
-1. Crea un repositorio nuevo **`Prodigy-Creatures`** en GitHub (no subas esto a Prodigy Blueprints).
-2. Sube todos los archivos y carpetas **de la raíz de este proyecto**, incluida `.github`.
-3. En Actions, selecciona `Build Prodigy Creatures`, luego `Run workflow`.
-4. Descarga el artifact ZIP; dentro encontrarás un `.jar` si la compilación pasa.
-5. Prueba en un mundo de test: instala este mod **junto a ROR**, nunca en lugar de él.
-
-**Estado:** código fuente prototipo. No se ha compilado con Gradle/Forge en este entorno; podrían requerirse correcciones de API. No es todavía un `.jar` listo para jugar.
-
-## Objetivos próximos
-
-- **v0.2**: rediseñar modelo en Blockbench con geometría más fiel al estilo de ROR y animaciones completas (incluido golpe de cola).
-- **v0.3**: crecimiento, huevos, crianza, domesticación avanzada y aparición natural equilibrada.
-- **v0.4**: montura, armadura, ataques en arco y configuración de IA por órdenes.
-
-**Copyright:** modelo, animaciones y texturas originales. No contiene recursos del mod ROR. Referencia de compatibilidad y balance únicamente.
+## Implementation limits
+- No chibi/juvenile form, RPG progression, mount, armor or skill tree implemented yet.
+- Entity hitbox remains 4x5 blocks, much smaller than the body + tail; to be revisited.
+- Build success does not guarantee correct animation appearance; validate in Minecraft before migrating your main world.
+- The original ROR creatures/assets are not bundled here.
