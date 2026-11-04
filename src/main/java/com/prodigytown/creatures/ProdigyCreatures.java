@@ -1,5 +1,8 @@
 package com.prodigytown.creatures;
 
+import com.prodigytown.chibi.ChibiAlpha;
+import com.prodigytown.chibi.ChibiStego;
+import software.bernie.geckolib.GeckoLib;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.Mob;
@@ -30,10 +33,13 @@ public class ProdigyCreatures {
             .sized(4.0f, 5.0f).clientTrackingRange(12).build(MODID + ":stegosaurus"));
 
     public static final RegistryObject<Item> STEGOSAURUS_EGG = ITEMS.register("stegosaurus_spawn_egg", () ->
-        new ForgeSpawnEggItem(STEGOSAURUS, 0x43533c, 0x9d4b34, new Item.Properties()));
+        new ProdigyStegosaurusEgg(new Item.Properties()));
 
     public ProdigyCreatures() {
         var bus = FMLJavaModLoadingContext.get().getModEventBus();
+        GeckoLib.initialize();
+        // Legacy baby registry is initialized by this SAME mod, not by a second @Mod.
+        ChibiAlpha.register(bus);
         ENTITIES.register(bus);
         ITEMS.register(bus);
     }
@@ -69,6 +75,7 @@ public class ProdigyCreatures {
         @SubscribeEvent
         public static void registerAttributes(EntityAttributeCreationEvent event) {
             event.put(STEGOSAURUS.get(), StegosaurusEntity.createAttributes().build());
+            event.put(ChibiAlpha.STEGO.get(), ChibiStego.attributes().build());
         }
     }
 }
