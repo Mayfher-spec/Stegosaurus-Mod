@@ -14,7 +14,7 @@ import net.minecraft.resources.ResourceLocation;
 /** Emissive textures drawn at full brightness with alpha cutout; no GeckoLib. */
 public final class StegosaurusGlowLayer extends RenderLayer<StegosaurusEntity, StegosaurusModel<StegosaurusEntity>> {
     private static final ResourceLocation[] GLOWS = {
-        glow("cybernetic"), glow("golden"), glow("magma"), glow("glacial")
+        glow("cybernetic"), glow("golden"), glow("magma"), glow("glacial"), glow("natural")
     };
     private static ResourceLocation glow(String name) {
         return new ResourceLocation(ProdigyCreatures.MODID, "textures/entity/stegosaurus_" + name + "_emissive.png");

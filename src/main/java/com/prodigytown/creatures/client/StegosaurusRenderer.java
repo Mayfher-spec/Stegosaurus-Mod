@@ -9,7 +9,7 @@ import net.minecraft.resources.ResourceLocation;
 /** Vanilla/Forge ModelPart renderer, same rendering family as ROR's T-Rex. */
 public final class StegosaurusRenderer extends MobRenderer<StegosaurusEntity, StegosaurusModel<StegosaurusEntity>> {
     private static final ResourceLocation[] SKINS = {
-        texture("cybernetic"), texture("golden"), texture("magma"), texture("glacial")
+        texture("cybernetic"), texture("golden"), texture("magma"), texture("glacial"), texture("natural")
     };
     private static ResourceLocation texture(String name) {
         return new ResourceLocation(ProdigyCreatures.MODID, "textures/entity/stegosaurus_" + name + ".png");

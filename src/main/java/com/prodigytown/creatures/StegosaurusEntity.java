@@ -43,24 +43,31 @@ import org.jetbrains.annotations.Nullable;
 public class StegosaurusEntity extends TamableAnimal {
     public final AnimationState idleAnimationState = new AnimationState();
     public final AnimationState tailWhipAnimationState = new AnimationState();
+    public final AnimationState biteAnimationState = new AnimationState();
+    public final AnimationState roarAnimationState = new AnimationState();
     @Override public void tick() {
         super.tick();
         if (this.level().isClientSide) {
             this.idleAnimationState.startIfStopped(this.tickCount);
-            if (this.tailWhipAnimationState.isStarted() && this.tailWhipAnimationState.getAccumulatedTime() > 1600L) {
-                this.tailWhipAnimationState.stop();
-            }
+            if (this.tailWhipAnimationState.isStarted() && this.tailWhipAnimationState.getAccumulatedTime() > 1800L) this.tailWhipAnimationState.stop();
+            if (this.biteAnimationState.isStarted() && this.biteAnimationState.getAccumulatedTime() > 1200L) this.biteAnimationState.stop();
+            if (this.roarAnimationState.isStarted() && this.roarAnimationState.getAccumulatedTime() > 3000L) this.roarAnimationState.stop();
+        } else if (this.getTarget() != null && !this.isOrderedToSit() && this.tickCount % 240 == 0 && this.random.nextInt(4) == 0) {
+            // Periodic roar while in combat, synced to nearby clients. Not every tick.
+            this.level().broadcastEntityEvent(this, (byte) 63);
         }
     }
     @Override public void handleEntityEvent(byte id) {
         if (id == 61) this.tailWhipAnimationState.start(this.tickCount);
+        else if (id == 62) this.biteAnimationState.start(this.tickCount);
+        else if (id == 63) this.roarAnimationState.start(this.tickCount);
         else super.handleEntityEvent(id);
     }
 
     private static final EntityDataAccessor<Integer> VARIANT = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.INT);
     private static final ResourceLocation SALAD_ID = new ResourceLocation("ror", "redwood_salad");
     // Preserve previously saved NBT variant numbers: 0 -> cyber, 1 -> golden, 2 -> magma.
-    public static final int CYBERNETIC = 0, GOLDEN = 1, MAGMA = 2, GLACIAL = 3;
+    public static final int CYBERNETIC = 0, GOLDEN = 1, MAGMA = 2, GLACIAL = 3, NATURAL = 4;
     public static final int NORMAL = CYBERNETIC, ALBINO = GOLDEN; // deprecated aliases
 
     public StegosaurusEntity(EntityType<? extends StegosaurusEntity> type, Level level) {
@@ -84,7 +91,7 @@ public class StegosaurusEntity extends TamableAnimal {
     }
 
     public int getVariant() { return this.entityData.get(VARIANT); }
-    public void setVariant(int variant) { this.entityData.set(VARIANT, Math.max(0, Math.min(GLACIAL, variant))); }
+    public void setVariant(int variant) { this.entityData.set(VARIANT, Math.max(0, Math.min(NATURAL, variant))); }
 
     @Override public void addAdditionalSaveData(CompoundTag tag) {
         super.addAdditionalSaveData(tag);
@@ -100,7 +107,9 @@ public class StegosaurusEntity extends TamableAnimal {
             MobSpawnType reason, @Nullable SpawnGroupData previous, @Nullable CompoundTag tag) {
         SpawnGroupData result = super.finalizeSpawn(level, difficulty, reason, previous, tag);
         int chance = this.random.nextInt(100);
-        setVariant(chance < 3 ? MAGMA : chance < 12 ? GOLDEN : chance < 17 ? GLACIAL : CYBERNETIC); // 83 / 9 / 3 / 5
+        // New naturally-colored variant is common. Legacy IDs 0..3 remain unchanged in saved worlds.
+        // 65% natural, 20% cybernetic, 9% golden, 3% magma, 3% glacial.
+        setVariant(chance < 3 ? MAGMA : chance < 12 ? GOLDEN : chance < 15 ? GLACIAL : chance < 35 ? CYBERNETIC : NATURAL);
         return result;
     }
 
@@ -158,7 +167,7 @@ public class StegosaurusEntity extends TamableAnimal {
         // Defensive tail strike: slower than a rex, but heavy impact.
         boolean hit = entity.hurt(this.damageSources().mobAttack(this), damage);
         if (hit) {
-            if (!this.level().isClientSide) this.level().broadcastEntityEvent(this, (byte)61);
+            if (!this.level().isClientSide) this.level().broadcastEntityEvent(this, (byte)(this.random.nextInt(5) == 0 ? 62 : 61));
             living.knockback(1.9, this.getX()-entity.getX(), this.getZ()-entity.getZ());
         }
         return hit;
