@@ -15,6 +15,8 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.8'
+      - name: Generar geometría y textura del chibi
+        run: python3 chibi-alpha/generate_assets.py
       - name: Build mod
         run: gradle --no-daemon -p chibi-alpha build
       - uses: actions/upload-artifact@v4
