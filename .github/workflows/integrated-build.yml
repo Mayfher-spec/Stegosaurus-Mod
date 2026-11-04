@@ -1,0 +1,49 @@
+name: Build Prodigy Creatures Integrated
+on:
+  push:
+    branches:
+      - feature/prodigy-creatures-v4.2.0-adult-chibi-integrated
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.8'
+      - name: Compile native adult Stegosaurus (Forge 1.20.1)
+        run: gradle --no-daemon build
+      - name: Fetch pinned Chibi Alpha 0.5.2 from this repo
+        run: |
+          git fetch origin refs/heads/alpha/chibi-0.5.2-walk-fix:refs/remotes/origin/alpha/chibi-0.5.2-walk-fix
+          git show origin/alpha/chibi-0.5.2-walk-fix:releases/chibi-alpha-0.5.2/Prodigy_Chibi_Alpha_0.5.2_Caminata_Sin_Patinaje_Forge_1.20.1.jar > /tmp/prodigy_chibi_052.jar
+          echo '0c46b3f86fde5c7226d387b7a704a4063de71ffce9e0d0f9e9a5ce30b2a8eadd  /tmp/prodigy_chibi_052.jar' | sha256sum -c -
+      - name: Apply corrected Alpha 0.5.4 eye UVs (same four skins)
+        run: |
+          python3 -m pip install pillow
+          python3 scripts/patch_chibi_eyes.py /tmp/prodigy_chibi_052.jar /tmp/prodigy_chibi_054.jar
+      - name: Assemble integrated Forge JAR with both mod IDs
+        run: |
+          mkdir -p dist
+          ADULT_JAR="$(find build/libs -maxdepth 1 -name 'Stegosaurus-for-ROR-*.jar' | head -n 1)"
+          test -n "$ADULT_JAR"
+          python3 scripts/merge_mods.py "$ADULT_JAR" /tmp/prodigy_chibi_054.jar dist/Prodigy_Creatures_Integrado_v4.2.0_BETA_Forge_1.20.1.jar
+      - name: Verify both entity registries, animations, and merged metadata
+        run: |
+          jar tf dist/Prodigy_Creatures_Integrado_v4.2.0_BETA_Forge_1.20.1.jar | grep 'com/prodigytown/creatures/ProdigyCreatures.class'
+          jar tf dist/Prodigy_Creatures_Integrado_v4.2.0_BETA_Forge_1.20.1.jar | grep 'com/prodigytown/chibi/ChibiAlpha.class'
+          unzip -p dist/Prodigy_Creatures_Integrado_v4.2.0_BETA_Forge_1.20.1.jar META-INF/mods.toml | grep -E 'modId="prodigycreatures"|modId="prodigychibi"'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Prodigy-Creatures-Integrated-4.2.0-beta
+          path: dist/Prodigy_Creatures_Integrado_v4.2.0_BETA_Forge_1.20.1.jar
+          if-no-files-found: error

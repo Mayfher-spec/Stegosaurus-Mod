@@ -78,7 +78,7 @@ public class StegosaurusEntity extends TamableAnimal {
     public static AttributeSupplier.Builder createAttributes() {
         return TamableAnimal.createMobAttributes()
             .add(Attributes.MAX_HEALTH, 270.0)
-            .add(Attributes.MOVEMENT_SPEED, 0.19)
+            .add(Attributes.MOVEMENT_SPEED, 0.26)
             .add(Attributes.ATTACK_DAMAGE, 27.0)
             .add(Attributes.ARMOR, 14.0)
             .add(Attributes.KNOCKBACK_RESISTANCE, 0.85)
@@ -116,9 +116,9 @@ public class StegosaurusEntity extends TamableAnimal {
     @Override protected void registerGoals() {
         this.goalSelector.addGoal(0, new FloatGoal(this));
         this.goalSelector.addGoal(1, new SitWhenOrderedToGoal(this));
-        this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.15, true));
-        this.goalSelector.addGoal(3, new FollowOwnerGoal(this, 1.15, 7.0f, 3.0f, false));
-        this.goalSelector.addGoal(5, new RandomStrollGoal(this, 0.75));
+        this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.22, true));
+        this.goalSelector.addGoal(3, new FollowOwnerGoal(this, 1.25, 7.0f, 3.0f, false));
+        this.goalSelector.addGoal(5, new RandomStrollGoal(this, 0.85));
         this.goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 12.0f));
         this.goalSelector.addGoal(7, new RandomLookAroundGoal(this));
         this.targetSelector.addGoal(1, new OwnerHurtByTargetGoal(this));
