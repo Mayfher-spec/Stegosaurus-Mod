@@ -2,7 +2,7 @@ name: Build Prodigy Creatures Unified
 
 on:
   push:
-    branches: [feature/prodigy-creatures-v4.3.1-unified]
+    branches: [feature/prodigy-creatures-v4.3.0-unified]
   workflow_dispatch:
 
 jobs:
