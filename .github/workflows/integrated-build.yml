@@ -2,7 +2,7 @@ name: Build Prodigy Creatures Unified
 
 on:
   push:
-    branches: [feature/prodigy-creatures-v4.3.0-unified]
+    branches: [feature/prodigy-creatures-v4.3.1-unified]
   workflow_dispatch:
 
 jobs:
@@ -39,16 +39,16 @@ jobs:
           mkdir -p dist
           ADULT_JAR="$(find build/libs -maxdepth 1 -name 'Prodigy-Creatures-*.jar' | head -n 1)"
           test -n "$ADULT_JAR"
-          python3 scripts/merge_mods.py "$ADULT_JAR" /tmp/prodigy_chibi_054.jar dist/Prodigy_Creatures_Unificado_v4.3.0_BETA_Forge_1.20.1.jar
+          python3 scripts/merge_mods.py "$ADULT_JAR" /tmp/prodigy_chibi_054.jar dist/Prodigy_Creatures_Unificado_v4.3.1_BETA_Forge_1.20.1.jar
 
       - name: Verify single mod descriptor, legacy baby entity, new spawn egg and textures
         run: |
-          unzip -p dist/Prodigy_Creatures_Unificado_v4.3.0_BETA_Forge_1.20.1.jar META-INF/mods.toml
-          jar tf dist/Prodigy_Creatures_Unificado_v4.3.0_BETA_Forge_1.20.1.jar | grep 'com/prodigytown/chibi/ChibiStego.class'
-          jar tf dist/Prodigy_Creatures_Unificado_v4.3.0_BETA_Forge_1.20.1.jar | grep 'com/prodigytown/creatures/ProdigyStegosaurusEgg.class'
+          unzip -p dist/Prodigy_Creatures_Unificado_v4.3.1_BETA_Forge_1.20.1.jar META-INF/mods.toml
+          jar tf dist/Prodigy_Creatures_Unificado_v4.3.1_BETA_Forge_1.20.1.jar | grep 'com/prodigytown/chibi/ChibiStego.class'
+          jar tf dist/Prodigy_Creatures_Unificado_v4.3.1_BETA_Forge_1.20.1.jar | grep 'com/prodigytown/creatures/ProdigyStegosaurusEgg.class'
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Prodigy-Creatures-Unified-4.3.0-beta
-          path: dist/Prodigy_Creatures_Unificado_v4.3.0_BETA_Forge_1.20.1.jar
+          name: Prodigy-Creatures-Unified-4.3.1-beta
+          path: dist/Prodigy_Creatures_Unificado_v4.3.1_BETA_Forge_1.20.1.jar
           if-no-files-found: error
