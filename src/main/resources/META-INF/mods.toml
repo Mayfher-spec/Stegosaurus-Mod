@@ -6,7 +6,7 @@ modId="prodigycreatures"
 version="${mod_version}"
 displayName="Stegosaurus for ROR"
 authors="The Prodigy Town"
-description="Custom Stegosaurus with 64-cube native ROR-style model, 5 skins (including legacy Glacial), six animations, rare Badlands and Savanna natural spawns, Redwood Salad taming. No GeckoLib required."
+description="Custom Stegosaurus with 64-cube native ROR-style model, 5 skins (including legacy Glacial), six animations, rare Badlands and Savanna natural spawns, Redwood Salad taming. Chibi support in merged JAR requires GeckoLib 4.4.9+."
 [[dependencies.prodigycreatures]]
 modId="forge"
 mandatory=true
