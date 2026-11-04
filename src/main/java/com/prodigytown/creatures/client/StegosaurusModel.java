@@ -38,8 +38,9 @@ public final class StegosaurusModel<T extends StegosaurusEntity> extends Hierarc
     ModelPart jaw = head.getChild("jaw");
     ModelPart frontL = fore.getChild("arm_l");
     ModelPart frontR = fore.getChild("arm_r");
-    ModelPart backL = hind.getChild("leg_l");
-    ModelPart backR = hind.getChild("leg_r");
+    // The hind legs are children of "all", NOT "body".
+    ModelPart backL = base.getChild("leg_l");
+    ModelPart backR = base.getChild("leg_r");
     ModelPart tail = hind.getChild("tail");
     ModelPart tail2 = tail.getChild("tail2");
 
