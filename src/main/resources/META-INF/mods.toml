@@ -3,10 +3,10 @@ loaderVersion="[47,)"
 license="MIT"
 [[mods]]
 modId="prodigycreatures"
-version="${file.jarVersion}"
-displayName="Prodigy Creatures"
+version="${mod_version}"
+displayName="Stegosaurus for ROR"
 authors="The Prodigy Town"
-description="Original Stegosaurus companion with ROR Redwood Salad taming and three skin variants."
+description="Stegosaurus companion for ROR with ROR-style 52-cube vanilla ModelPart entity, 3 skins and an ice recolor, native animations, natural Badlands/Savanna spawns and Redwood Salad taming. No GeckoLib required."
 [[dependencies.prodigycreatures]]
 modId="forge"
 mandatory=true
@@ -25,3 +25,4 @@ mandatory=true
 versionRange="[0,)"
 ordering="AFTER"
 side="BOTH"
+
