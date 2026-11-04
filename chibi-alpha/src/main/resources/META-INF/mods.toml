@@ -1,0 +1,26 @@
+modLoader="javafml"
+loaderVersion="[47,)"
+license="MIT"
+[[mods]]
+modId="prodigychibi"
+version="0.1.0-alpha.1"
+displayName="Prodigy Creatures Chibi Alpha"
+description="Alfa del Stegosaurus Chibi Natural: silla y movimiento de prueba."
+[[dependencies.prodigychibi]]
+modId="forge"
+mandatory=true
+versionRange="[47,)"
+ordering="NONE"
+side="BOTH"
+[[dependencies.prodigychibi]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.20.1,1.20.2)"
+ordering="NONE"
+side="BOTH"
+[[dependencies.prodigychibi]]
+modId="geckolib"
+mandatory=true
+versionRange="[4.4.9,)"
+ordering="AFTER"
+side="BOTH"
