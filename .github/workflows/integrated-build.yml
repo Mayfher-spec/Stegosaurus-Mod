@@ -1,11 +1,10 @@
-name: Build Prodigy Creatures Integrated
+name: Build Prodigy Creatures Unified
+
 on:
   push:
-    branches:
-      - feature/prodigy-creatures-v4.2.0-adult-chibi-integrated
-  pull_request:
-    branches: [main]
+    branches: [feature/prodigy-creatures-v4.3.0-unified]
   workflow_dispatch:
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -20,30 +19,36 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.8'
-      - name: Compile native adult Stegosaurus (Forge 1.20.1)
+
+      - name: Compile native adults AND source chibis in a single Forge mod
         run: gradle --no-daemon build
-      - name: Fetch pinned Chibi Alpha 0.5.2 from this repo
+
+      - name: Fetch pinned Chibi Alpha 0.5.2 resources
         run: |
           git fetch origin refs/heads/alpha/chibi-0.5.2-walk-fix:refs/remotes/origin/alpha/chibi-0.5.2-walk-fix
           git show origin/alpha/chibi-0.5.2-walk-fix:releases/chibi-alpha-0.5.2/Prodigy_Chibi_Alpha_0.5.2_Caminata_Sin_Patinaje_Forge_1.20.1.jar > /tmp/prodigy_chibi_052.jar
           echo '0c46b3f86fde5c7226d387b7a704a4063de71ffce9e0d0f9e9a5ce30b2a8eadd  /tmp/prodigy_chibi_052.jar' | sha256sum -c -
-      - name: Apply corrected Alpha 0.5.4 eye UVs (same four skins)
+
+      - name: Restore 0.5.4 UV-corrected eyes
         run: |
           python3 -m pip install pillow
           python3 scripts/patch_chibi_eyes.py /tmp/prodigy_chibi_052.jar /tmp/prodigy_chibi_054.jar
-      - name: Assemble integrated Forge JAR with both mod IDs
+
+      - name: Bundle ONLY chibi assets, preserving ONE Forge mod identity
         run: |
           mkdir -p dist
-          ADULT_JAR="$(find build/libs -maxdepth 1 -name 'Stegosaurus-for-ROR-*.jar' | head -n 1)"
+          ADULT_JAR="$(find build/libs -maxdepth 1 -name 'Prodigy-Creatures-*.jar' | head -n 1)"
           test -n "$ADULT_JAR"
-          python3 scripts/merge_mods.py "$ADULT_JAR" /tmp/prodigy_chibi_054.jar dist/Prodigy_Creatures_Integrado_v4.2.0_BETA_Forge_1.20.1.jar
-      - name: Verify both entity registries, animations, and merged metadata
+          python3 scripts/merge_mods.py "$ADULT_JAR" /tmp/prodigy_chibi_054.jar dist/Prodigy_Creatures_Unificado_v4.3.0_BETA_Forge_1.20.1.jar
+
+      - name: Verify single mod descriptor, legacy baby entity, new spawn egg and textures
         run: |
-          jar tf dist/Prodigy_Creatures_Integrado_v4.2.0_BETA_Forge_1.20.1.jar | grep 'com/prodigytown/creatures/ProdigyCreatures.class'
-          jar tf dist/Prodigy_Creatures_Integrado_v4.2.0_BETA_Forge_1.20.1.jar | grep 'com/prodigytown/chibi/ChibiAlpha.class'
-          unzip -p dist/Prodigy_Creatures_Integrado_v4.2.0_BETA_Forge_1.20.1.jar META-INF/mods.toml | grep -E 'modId="prodigycreatures"|modId="prodigychibi"'
+          unzip -p dist/Prodigy_Creatures_Unificado_v4.3.0_BETA_Forge_1.20.1.jar META-INF/mods.toml
+          jar tf dist/Prodigy_Creatures_Unificado_v4.3.0_BETA_Forge_1.20.1.jar | grep 'com/prodigytown/chibi/ChibiStego.class'
+          jar tf dist/Prodigy_Creatures_Unificado_v4.3.0_BETA_Forge_1.20.1.jar | grep 'com/prodigytown/creatures/ProdigyStegosaurusEgg.class'
+
       - uses: actions/upload-artifact@v4
         with:
-          name: Prodigy-Creatures-Integrated-4.2.0-beta
-          path: dist/Prodigy_Creatures_Integrado_v4.2.0_BETA_Forge_1.20.1.jar
+          name: Prodigy-Creatures-Unified-4.3.0-beta
+          path: dist/Prodigy_Creatures_Unificado_v4.3.0_BETA_Forge_1.20.1.jar
           if-no-files-found: error
