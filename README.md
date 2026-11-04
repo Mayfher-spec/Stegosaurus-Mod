@@ -1,43 +1,22 @@
-# Stegosaurus for ROR v3.0.0
+# Stegosaurus for ROR v4.0.0 (Minecraft Forge 1.20.1)
 
-Mod original para **Minecraft 1.20.1, Forge 47.4.0 y GeckoLib 4.8.4**, integrado como mod adicional a ROR.
+**Native Minecraft ModelPart / Java model; GeckoLib no longer required.**
 
-## Actualizacion GeckoLib
+Built from the user's `estegosaurio_ror_variantes.zip` (`Blockbench Modded Entity`), which includes **3 identical 52-cube, 50-bone geometries** (cybernetic, magma, golden), 512x512 user-authored texture and emissive PNG for each, and Blockbench animations `idle`, `walk`, `tail_whip`.
 
-- Modelo de 48 huesos y 1121 cubos geometrizados en `assets/prodigycreatures/geo/stegosaurus.geo.json` (formato Bedrock para Blockbench).
-- Cinco animaciones: idle, walk, sit, eat y attack (coletazo disparado desde servidor).
-- Cuatro variantes conservadas: cybernetic, golden, magma, glacial.
-- Mascara luminosa `_glowmask.png` de GeckoLib para cada skin; no proyecta luz en el terreno.
-- Mantiene el ID interno `prodigycreatures` para compatibilidad con criaturas guardadas; nombre visible fijo `Stegosaurus for ROR`.
-- 270 HP, 27 daño, armadura 14 y domesticación con `ror:redwood_salad` sin cambios.
+### Technical implementation
+- `StegosaurusModel.java`: native baked `LayerDefinition`, complete 50-bone hierarchy, box UV layout, 10 zero-thickness dorsal plates, double-sided alpha via standard entity model render type.
+- `StegosaurusAnimations.java`: native 1.20.1 `AnimationDefinition`/`Keyframe` conversion, preserving timings and Catmull-Rom interpolation.
+- `StegosaurusRenderer.java`: vanilla/Forge `MobRenderer` with shadow radius 3.0.
+- `StegosaurusGlowLayer.java`: glowmask on native RenderType.eyes (fullbright, but NOT dynamic actual light).
+- Entity behavior, saved NBT (`SkinVariant:0..3`), egg, 270 HP, Redwood Salad, and spawn weights in Badlands/Savannas preserved.
+- New entity hitbox **4.0 wide x 5.0 high** (from supplied README). **WARNING:** this matches the intended T-Rex hitbox, but does not cover full 15-block tail; vanilla mobs only have one hitbox.
+- Glacial skin was NOT in user ZIP: derived from 512x512 cyber atlas, matching its UVs; mark it generated.
+- `ror` remains mandatory runtime dependency; `geckolib` is removed from dependencies and source.
 
-## Instalacion
+### Test plan
+Load in isolated Forge 47.4.x + ROR beta 0.71 (without GeckoLib if other mods do not require it); check spawn egg and `/summon prodigycreatures:stegosaurus`; verify 3 authored skins + generated glacial; check body directions, transparent dorsal plates, head/leg/tail animation, strike on hit, glow, collision/hitbox, natural spawn in Badlands and Savanna.
 
-1. Mantener ROR beta 0.71 del modpack.
-2. Instalar **GeckoLib 4.8.4 para Forge 1.20.1** en `mods` (obligatorio).
-3. Eliminar el JAR antiguo de Stegosaurus for ROR para evitar duplicados.
-4. Instalar `Stegosaurus-for-ROR-3.0.0.jar` y probar en un mundo plano.
-
-## Desarrollo
-
-`python3 generate_textures.py && python3 make_gecko_model.py`
-
-`gradle --no-daemon build`
-
-La geometría se puede abrir en Blockbench. Los PNG son texturas pixel-art originales; los artes de referencia solo guían la apariencia. No se copian recursos de ROR.
-
-**Notas:** La integración necesita pruebas visuales dentro de Minecraft; que compile no garantiza que las animaciones, pivotes o brillos funcionen con cada shader. La animación de comer se incluye como recurso para futuras mejoras de IA y aún no se activa de forma automática.
-
-
-## v3.4.0 — Badlands natural spawn
-- Biomes: `#minecraft:is_badlands` (badlands, eroded_badlands, wooded_badlands)
-- Weight: 2 (relative weight, NOT a 2% probability)
-- Group: 1–2 individuals
-- Ground-based natural spawning on solid blocks (including terracotta and red sand); standard CREATURE spawn cap.
-- No changes to skin, tame, behavior or saved entity IDs. The local v3.4.0 source ZIP preserves the newer 3.3.0 artwork.
-
-
-## v3.5.0 — Badlands and Savanna natural spawning
-- Natural spawns: `#minecraft:is_badlands` and `#minecraft:is_savanna` only
-- Relative spawn weight 2; group 1–2
-- No changes to textures, animations, taming, or combat. The local v3.5.0 source package retains the custom v3.3.0 models/textures.
+### Build
+With a Java 17 toolchain and ForgeGradle 6: `./gradlew build` if wrapper present, else `gradle build`.
+The source ZIP includes all editable Blockbench models in `custom_assets/`.

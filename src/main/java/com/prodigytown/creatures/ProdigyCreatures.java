@@ -1,6 +1,5 @@
 package com.prodigytown.creatures;
 
-import software.bernie.geckolib.GeckoLib;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.Mob;
@@ -28,13 +27,12 @@ public class ProdigyCreatures {
 
     public static final RegistryObject<EntityType<StegosaurusEntity>> STEGOSAURUS = ENTITIES.register("stegosaurus", () ->
         EntityType.Builder.of(StegosaurusEntity::new, MobCategory.CREATURE)
-            .sized(3.6f, 3.4f).clientTrackingRange(12).build(MODID + ":stegosaurus"));
+            .sized(4.0f, 5.0f).clientTrackingRange(12).build(MODID + ":stegosaurus"));
 
     public static final RegistryObject<Item> STEGOSAURUS_EGG = ITEMS.register("stegosaurus_spawn_egg", () ->
         new ForgeSpawnEggItem(STEGOSAURUS, 0x43533c, 0x9d4b34, new Item.Properties()));
 
     public ProdigyCreatures() {
-        GeckoLib.initialize();
         var bus = FMLJavaModLoadingContext.get().getModEventBus();
         ENTITIES.register(bus);
         ITEMS.register(bus);
@@ -49,9 +47,14 @@ public class ProdigyCreatures {
             }
         }
 
+        /**
+         * Permite la aparicion natural en terreno firme de Badlands.
+         * El biome modifier (JSON) restringe los tres biomas; esta regla
+         * evita usar Animal.checkAnimalSpawnRules, que suele exigir hierba
+         * y bloquearia el spawn sobre arena roja o terracota.
+         */
         @SubscribeEvent
         public static void registerSpawnPlacement(SpawnPlacementRegisterEvent event) {
-            // Badlands has red sand/terracotta, not just grass like default animal rules.
             event.register(
                 STEGOSAURUS.get(),
                 SpawnPlacements.Type.ON_GROUND,
