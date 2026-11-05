@@ -43,6 +43,8 @@ public final class TalentScreen extends Screen {
     private static final int[] BRANCH_COLOR = {0xFFE0605C, 0xFF58B0EE, 0xFF6CCB6C};
     private static final String[] BRANCH_NAME = {"Combate", "Defensa", "Soporte"};
     private static final String[] BRANCH_SUB = {"Ofensiva", "Proteccion", "Utilidad"};
+    /** Color del texto de la habilidad definitiva segun la raza (cian, dorado, magma, esmeralda, natural). */
+    private static final int[] ULT_COLOR = {0xFF5CE8FF, 0xFFFFD24C, 0xFFFF6A3C, 0xFF5CFF9A, 0xFFA6E34C};
     private static final String[] VARIANT_NAME = {"Cibernetico", "Dorado", "Magma", "Esmeralda", "Natural"};
     private static final String[] TABS = {"Habilidades", "Resumen", "Equipamiento", "Variantes"};
     private static final int TEXT = 0xFFEDEDED, DIM = 0xFF9AA0A6;
@@ -303,8 +305,8 @@ public final class TalentScreen extends Screen {
             g.pose().scale(1.4F, 1.4F, 1.0F);
             g.renderItem(new ItemStack(Items.NETHER_STAR), 0, 0);
             g.pose().popPose();
-            text(g, "Habilidad", ux + 28, uy + 3, 0.85F, 0xFFC27BFF, false);
-            text(g, "Definitiva", ux + 28, uy + 12, 0.85F, 0xFFC27BFF, false);
+            text(g, "Habilidad", ux + 28, uy + 3, 0.85F, ULT_COLOR[VI], false);
+            text(g, "Definitiva", ux + 28, uy + 12, 0.85F, ULT_COLOR[VI], false);
             text(g, "Rango 0 / 1", ux, uy + 28, 0.85F, GOLD, false);
             int uy2 = uy + 40;
             for (String l : new String[]{"Se desbloquea al completar las 3 ramas principales (Combate, Defensa y Soporte)."}) {
