@@ -24,7 +24,7 @@ public final class StegosaurusSaddleLayer extends RenderLayer<StegosaurusEntity,
     @Override public void render(PoseStack stack, MultiBufferSource buffers, int packedLight, StegosaurusEntity entity,
                                 float limbSwing, float limbSwingAmount, float partialTick, float ageInTicks,
                                 float netHeadYaw, float headPitch) {
-        if (!entity.isSaddled() || entity.isInvisible()) return;
+        if (!entity.isSaddled() || entity.isInvisible() || entity.getEvolveTicks() > 0) return;
         // el equipo copia la pose de cada hueso (cuello, cola, patas...) para moverse con el estegosaurio
         if (theirs == null) {
             theirs = new ModelPart[StegosaurusSaddleModel.TRACK.length];

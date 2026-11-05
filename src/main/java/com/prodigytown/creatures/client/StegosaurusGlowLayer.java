@@ -25,6 +25,7 @@ public final class StegosaurusGlowLayer extends RenderLayer<StegosaurusEntity, S
     @Override public void render(PoseStack stack, MultiBufferSource buffers, int packedLight, StegosaurusEntity entity,
                                 float limbSwing, float limbSwingAmount, float partialTick, float ageInTicks,
                                 float netHeadYaw, float headPitch) {
+        if (entity.getEvolveTicks() > 0) return;
         ResourceLocation glow = GLOWS[Math.max(0, Math.min(GLOWS.length - 1, entity.getVariant()))];
         VertexConsumer consumer = buffers.getBuffer(RenderType.eyes(glow));
         this.getParentModel().renderToBuffer(stack, consumer, 15728640, OverlayTexture.NO_OVERLAY,

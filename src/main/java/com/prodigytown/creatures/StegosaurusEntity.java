@@ -72,11 +72,13 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         if (this.level().isClientSide) {
             this.idleAnimationState.startIfStopped(this.tickCount);
             updateGait();
+            if (flashFade > 0) flashFade--;
             if (this.tailWhipAnimationState.isStarted() && this.tailWhipAnimationState.getAccumulatedTime() > 1800L) this.tailWhipAnimationState.stop();
             if (this.biteAnimationState.isStarted() && this.biteAnimationState.getAccumulatedTime() > 1200L) this.biteAnimationState.stop();
             if (this.roarAnimationState.isStarted() && this.roarAnimationState.getAccumulatedTime() > 3000L) this.roarAnimationState.stop();
         } else {
             serverProgressTick();
+            evolveTick();
         }
         if (!this.level().isClientSide && this.getTarget() != null && !this.isOrderedToSit() && this.tickCount % 240 == 0 && this.random.nextInt(4) == 0) {
             // Periodic roar while in combat, synced to nearby clients. Not every tick.
@@ -86,6 +88,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
     @Override public void handleEntityEvent(byte id) {
         if (id == 61) this.tailWhipAnimationState.start(this.tickCount);
         else if (id == 62) this.biteAnimationState.start(this.tickCount);
+        else if (id == 64) this.flashFade = 24;
         else if (id == 63) {
             this.roarAnimationState.start(this.tickCount);
             this.level().playLocalSound(this.getX(), this.getY(), this.getZ(), ModSounds.STEGO_ROAR.get(),
@@ -95,6 +98,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
     }
 
     private static final EntityDataAccessor<Integer> VARIANT = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> EVOLVE = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> SADDLED = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<CompoundTag> PROGRESS = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.COMPOUND_TAG);
 
@@ -159,6 +163,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         this.entityData.define(VARIANT, CYBERNETIC);
         this.entityData.define(PROGRESS, new ProdigyProgress().save());
         this.entityData.define(SADDLED, Boolean.FALSE);
+        this.entityData.define(EVOLVE, 0);
     }
 
     public int getVariant() { return this.entityData.get(VARIANT); }
@@ -289,6 +294,61 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
             }
         }
         return hit;
+    }
+
+    // ------------------------------------------------------------------ transicion de evolucion (chibi -> adulto)
+
+    /** Duracion de la transicion en ticks (4 s). El adulto aparece como silueta blanca chica, crece y estalla en un destello. */
+    public static final int EVOLVE_LEN = 80;
+    /** Solo cliente: ticks restantes del destello blanco con el que aparece la textura final. */
+    public int flashFade = 0;
+
+    /** Ticks que le faltan a la transicion (0 = no esta evolucionando). Se sincroniza al cliente; no se guarda en el mundo. */
+    public int getEvolveTicks() { return this.entityData.get(EVOLVE); }
+
+    @Override protected boolean isImmobile() { return super.isImmobile() || getEvolveTicks() > 0; }
+
+    /** La llama el chibi al convertirse en adulto (solo servidor). */
+    public void startEvolution() {
+        if (this.level().isClientSide) return;
+        this.entityData.set(EVOLVE, EVOLVE_LEN);
+        this.playSound(ModSounds.STEGO_EVOLVE.get(), 3.0F, 1.0F);
+    }
+
+    private void evolveTick() {
+        int left = getEvolveTicks();
+        if (left <= 0 || !(this.level() instanceof ServerLevel server)) return;
+        int e = EVOLVE_LEN - left;
+        double p = e / (double) EVOLVE_LEN;
+        this.getNavigation().stop();
+        Vec3 mv = this.getDeltaMovement();
+        this.setDeltaMovement(0.0, Math.min(0.0, mv.y), 0.0);
+        double cx = this.getX(), cz = this.getZ(), cy = this.getY();
+        if (e == 0) {
+            server.sendParticles(net.minecraft.core.particles.ParticleTypes.FLASH, cx, cy + 1.2, cz, 1, 0, 0, 0, 0);
+            server.sendParticles(net.minecraft.core.particles.ParticleTypes.END_ROD, cx, cy + 1.2, cz, 30, 0.5, 0.5, 0.5, 0.15);
+        }
+        if (e % 2 == 0) { // remolino de luz que se cierra sobre el estegosaurio y sube
+            for (int k = 0; k < 3; k++) {
+                double a = e * 0.35 + k * 2.094;
+                double r = 2.6 * (1.0 - p) + 0.7;
+                server.sendParticles(net.minecraft.core.particles.ParticleTypes.END_ROD,
+                    cx + Math.cos(a) * r, cy + 0.3 + 3.8 * p, cz + Math.sin(a) * r, 1, 0, 0.03, 0, 0.0);
+            }
+        }
+        if (e % 6 == 0) {
+            server.sendParticles(net.minecraft.core.particles.ParticleTypes.ELECTRIC_SPARK,
+                cx + (this.random.nextDouble() - 0.5) * 3.0, cy + this.random.nextDouble() * 4.0, cz + (this.random.nextDouble() - 0.5) * 3.0, 3, 0.1, 0.1, 0.1, 0.05);
+        }
+        if (left == 5) { // estallido final
+            server.sendParticles(net.minecraft.core.particles.ParticleTypes.FLASH, cx, cy + 2.0, cz, 1, 0, 0, 0, 0);
+            server.sendParticles(net.minecraft.core.particles.ParticleTypes.FIREWORK, cx, cy + 2.0, cz, 70, 1.6, 1.6, 1.6, 0.12);
+        }
+        this.entityData.set(EVOLVE, left - 1);
+        if (left == 1) {
+            this.level().broadcastEntityEvent(this, (byte) 64); // destello blanco sobre la textura final
+            this.level().broadcastEntityEvent(this, (byte) 63); // rugido
+        }
     }
 
     // ------------------------------------------------------------------ montura (silla)
@@ -646,6 +706,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
     }
 
     @Override public boolean isInvulnerableTo(DamageSource damage) {
+        if (getEvolveTicks() > 0 && !damage.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) return true;
         return (this.getVariant() == MAGMA && damage.is(DamageTypeTags.IS_FIRE)) || super.isInvulnerableTo(damage);
     }
 

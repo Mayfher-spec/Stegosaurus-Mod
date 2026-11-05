@@ -82,6 +82,15 @@
       }
     ]
   },
+  "stegosaurus.evolve": {
+    "subtitle": "subtitles.prodigycreatures.stegosaurus.evolve",
+    "sounds": [
+      {
+        "name": "prodigycreatures:stegosaurus/evolve",
+        "stream": false
+      }
+    ]
+  },
   "chibi.ambient": {
     "subtitle": "subtitles.prodigycreatures.chibi.ambient",
     "sounds": [

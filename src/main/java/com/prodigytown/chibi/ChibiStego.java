@@ -283,10 +283,7 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
         adult.adoptProgress(progress);
         adult.setHealth(adult.getMaxHealth());
         server.addFreshEntity(adult);
-        server.sendParticles(ParticleTypes.HAPPY_VILLAGER, getX(), getY() + 1.0, getZ(), 40, 0.8, 0.8, 0.8, 0.1);
-        server.sendParticles(ParticleTypes.END_ROD, getX(), getY() + 1.0, getZ(), 30, 0.8, 1.0, 0.8, 0.05);
-        adult.playSound(SoundEvents.PLAYER_LEVELUP, 1.5F, 0.6F);
-        server.broadcastEntityEvent(adult, (byte) 63); // rugido de adulto
+        adult.startEvolution(); // silueta blanca que crece, destello y rugido (ver StegosaurusEntity.evolveTick)
         if (getOwner() instanceof Player p) p.displayClientMessage(Component.literal("Tu chibi evoluciono a Estegosaurio adulto"), false);
         discard();
     }
