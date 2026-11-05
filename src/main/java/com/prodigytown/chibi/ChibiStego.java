@@ -71,6 +71,7 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
     private static final int EVOLVE_LEVEL = 30;
     /** Duracion de la fase de carga del chibi (2,5 s) antes de convertirse en la silueta del adulto. */
     public static final int EVOLVE_PRE = 50;
+    private static final EntityDataAccessor<Boolean> FEMALE = SynchedEntityData.defineId(ChibiStego.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> QUICK = SynchedEntityData.defineId(ChibiStego.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Integer> CHARGE = SynchedEntityData.defineId(ChibiStego.class, EntityDataSerializers.INT);
     private static final UUID M_HP = UUID.fromString("c41b1000-0001-4d1e-9a10-5e90a5a10001");
@@ -124,6 +125,7 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
         entityData.define(VARIANT, NATURAL);
         entityData.define(CHARGE, 0);
         entityData.define(QUICK, false);
+        entityData.define(FEMALE, false);
     }
 
     /** Verdadero si nacio de un huevo glacial: se ve como chibi natural pero crece como adulto glacial. */
@@ -171,6 +173,7 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
         tag.putBoolean("GlacialLine", glacialLine);
         tag.putBoolean("EvolveLock", evolveLock);
         tag.putBoolean("QuickEvolve", isQuickEvolve());
+        tag.putBoolean("Female", isFemale());
         tag.put("ProdigyProgress", progress.save());
     }
 
@@ -180,6 +183,7 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
         glacialLine = tag.getBoolean("GlacialLine");
         evolveLock = tag.getBoolean("EvolveLock");
         entityData.set(QUICK, tag.getBoolean("QuickEvolve"));
+        entityData.set(FEMALE, tag.contains("Female") ? tag.getBoolean("Female") : random.nextBoolean());
         // Chibis guardados antes de este sistema: nivel 1.
         progress = ProdigyProgress.load(tag.contains("ProdigyProgress") ? tag.getCompound("ProdigyProgress") : null, 1);
         applyStats();
@@ -191,6 +195,7 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
         SpawnGroupData result = super.finalizeSpawn(world, difficulty, reason, old, nbt);
         int chance = random.nextInt(100);
         setVariant(chance < 72 ? NATURAL : chance < 85 ? CYBER : chance < 95 ? MAGMA : GOLD);
+        setFemale(random.nextBoolean());
         applyStats();
         return result;
     }
@@ -311,6 +316,9 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
     /** Fase 1 de la evolucion (crisalida de luz): ticks que faltan; 0 = no esta evolucionando. Sincronizado, no se guarda. */
     public int chargeTicks() { return entityData.get(CHARGE); }
     /** Chibi que ya fue adulto: sus nuevas evoluciones son cortas (la primera, la larga, ocurre una sola vez). */
+    public boolean isFemale() { return entityData.get(FEMALE); }
+    public void setFemale(boolean f) { entityData.set(FEMALE, f); }
+    public boolean isGlacial() { return glacialLine; }
     public boolean isQuickEvolve() { return entityData.get(QUICK); }
     public int chargeTotal() { return isQuickEvolve() ? 20 : EVOLVE_PRE; }
     @Override protected boolean isImmobile() { return super.isImmobile() || chargeTicks() > 0; }
@@ -368,6 +376,7 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
         StegosaurusEntity adult = makeAdultIfRoom(server);
         if (adult == null) { entityData.set(CHARGE, 0); return; } // se bloqueo el espacio: se cancela, reintenta luego
         adult.setVariant(adultVariant());
+        adult.setFemale(isFemale());
         adult.setOwnerUUID(getOwnerUUID());
         adult.setTame(true);
         adult.setOrderedToSit(isOrderedToSit());

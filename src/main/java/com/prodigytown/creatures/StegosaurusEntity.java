@@ -205,6 +205,8 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
     }
 
     public boolean isFemale() { return this.entityData.get(FEMALE); }
+    /** Fija el sexo (p. ej. al crecer desde un chibi, que conserva el suyo). */
+    public void setFemale(boolean f) { this.entityData.set(FEMALE, f); this.sexAssigned = true; }
     private void assignSex() {
         this.entityData.set(FEMALE, this.random.nextBoolean());
         this.sexAssigned = true;
@@ -416,6 +418,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         chibi.moveTo(getX(), getY(), getZ(), getYRot(), 0.0F);
         chibi.finalizeSpawn(server, server.getCurrentDifficultyAt(blockPosition()), net.minecraft.world.entity.MobSpawnType.MOB_SUMMONED, null, null);
         chibi.initFromAdult(getVariant());
+        chibi.setFemale(isFemale());
         chibi.setOwnerUUID(getOwnerUUID());
         chibi.setTame(true);
         chibi.setOrderedToSit(isOrderedToSit());
