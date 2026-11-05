@@ -28,5 +28,8 @@
   "item.prodigycreatures.stegosaurus_egg_glacial": "Huevo de estegosaurio esmeralda",
   "item.prodigycreatures.stegosaurus_egg_natural": "Huevo de estegosaurio natural",
   "block.prodigycreatures.stegosaurus_nest": "Nido de estegosaurio",
-  "item.prodigycreatures.stegosaurus_nest": "Nido de estegosaurio"
+  "item.prodigycreatures.stegosaurus_nest": "Nido de estegosaurio",
+  "subtitles.prodigycreatures.stegosaurus.bite_power": "Estegosaurio muerde con fuerza",
+  "subtitles.prodigycreatures.stegosaurus.tail_power": "Estegosaurio azota con la cola",
+  "subtitles.prodigycreatures.stegosaurus.charge_power": "Estegosaurio embiste"
 }
