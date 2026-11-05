@@ -36,10 +36,14 @@ public final class MountHud {
     }
 
     private static final ResourceLocation FRAME = new ResourceLocation(ProdigyCreatures.MODID, "textures/gui/hud_frame.png");
-    private static final ResourceLocation[] ICON = {
-        new ResourceLocation(ProdigyCreatures.MODID, "textures/gui/ab_bite.png"),
-        new ResourceLocation(ProdigyCreatures.MODID, "textures/gui/ab_tail.png"),
-        new ResourceLocation(ProdigyCreatures.MODID, "textures/gui/ab_charge.png")};
+    /** ICON[variante][0 mordida, 1 coletazo, 2 embestida]: iconos con el color de cada raza. */
+    private static final ResourceLocation[][] ICON = new ResourceLocation[5][3];
+    static {
+        String[] kinds = {"bite", "tail", "charge"};
+        for (int v = 0; v < 5; v++)
+            for (int k = 0; k < 3; k++)
+                ICON[v][k] = new ResourceLocation(ProdigyCreatures.MODID, "textures/gui/ab_" + kinds[k] + "_" + v + ".png");
+    }
 
     private static void render(GuiGraphics g, int w, int h) {
         Minecraft mc = Minecraft.getInstance();
@@ -87,7 +91,7 @@ public final class MountHud {
         for (int i = 0; i < 3; i++) {
             int r = rad[i], x = cx[i] - r, y = cy[i] - r;
             float left = s.cooldownLeft(which[i]);
-            g.blit(ICON[i], x, y, 2 * r, 2 * r, 0.0F, 0.0F, 64, 64, 64, 64);
+            g.blit(ICON[Math.max(0, Math.min(4, s.getVariant()))][i], x, y, 2 * r, 2 * r, 0.0F, 0.0F, 64, 64, 64, 64);
             if (left > 0.0F) {
                 double start = (1.0 - left) * Math.PI * 2.0;
                 for (int dy = -r; dy <= r; dy++) {

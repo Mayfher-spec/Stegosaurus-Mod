@@ -722,6 +722,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
             this.entityData.set(CHARGE_LEFT, chargeTicks);
             Vec3 mv = this.getDeltaMovement();
             this.setDeltaMovement(chargeDir.x * 0.5, mv.y, chargeDir.z * 0.5);
+            if (chargeTicks % 2 == 0) powerFx(this.getX() - chargeDir.x * 1.5, this.getY() + 0.3, this.getZ() - chargeDir.z * 1.5, 6, 0.6);
             float dmg = (float)this.getAttributeValue(Attributes.ATTACK_DAMAGE) * new float[]{0F, 0.5F, 0.75F, 1.0F}[Math.max(1, progress.rank("C3"))];
             for (LivingEntity e : this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(0.6), this::isFoe)) {
                 if (chargeHit.add(e.getId())) {
@@ -740,6 +741,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
                 float bonus = r > 0 ? new float[]{0F, 1.0F, 1.5F, 2.0F}[r] : 0.5F;
                 float dmg = (float)this.getAttributeValue(Attributes.ATTACK_DAMAGE) * (1.0F + bonus);
                 this.playSound(ModSounds.STEGO_TAIL.get(), 1.6F, 0.9F + this.random.nextFloat() * 0.2F);
+                powerFx(this.getX(), this.getY() + 0.9, this.getZ(), 40, 2.4);
                 for (LivingEntity e : this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(3.5), this::isFoe)) {
                     e.hurt(this.damageSources().mobAttack(this), dmg);
                     e.knockback(2.6, this.getX() - e.getX(), this.getZ() - e.getZ());
@@ -789,6 +791,22 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         return false;
     }
 
+
+    /** Particulas de los poderes segun la raza: 0 cibernetico, 1 dorado, 2 magma, 3 esmeralda, 4 natural. */
+    private void powerFx(double x, double y, double z, int count, double spread) {
+        if (!(this.level() instanceof net.minecraft.server.level.ServerLevel server)) return;
+        net.minecraft.core.particles.SimpleParticleType main, extra;
+        switch (this.getVariant()) {
+            case CYBERNETIC -> { main = net.minecraft.core.particles.ParticleTypes.ELECTRIC_SPARK; extra = net.minecraft.core.particles.ParticleTypes.END_ROD; }
+            case GOLDEN -> { main = net.minecraft.core.particles.ParticleTypes.WAX_ON; extra = net.minecraft.core.particles.ParticleTypes.END_ROD; }
+            case MAGMA -> { main = net.minecraft.core.particles.ParticleTypes.FLAME; extra = net.minecraft.core.particles.ParticleTypes.LAVA; }
+            case GLACIAL -> { main = net.minecraft.core.particles.ParticleTypes.HAPPY_VILLAGER; extra = net.minecraft.core.particles.ParticleTypes.SCULK_SOUL; }
+            default -> { main = net.minecraft.core.particles.ParticleTypes.COMPOSTER; extra = net.minecraft.core.particles.ParticleTypes.SPORE_BLOSSOM_AIR; }
+        }
+        server.sendParticles(main, x, y, z, count, spread, spread * 0.6, spread, 0.04);
+        server.sendParticles(extra, x, y, z, Math.max(1, count / 3), spread, spread * 0.6, spread, 0.02);
+    }
+
     /** Mordida: golpea al enemigo mas cercano delante de la boca (daño = 40 % del ataque). */
     private void doBite() {
         Vec3 fwd = Vec3.directionFromRotation(0.0F, this.getYRot());
@@ -798,6 +816,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
             if (best == null || e.distanceToSqr(mouth) < best.distanceToSqr(mouth)) best = e;
         }
         this.playSound(ModSounds.STEGO_BITE.get(), 1.4F, 0.9F + this.random.nextFloat() * 0.2F);
+        powerFx(mouth.x, mouth.y, mouth.z, 10, 0.5);
         if (best == null) return;
         float dmg = (float) this.getAttributeValue(Attributes.ATTACK_DAMAGE) * 0.4F * furyMultiplier();
         if (best.hurt(this.damageSources().mobAttack(this), dmg)) {
