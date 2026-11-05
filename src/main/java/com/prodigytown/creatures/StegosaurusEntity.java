@@ -683,6 +683,11 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
     private boolean isFoe(LivingEntity e) {
         if (e == this || e == this.getOwner() || e instanceof Player) return false;
         if (e instanceof TamableAnimal t && t.isTame()) return false;
+        if (this.isTame()) { // domesticado: golpea a cualquier mob, menos mascotas (fuego amigo no), jugadores ni soportes
+            if (e instanceof net.minecraft.world.entity.OwnableEntity oe && oe.getOwnerUUID() != null) return false;
+            if (e instanceof net.minecraft.world.entity.decoration.ArmorStand || e.isPassengerOfSameVehicle(this) || this.hasPassenger(e)) return false;
+            return e.isAlive();
+        }
         return e instanceof Enemy || e == this.getTarget();
     }
 
@@ -892,22 +897,11 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
 
     /** Fuego espectral verde: 2 de dano por segundo (el doble que el fuego normal). */
     private void spectralBurn(LivingEntity e, int ticks) {
-        if (!e.fireImmune()) spectral.put(e.getId(), ticks);
+        if (e.fireImmune()) return;
+        e.addEffect(new net.minecraft.world.effect.MobEffectInstance(ModEffects.SPECTRAL_BURN.get(), ticks, 0, false, false, false), this);
     }
 
-    private void spectralTick() {
-        if (spectral.isEmpty() || !(this.level() instanceof net.minecraft.server.level.ServerLevel server)) return;
-        java.util.Iterator<java.util.Map.Entry<Integer, Integer>> it = spectral.entrySet().iterator();
-        while (it.hasNext()) {
-            java.util.Map.Entry<Integer, Integer> en = it.next();
-            net.minecraft.world.entity.Entity x = server.getEntity(en.getKey());
-            if (!(x instanceof LivingEntity le) || !le.isAlive()) { it.remove(); continue; }
-            int left = en.getValue() - 1;
-            if (left % 20 == 0) le.hurt(this.damageSources().onFire(), 2.0F);
-            if (left % 3 == 0) server.sendParticles(emeraldDust(), le.getX(), le.getY() + le.getBbHeight() * 0.5, le.getZ(), 4, 0.25, 0.4, 0.25, 0.01);
-            if (left <= 0) it.remove(); else en.setValue(left);
-        }
-    }
+    private void spectralTick() { }
 
     private void zap(Vec3 a, Vec3 b) {
         if (!(this.level() instanceof net.minecraft.server.level.ServerLevel server)) return;

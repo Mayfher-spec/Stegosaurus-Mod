@@ -32,5 +32,6 @@
   "subtitles.prodigycreatures.stegosaurus.bite_power": "Estegosaurio muerde con fuerza",
   "subtitles.prodigycreatures.stegosaurus.tail_power": "Estegosaurio azota con la cola",
   "subtitles.prodigycreatures.stegosaurus.charge_power": "Estegosaurio embiste",
-  "key.prodigycreatures.ultimate": "Habilidad definitiva"
+  "key.prodigycreatures.ultimate": "Habilidad definitiva",
+  "effect.prodigycreatures.spectral_burn": "Fuego espectral"
 }
