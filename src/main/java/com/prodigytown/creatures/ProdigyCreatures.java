@@ -38,6 +38,7 @@ public class ProdigyCreatures {
     public ProdigyCreatures() {
         var bus = FMLJavaModLoadingContext.get().getModEventBus();
         GeckoLib.initialize();
+        com.prodigytown.creatures.net.ModNetwork.register();
         // Legacy baby registry is initialized by this SAME mod, not by a second @Mod.
         ChibiAlpha.register(bus);
         ENTITIES.register(bus);

@@ -1,4 +1,8 @@
 {
   "entity.prodigycreatures.stegosaurus": "Stegosaurus",
-  "item.prodigycreatures.stegosaurus_spawn_egg": "Stegosaurus Spawn Egg"
+  "item.prodigycreatures.stegosaurus_spawn_egg": "Stegosaurus Spawn Egg",
+  "key.categories.prodigycreatures": "Prodigy Creatures",
+  "key.prodigycreatures.open_talents": "Open skill tree",
+  "key.prodigycreatures.charge": "Charge (Embestida)",
+  "key.prodigycreatures.tail": "Devastating tail strike"
 }

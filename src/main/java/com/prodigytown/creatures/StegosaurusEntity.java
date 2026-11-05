@@ -1,6 +1,28 @@
 package com.prodigytown.creatures;
 
+import com.prodigytown.creatures.progress.GrowthTable;
+import com.prodigytown.creatures.progress.ProdigyProgress;
+import com.prodigytown.creatures.progress.Talents;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.util.Mth;
+import net.minecraft.world.damagesource.DamageTypes;
+import net.minecraft.world.entity.ai.attributes.Attribute;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.goal.Goal;
+import net.minecraft.world.entity.monster.Enemy;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.fml.DistExecutor;
+import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -31,7 +53,6 @@ import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.OwnerHurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.OwnerHurtTargetGoal;
 import net.minecraft.world.entity.TamableAnimal;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -49,10 +70,14 @@ public class StegosaurusEntity extends TamableAnimal {
         super.tick();
         if (this.level().isClientSide) {
             this.idleAnimationState.startIfStopped(this.tickCount);
+            updateGait();
             if (this.tailWhipAnimationState.isStarted() && this.tailWhipAnimationState.getAccumulatedTime() > 1800L) this.tailWhipAnimationState.stop();
             if (this.biteAnimationState.isStarted() && this.biteAnimationState.getAccumulatedTime() > 1200L) this.biteAnimationState.stop();
             if (this.roarAnimationState.isStarted() && this.roarAnimationState.getAccumulatedTime() > 3000L) this.roarAnimationState.stop();
-        } else if (this.getTarget() != null && !this.isOrderedToSit() && this.tickCount % 240 == 0 && this.random.nextInt(4) == 0) {
+        } else {
+            serverProgressTick();
+        }
+        if (!this.level().isClientSide && this.getTarget() != null && !this.isOrderedToSit() && this.tickCount % 240 == 0 && this.random.nextInt(4) == 0) {
             // Periodic roar while in combat, synced to nearby clients. Not every tick.
             this.level().broadcastEntityEvent(this, (byte) 63);
         }
@@ -65,6 +90,40 @@ public class StegosaurusEntity extends TamableAnimal {
     }
 
     private static final EntityDataAccessor<Integer> VARIANT = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<CompoundTag> PROGRESS = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.COMPOUND_TAG);
+
+    // ---- Progresion y talentos (ver progress/*) ----
+    private static final double BASE_HEALTH = 270.0, BASE_DAMAGE = 27.0, BASE_ARMOR = 14.0;
+    private static final UUID M_HP_ADD = UUID.fromString("a7d1c0de-0001-4d1e-9a10-5e90a5a00001");
+    private static final UUID M_HP_MUL = UUID.fromString("a7d1c0de-0002-4d1e-9a10-5e90a5a00002");
+    private static final UUID M_DMG_ADD = UUID.fromString("a7d1c0de-0003-4d1e-9a10-5e90a5a00003");
+    private static final UUID M_DMG_MUL = UUID.fromString("a7d1c0de-0004-4d1e-9a10-5e90a5a00004");
+    private static final UUID M_ARM_ADD = UUID.fromString("a7d1c0de-0005-4d1e-9a10-5e90a5a00005");
+    private static final UUID M_KB_ADD = UUID.fromString("a7d1c0de-0006-4d1e-9a10-5e90a5a00006");
+    private static final UUID M_SPD_MUL = UUID.fromString("a7d1c0de-0007-4d1e-9a10-5e90a5a00007");
+
+    private ProdigyProgress progress = new ProdigyProgress();
+    private int lastCombatTick = -100000;
+    private int guardUntil = -1, guardPct = 0, guardReadyAt = 0;
+    private int chargeTicks = 0, tailWindup = 0;
+    private Vec3 chargeDir = Vec3.ZERO;
+    private final Set<Integer> chargeHit = new HashSet<>();
+    private int chargeReadyAt = 0, tailReadyAt = 0;
+
+    public ProdigyProgress getProgress() { return progress; }
+
+    // ---- Marcha (solo cliente): fase ligada a la distancia real recorrida, ver client/AdultGait ----
+    public float gaitV = 0.0F, gaitPhase = 0.0F;
+    private void updateGait() {
+        double dx = this.getX() - this.xo, dz = this.getZ() - this.zo;
+        float v = (float) Math.sqrt(dx * dx + dz * dz);
+        gaitV += (v - gaitV) * 0.35F;
+        if (gaitV > com.prodigytown.creatures.client.AdultGait.MIN_V) {
+            gaitPhase += com.prodigytown.creatures.client.AdultGait.phaseRate(gaitV);
+            float wrap = (float) (Math.PI * 2.0 * 64.0);
+            if (gaitPhase > wrap) gaitPhase -= wrap;
+        }
+    }
     private static final ResourceLocation SALAD_ID = new ResourceLocation("ror", "redwood_salad");
     // Preserve previously saved NBT variant numbers: 0 -> cyber, 1 -> golden, 2 -> magma.
     public static final int CYBERNETIC = 0, GOLDEN = 1, MAGMA = 2, GLACIAL = 3, NATURAL = 4;
@@ -88,6 +147,7 @@ public class StegosaurusEntity extends TamableAnimal {
     @Override protected void defineSynchedData() {
         super.defineSynchedData();
         this.entityData.define(VARIANT, CYBERNETIC);
+        this.entityData.define(PROGRESS, new ProdigyProgress().save());
     }
 
     public int getVariant() { return this.entityData.get(VARIANT); }
@@ -96,10 +156,20 @@ public class StegosaurusEntity extends TamableAnimal {
     @Override public void addAdditionalSaveData(CompoundTag tag) {
         super.addAdditionalSaveData(tag);
         tag.putInt("SkinVariant", getVariant());
+        tag.put("ProdigyProgress", progress.save());
     }
     @Override public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
         setVariant(tag.getInt("SkinVariant"));
+        // Mundos antiguos no tienen este tag: se carga con nivel 30 y sin talentos.
+        progress = ProdigyProgress.load(tag.contains("ProdigyProgress") ? tag.getCompound("ProdigyProgress") : null);
+        this.entityData.set(PROGRESS, progress.save());
+        applyStats();
+    }
+
+    @Override public void onSyncedDataUpdated(EntityDataAccessor<?> key) {
+        super.onSyncedDataUpdated(key);
+        if (PROGRESS.equals(key)) this.progress = ProdigyProgress.load(this.entityData.get(PROGRESS));
     }
 
     @Nullable
@@ -117,7 +187,7 @@ public class StegosaurusEntity extends TamableAnimal {
         this.goalSelector.addGoal(0, new FloatGoal(this));
         this.goalSelector.addGoal(1, new SitWhenOrderedToGoal(this));
         this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.22, true));
-        this.goalSelector.addGoal(3, new FollowOwnerGoal(this, 1.25, 7.0f, 3.0f, false));
+        this.goalSelector.addGoal(3, new RejoinFollowGoal(1.25, 7.0f, 3.0f));
         this.goalSelector.addGoal(5, new RandomStrollGoal(this, 0.85));
         this.goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 12.0f));
         this.goalSelector.addGoal(7, new RandomLookAroundGoal(this));
@@ -148,6 +218,12 @@ public class StegosaurusEntity extends TamableAnimal {
             }
             return InteractionResult.sidedSuccess(this.level().isClientSide);
         }
+        if (this.isTame() && this.isOwnedBy(player) && player.isShiftKeyDown() && held.isEmpty()) {
+            if (this.level().isClientSide) {
+                DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> com.prodigytown.creatures.client.ClientHooks.openTalents(this));
+            }
+            return InteractionResult.sidedSuccess(this.level().isClientSide);
+        }
         if (this.isTame() && this.isOwnedBy(player) && !player.isShiftKeyDown()) {
             if (!this.level().isClientSide) {
                 this.setOrderedToSit(!this.isOrderedToSit());
@@ -163,14 +239,270 @@ public class StegosaurusEntity extends TamableAnimal {
 
     @Override public boolean doHurtTarget(net.minecraft.world.entity.Entity entity) {
         if (!(entity instanceof LivingEntity living) || living == this.getOwner()) return false;
-        float damage = (float)this.getAttributeValue(Attributes.ATTACK_DAMAGE);
+        if (living instanceof StegosaurusEntity other && other.getOwnerUUID() != null && other.getOwnerUUID().equals(this.getOwnerUUID())) return false;
+        this.lastCombatTick = this.tickCount;
+        float damage = (float)this.getAttributeValue(Attributes.ATTACK_DAMAGE) * furyMultiplier();
         // Defensive tail strike: slower than a rex, but heavy impact.
         boolean hit = entity.hurt(this.damageSources().mobAttack(this), damage);
         if (hit) {
             if (!this.level().isClientSide) this.level().broadcastEntityEvent(this, (byte)(this.random.nextInt(5) == 0 ? 62 : 61));
             living.knockback(1.9, this.getX()-entity.getX(), this.getZ()-entity.getZ());
+            int sweep = progress.rank("C2");
+            if (sweep > 0 && !this.level().isClientSide) {
+                AABB area = living.getBoundingBox().inflate(1.0 + 0.5 * sweep);
+                for (LivingEntity e : this.level().getEntitiesOfClass(LivingEntity.class, area, x -> x != this && x != living && x instanceof Enemy)) {
+                    e.hurt(this.damageSources().mobAttack(this), damage * 0.5F);
+                }
+            }
         }
         return hit;
+    }
+
+    // ------------------------------------------------------------------ progresion
+
+    private float cooldownFactor() { return 1.0F - 0.10F * progress.rank("C7"); }
+    private float supportBoost() { return 1.0F + 0.20F * progress.rank("S7"); }
+
+    private float furyMultiplier() {
+        float mult = 1.0F;
+        int fury = progress.rank("C6");
+        if (fury > 0 && this.getOwner() instanceof LivingEntity owner) {
+            boolean low = owner.getHealth() < owner.getMaxHealth() * 0.5F;
+            boolean recentlyHurt = owner.tickCount - owner.getLastHurtByMobTimestamp() < 100 && owner.getLastHurtByMobTimestamp() != 0;
+            if (low || recentlyHurt) mult += 0.10F * fury;
+        }
+        return mult;
+    }
+
+    private boolean isFoe(LivingEntity e) {
+        if (e == this || e == this.getOwner() || e instanceof Player) return false;
+        if (e instanceof TamableAnimal t && t.isTame()) return false;
+        return e instanceof Enemy || e == this.getTarget();
+    }
+
+    /** Recalcula los modificadores de atributos a partir de nivel y talentos (solo servidor). */
+    public void applyStats() {
+        if (this.level().isClientSide) return;
+        int lv = progress.level();
+        setMod(Attributes.MAX_HEALTH, M_HP_ADD, GrowthTable.HEALTH[lv] - BASE_HEALTH, AttributeModifier.Operation.ADDITION);
+        setMod(Attributes.MAX_HEALTH, M_HP_MUL, 0.04 * progress.rank("D2"), AttributeModifier.Operation.MULTIPLY_TOTAL);
+        setMod(Attributes.ATTACK_DAMAGE, M_DMG_ADD, GrowthTable.DAMAGE[lv] - BASE_DAMAGE, AttributeModifier.Operation.ADDITION);
+        setMod(Attributes.ATTACK_DAMAGE, M_DMG_MUL, 0.05 * progress.rank("C1") + 0.10 * progress.rank("C7"), AttributeModifier.Operation.MULTIPLY_TOTAL);
+        setMod(Attributes.ARMOR, M_ARM_ADD, GrowthTable.ARMOR[lv] - BASE_ARMOR + progress.rank("D1"), AttributeModifier.Operation.ADDITION);
+        setMod(Attributes.KNOCKBACK_RESISTANCE, M_KB_ADD, 0.05 * progress.rank("D3"), AttributeModifier.Operation.ADDITION);
+        setMod(Attributes.MOVEMENT_SPEED, M_SPD_MUL, 0.02 * progress.rank("S1"), AttributeModifier.Operation.MULTIPLY_TOTAL);
+        if (this.getHealth() > this.getMaxHealth()) this.setHealth(this.getMaxHealth());
+    }
+
+    private void setMod(Attribute attr, UUID id, double amount, AttributeModifier.Operation op) {
+        AttributeInstance inst = this.getAttribute(attr);
+        if (inst == null) return;
+        inst.removeModifier(id);
+        if (amount != 0.0) inst.addPermanentModifier(new AttributeModifier(id, "prodigy_progress", amount, op));
+    }
+
+    private void pushProgress() {
+        this.entityData.set(PROGRESS, progress.save());
+    }
+
+    public void gainXp(int amount) {
+        if (this.level().isClientSide || amount <= 0) return;
+        float oldMax = this.getMaxHealth();
+        boolean leveled = progress.addXp(amount);
+        if (leveled) {
+            applyStats();
+            float diff = this.getMaxHealth() - oldMax;
+            if (diff > 0) this.heal(diff);
+            if (this.getOwner() instanceof Player p) {
+                p.displayClientMessage(Component.literal("Tu estegosaurio sube a nivel " + progress.level()
+                    + " (" + progress.pointsAvailable() + " puntos disponibles)"), true);
+            }
+            this.playSound(SoundEvents.PLAYER_LEVELUP, 1.0F, 0.8F);
+        }
+        pushProgress();
+    }
+
+    public boolean unlockTalent(int idx) {
+        if (this.level().isClientSide) return false;
+        float oldMax = this.getMaxHealth();
+        if (!progress.unlock(idx)) return false;
+        applyStats();
+        float diff = this.getMaxHealth() - oldMax;
+        if (diff > 0) this.heal(diff);
+        pushProgress();
+        return true;
+    }
+
+    public void resetTalents() {
+        if (this.level().isClientSide) return;
+        progress.reset();
+        applyStats();
+        pushProgress();
+    }
+
+    private void serverProgressTick() {
+        // Regeneracion (S2 siempre; S5 tras 10 s sin combate), una vez por segundo.
+        if (this.tickCount % 20 == 0 && this.isAlive() && this.getHealth() < this.getMaxHealth()) {
+            float pct = 0.0F;
+            int s2 = progress.rank("S2");
+            if (s2 > 0) pct += new float[]{0F, 0.10F, 0.15F, 0.20F}[s2];
+            int s5 = progress.rank("S5");
+            if (s5 > 0 && this.tickCount - lastCombatTick > 200) pct += new float[]{0F, 0.3F, 0.5F, 0.7F}[s5];
+            if (pct > 0.0F) this.heal(this.getMaxHealth() * pct / 100.0F * supportBoost());
+        }
+        // Embestida (C3)
+        if (chargeTicks > 0) {
+            chargeTicks--;
+            Vec3 mv = this.getDeltaMovement();
+            this.setDeltaMovement(chargeDir.x * 0.5, mv.y, chargeDir.z * 0.5);
+            float dmg = (float)this.getAttributeValue(Attributes.ATTACK_DAMAGE) * new float[]{0F, 0.5F, 0.75F, 1.0F}[Math.max(1, progress.rank("C3"))];
+            for (LivingEntity e : this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(0.6), this::isFoe)) {
+                if (chargeHit.add(e.getId())) {
+                    e.hurt(this.damageSources().mobAttack(this), dmg);
+                    e.knockback(1.2, -chargeDir.x, -chargeDir.z);
+                }
+            }
+            if (chargeTicks == 0) chargeHit.clear();
+        }
+        // Coletazo devastador (C5): 1 s de carga y golpe en area
+        if (tailWindup > 0) {
+            tailWindup--;
+            if (tailWindup == 0) {
+                int r = Math.max(1, progress.rank("C5"));
+                float bonus = new float[]{0F, 1.0F, 1.5F, 2.0F}[r];
+                float dmg = (float)this.getAttributeValue(Attributes.ATTACK_DAMAGE) * (1.0F + bonus);
+                this.level().broadcastEntityEvent(this, (byte) 61);
+                for (LivingEntity e : this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(3.5), this::isFoe)) {
+                    e.hurt(this.damageSources().mobAttack(this), dmg);
+                    e.knockback(2.6, this.getX() - e.getX(), this.getZ() - e.getZ());
+                }
+                this.lastCombatTick = this.tickCount;
+            }
+        }
+    }
+
+    /** @param id 0 = embestida (C3), 1 = coletazo devastador (C5) */
+    public boolean useAbility(Player player, int id) {
+        if (this.level().isClientSide || this.isOrderedToSit() || !this.isAlive()) return false;
+        if (id == 0) {
+            int r = progress.rank("C3");
+            if (r <= 0) { player.displayClientMessage(Component.literal("Embestida no desbloqueada"), true); return false; }
+            if (this.tickCount < chargeReadyAt) { cooldownMsg(player, chargeReadyAt); return false; }
+            int blocks = new int[]{0, 4, 6, 8}[r];
+            this.chargeDir = Vec3.directionFromRotation(0.0F, player.getYRot());
+            this.setYRot(player.getYRot()); this.yBodyRot = player.getYRot(); this.setYHeadRot(player.getYRot());
+            this.chargeHit.clear();
+            this.chargeTicks = blocks * 2;
+            this.chargeReadyAt = this.tickCount + Math.round(240 * cooldownFactor());
+            this.lastCombatTick = this.tickCount;
+            return true;
+        }
+        if (id == 1) {
+            int r = progress.rank("C5");
+            if (r <= 0) { player.displayClientMessage(Component.literal("Coletazo devastador no desbloqueado"), true); return false; }
+            if (this.tickCount < tailReadyAt) { cooldownMsg(player, tailReadyAt); return false; }
+            this.tailWindup = 20;
+            this.tailReadyAt = this.tickCount + Math.round(20 * new int[]{0, 10, 9, 8}[r] * cooldownFactor());
+            return true;
+        }
+        return false;
+    }
+
+    private void cooldownMsg(Player p, int readyAt) {
+        p.displayClientMessage(Component.literal("Recarga: " + Math.max(1, (readyAt - this.tickCount + 19) / 20) + " s"), true);
+    }
+
+    /** Distancia a partir de la cual el compañero se teletransporta junto al dueño (talento S3). */
+    public double rejoinDistance() {
+        return new double[]{32.0, 24.0, 18.0, 12.0}[progress.rank("S3")];
+    }
+
+    /** Reduccion de dano por caida del dueño (S4) que aporta este compañero, 0..1. */
+    public float fallReduction() {
+        int r = progress.rank("S4");
+        if (r <= 0) return 0.0F;
+        return Math.min(1.0F, 0.30F * r * supportBoost());
+    }
+
+    @Override public boolean hurt(DamageSource source, float amount) {
+        if (!this.level().isClientSide) {
+            this.lastCombatTick = this.tickCount;
+            if (this.tickCount < guardUntil) amount *= (1.0F - guardPct / 100.0F);
+        }
+        boolean result = super.hurt(source, amount);
+        if (result && !this.level().isClientSide) {
+            // D4 Instinto defensivo: al bajar del 50 % de vida
+            int d4 = progress.rank("D4");
+            if (d4 > 0 && this.tickCount >= guardReadyAt && this.tickCount >= guardUntil
+                    && this.getHealth() < this.getMaxHealth() * 0.5F) {
+                guardPct = new int[]{0, 20, 30, 40}[d4];
+                guardUntil = this.tickCount + 100;
+                guardReadyAt = this.tickCount + Math.round(20 * new int[]{0, 60, 50, 40}[d4] * cooldownFactor());
+            }
+            // C4 Puas afiladas: devuelve parte del dano cuerpo a cuerpo
+            int c4 = progress.rank("C4");
+            if (c4 > 0 && !source.is(DamageTypes.THORNS) && source.getEntity() instanceof LivingEntity attacker
+                    && source.getDirectEntity() == source.getEntity() && isFoeOrPlayerNotAlly(attacker)) {
+                float back = Math.min(15.0F, amount * new float[]{0F, 0.15F, 0.25F, 0.35F}[c4]);
+                if (back > 0.0F) attacker.hurt(this.damageSources().thorns(this), back);
+            }
+        }
+        return result;
+    }
+
+    private boolean isFoeOrPlayerNotAlly(LivingEntity e) {
+        if (e == this || e == this.getOwner()) return false;
+        if (e instanceof TamableAnimal t && t.isTame()) return false;
+        return true;
+    }
+
+    /** Teletransporte a un sitio libre junto al dueño. */
+    private void rejoinOwner(LivingEntity owner) {
+        BlockPos base = owner.blockPosition();
+        for (int i = 0; i < 40; i++) {
+            int dx = this.random.nextInt(11) - 5, dz = this.random.nextInt(11) - 5, dy = this.random.nextInt(3) - 1;
+            if (Math.abs(dx) < 3 && Math.abs(dz) < 3) continue;
+            BlockPos p = base.offset(dx, dy, dz);
+            BlockPos below = p.below();
+            if (!this.level().getBlockState(below).isFaceSturdy(this.level(), below, Direction.UP)) continue;
+            AABB box = this.getBoundingBox().move(p.getX() + 0.5 - this.getX(), p.getY() - this.getY(), p.getZ() + 0.5 - this.getZ());
+            if (!this.level().noCollision(this, box)) continue;
+            this.moveTo(p.getX() + 0.5, p.getY(), p.getZ() + 0.5, this.getYRot(), this.getXRot());
+            this.getNavigation().stop();
+            return;
+        }
+    }
+
+    /** Seguir al dueño caminando; teletransportarse solo a partir de rejoinDistance() (talento S3). */
+    private final class RejoinFollowGoal extends Goal {
+        private final double speed; private final float startDist, stopDist; private int recalc;
+        RejoinFollowGoal(double speed, float startDist, float stopDist) {
+            this.speed = speed; this.startDist = startDist; this.stopDist = stopDist;
+            this.setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK));
+        }
+        private LivingEntity owner() { return StegosaurusEntity.this.getOwner(); }
+        @Override public boolean canUse() {
+            LivingEntity o = owner();
+            if (o == null || o.isSpectator() || StegosaurusEntity.this.isOrderedToSit() || StegosaurusEntity.this.isLeashed()) return false;
+            return StegosaurusEntity.this.distanceToSqr(o) >= (double)(startDist * startDist);
+        }
+        @Override public boolean canContinueToUse() {
+            LivingEntity o = owner();
+            if (o == null || StegosaurusEntity.this.isOrderedToSit()) return false;
+            return StegosaurusEntity.this.distanceToSqr(o) > (double)(stopDist * stopDist);
+        }
+        @Override public void start() { recalc = 0; }
+        @Override public void stop() { StegosaurusEntity.this.getNavigation().stop(); }
+        @Override public void tick() {
+            LivingEntity o = owner();
+            if (o == null) return;
+            StegosaurusEntity.this.getLookControl().setLookAt(o, 10.0F, (float)StegosaurusEntity.this.getMaxHeadXRot());
+            if (--recalc > 0) return;
+            recalc = 10;
+            double d = rejoinDistance();
+            if (StegosaurusEntity.this.distanceToSqr(o) >= d * d) rejoinOwner(o);
+            else StegosaurusEntity.this.getNavigation().moveTo(o, speed);
+        }
     }
 
     @Override public boolean isInvulnerableTo(DamageSource damage) {

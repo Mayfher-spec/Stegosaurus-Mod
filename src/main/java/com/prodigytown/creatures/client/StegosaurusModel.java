@@ -44,38 +44,36 @@ public final class StegosaurusModel<T extends StegosaurusEntity> extends Hierarc
     ModelPart tail = hind.getChild("tail");
     ModelPart tail2 = tail.getChild("tail2");
 
-    float horizontalSpeed = (float)Math.sqrt(entity.getDeltaMovement().horizontalDistanceSqr());
     boolean resting = entity.isOrderedToSit();
-    boolean moving = !resting && (limbSwingAmount > 0.07F || horizontalSpeed > 0.035F);
-    boolean running = moving && (horizontalSpeed > 0.18F || limbSwingAmount > 0.85F);
-    float cycles = limbSwing * (running ? 1.45F : 1.18F);
-    float power = net.minecraft.util.Mth.clamp(Math.max(limbSwingAmount * 1.75F, horizontalSpeed * 2.3F), 0.0F, 1.0F);
-    float stride = (running ? 0.78F : 0.56F) * power;
+    float gv = entity.gaitV;
+    boolean moving = !resting && gv > AdultGait.MIN_V;
 
     if (moving) {
-      // Four grounded legs. Alternating walk -> diagonal trot when running.
-      float hindLag = running ? 0.16F : 1.05F;
-      float fl = net.minecraft.util.Mth.sin(cycles);
-      float fr = net.minecraft.util.Mth.sin(cycles + (float)Math.PI);
-      float bl = net.minecraft.util.Mth.sin(cycles + (float)Math.PI + hindLag);
-      float br = net.minecraft.util.Mth.sin(cycles + hindLag);
-      frontL.xRot += fl * stride;
-      frontR.xRot += fr * stride;
-      backL.xRot += bl * stride * 0.86F;
-      backR.xRot += br * stride * 0.86F;
-
-      // In chibi style, toes flex slightly on foot lift; don't translate leg root.
-      frontL.getChild("hand_l").xRot += Math.max(0F, -fl) * stride * 0.17F;
-      frontR.getChild("hand_r").xRot += Math.max(0F, -fr) * stride * 0.17F;
-      backL.getChild("leg_l2").xRot += Math.max(0F, -bl) * stride * 0.20F;
-      backR.getChild("leg_r2").xRot += Math.max(0F, -br) * stride * 0.20F;
-
-      // Body mass comes from the stance and subtle bob, never a slow-motion gait.
-      base.y += 0.42F * power * (1F - Math.abs(net.minecraft.util.Mth.sin(cycles * 2F)));
-      neck.xRot += 0.027F * power * net.minecraft.util.Mth.sin(cycles + 0.4F);
-      head.xRot += 0.024F * power * net.minecraft.util.Mth.sin(cycles + 0.8F);
-      tail.yRot += 0.07F * power * net.minecraft.util.Mth.sin(cycles * 0.55F);
-      tail2.yRot += 0.04F * power * net.minecraft.util.Mth.sin(cycles * 0.55F + 0.35F);
+      // Marcha ligada a la distancia real recorrida (ver AdultGait): el pie de apoyo no patina.
+      float w = net.minecraft.util.Mth.clamp((gv - AdultGait.MIN_V) / 0.03F, 0.0F, 1.0F);
+      float amp = AdultGait.amp(gv), duty = AdultGait.duty(gv);
+      float phase = entity.gaitPhase + AdultGait.phaseRate(gv) * (ageInTicks - entity.tickCount);
+      float[] p = new float[2];
+      float hip = AdultGait.LEG_UNITS;
+      ModelPart[] legs = {backL, frontL, backR, frontR};
+      ModelPart[] lower = {backL.getChild("leg_l2"), frontL.getChild("hand_l"), backR.getChild("leg_r2"), frontR.getChild("hand_r")};
+      float[] off = {AdultGait.offBackLeft(gv), AdultGait.offFrontLeft(gv), AdultGait.offBackRight(gv), AdultGait.offFrontRight(gv)};
+      float[] knee = {0.60F, 0.45F, 0.60F, 0.45F};
+      for (int k = 0; k < 4; k++) {
+        AdultGait.pose(phase, off[k], amp, duty, p);
+        legs[k].xRot += p[0] * w;
+        // mantener la suela en el suelo durante el apoyo y despegarla en el vuelo
+        float dip = hip * (1.0F - (float)Math.cos(p[0])) * (1.0F - p[1]);
+        legs[k].y += (dip - 3.0F * p[1]) * w;
+        lower[k].xRot += knee[k] * p[1] * w;
+      }
+      float bob = 0.5F * net.minecraft.util.Mth.sin(phase * 2.0F);
+      base.y += bob * w;
+      base.zRot += 0.012F * net.minecraft.util.Mth.sin(phase) * w;
+      neck.xRot += 0.027F * w * net.minecraft.util.Mth.sin(phase + 0.4F);
+      head.xRot += 0.024F * w * net.minecraft.util.Mth.sin(phase + 0.8F);
+      tail.yRot += 0.07F * w * net.minecraft.util.Mth.sin(phase * 0.5F);
+      tail2.yRot += 0.04F * w * net.minecraft.util.Mth.sin(phase * 0.5F + 0.35F);
     } else if (resting) {
       // Sleep: lower head, breathe, small tail motion. Dorsals stay still.
       neckBase.xRot += 0.14F;
