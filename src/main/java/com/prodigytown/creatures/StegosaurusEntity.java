@@ -266,7 +266,8 @@ public class StegosaurusEntity extends TamableAnimal {
     private float furyMultiplier() {
         float mult = 1.0F;
         int fury = progress.rank("C6");
-        if (fury > 0 && this.getOwner() instanceof LivingEntity owner) {
+        LivingEntity owner = this.getOwner();
+        if (fury > 0 && owner != null) {
             boolean low = owner.getHealth() < owner.getMaxHealth() * 0.5F;
             boolean recentlyHurt = owner.tickCount - owner.getLastHurtByMobTimestamp() < 100 && owner.getLastHurtByMobTimestamp() != 0;
             if (low || recentlyHurt) mult += 0.10F * fury;
