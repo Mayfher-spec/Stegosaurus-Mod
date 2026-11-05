@@ -69,6 +69,9 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
     private static final ResourceLocation SALAD_ID = new ResourceLocation("ror", "redwood_salad");
     private static final int SALAD_XP = 25;
     private static final int EVOLVE_LEVEL = 30;
+    /** Duracion de la fase de carga del chibi (2,5 s) antes de convertirse en la silueta del adulto. */
+    public static final int EVOLVE_PRE = 50;
+    private static final EntityDataAccessor<Integer> CHARGE = SynchedEntityData.defineId(ChibiStego.class, EntityDataSerializers.INT);
     private static final UUID M_HP = UUID.fromString("c41b1000-0001-4d1e-9a10-5e90a5a10001");
     private static final UUID M_DMG = UUID.fromString("c41b1000-0002-4d1e-9a10-5e90a5a10002");
     private static final UUID M_ARM = UUID.fromString("c41b1000-0003-4d1e-9a10-5e90a5a10003");
@@ -118,6 +121,7 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
     @Override protected void defineSynchedData() {
         super.defineSynchedData();
         entityData.define(VARIANT, NATURAL);
+        entityData.define(CHARGE, 0);
     }
 
     public int variant() { return entityData.get(VARIANT); }
@@ -261,11 +265,18 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
         };
     }
 
-    /** Nivel 30: se convierte en adulto en el mismo sitio si hay espacio. */
-    private void tryEvolve() {
-        if (!(level() instanceof ServerLevel server) || !isAlive() || !isTame() || progress.level() < EVOLVE_LEVEL) return;
+    /** Fase 1 de la evolucion (crisalida de luz): ticks que faltan; 0 = no esta evolucionando. Sincronizado, no se guarda. */
+    public int chargeTicks() { return entityData.get(CHARGE); }
+    @Override protected boolean isImmobile() { return super.isImmobile() || chargeTicks() > 0; }
+    @Override public boolean isInvulnerableTo(net.minecraft.world.damagesource.DamageSource source) {
+        if (chargeTicks() > 0 && !source.is(net.minecraft.tags.DamageTypeTags.BYPASSES_INVULNERABILITY)) return true;
+        return super.isInvulnerableTo(source);
+    }
+
+    /** Hay sitio libre para el adulto en este punto? Si no, avisa al dueno de vez en cuando. */
+    private StegosaurusEntity makeAdultIfRoom(ServerLevel server) {
         StegosaurusEntity adult = ProdigyCreatures.STEGOSAURUS.get().create(server);
-        if (adult == null) return;
+        if (adult == null) return null;
         adult.moveTo(getX(), getY(), getZ(), getYRot(), getXRot());
         if (!server.noCollision(adult, adult.getBoundingBox())) {
             if (tickCount - evolveNagTick > 200 && getOwner() instanceof Player p) {
@@ -273,8 +284,43 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
                 p.displayClientMessage(Component.literal("Tu chibi esta listo para evolucionar: necesita mas espacio libre"), true);
             }
             adult.discard();
-            return;
+            return null;
         }
+        return adult;
+    }
+
+    /** Nivel 30: si hay espacio empieza la evolucion (fase 1: el chibi se carga de luz). */
+    private void tryEvolve() {
+        if (!(level() instanceof ServerLevel server) || !isAlive() || !isTame() || progress.level() < EVOLVE_LEVEL || chargeTicks() > 0) return;
+        StegosaurusEntity probe = makeAdultIfRoom(server);
+        if (probe == null) return;
+        probe.discard();
+        entityData.set(CHARGE, EVOLVE_PRE);
+        getNavigation().stop();
+        playSound(ModSounds.CHIBI_EVOLVE.get(), 2.0F, 1.0F);
+    }
+
+    private void chargeTick(ServerLevel server) {
+        int left = chargeTicks();
+        int e = EVOLVE_PRE - left;
+        double p = e / (double) EVOLVE_PRE;
+        getNavigation().stop();
+        if (e % 2 == 0) { // espiral de luz que se cierra sobre el chibi
+            for (int k = 0; k < 2; k++) {
+                double a = e * 0.5 + k * Math.PI;
+                double r = 1.6 * (1.0 - p) + 0.35;
+                server.sendParticles(ParticleTypes.END_ROD, getX() + Math.cos(a) * r, getY() + 0.1 + 1.2 * p, getZ() + Math.sin(a) * r, 1, 0, 0.02, 0, 0.0);
+            }
+        }
+        if (e % 8 == 0) server.sendParticles(ParticleTypes.ELECTRIC_SPARK, getX(), getY() + 0.7, getZ(), 4, 0.4, 0.4, 0.4, 0.06);
+        entityData.set(CHARGE, left - 1);
+        if (left == 1) finishEvolve(server);
+    }
+
+    /** Fase 2: nace el adulto como silueta blanca del tamano del chibi (ver StegosaurusEntity.evolveTick). */
+    private void finishEvolve(ServerLevel server) {
+        StegosaurusEntity adult = makeAdultIfRoom(server);
+        if (adult == null) { entityData.set(CHARGE, 0); return; } // se bloqueo el espacio: se cancela, reintenta luego
         adult.setVariant(adultVariant());
         adult.setOwnerUUID(getOwnerUUID());
         adult.setTame(true);
@@ -283,7 +329,7 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
         adult.adoptProgress(progress);
         adult.setHealth(adult.getMaxHealth());
         server.addFreshEntity(adult);
-        adult.startEvolution(); // silueta blanca que crece, destello y rugido (ver StegosaurusEntity.evolveTick)
+        adult.startEvolution();
         if (getOwner() instanceof Player p) p.displayClientMessage(Component.literal("Tu chibi evoluciono a Estegosaurio adulto"), false);
         discard();
     }
@@ -300,6 +346,8 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
             float v = (float) Math.sqrt(dx * dx + dz * dz);
             movedPerTick += (v - movedPerTick) * 0.3F;
             walking = walking ? movedPerTick > 0.006F : movedPerTick > 0.012F; // histeresis
+        } else if (level() instanceof ServerLevel server && chargeTicks() > 0) {
+            chargeTick(server);
         } else if (tickCount % 20 == 0) {
             tryEvolve();
         }

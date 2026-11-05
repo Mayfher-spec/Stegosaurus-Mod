@@ -91,6 +91,15 @@
       }
     ]
   },
+  "chibi.evolve": {
+    "subtitle": "subtitles.prodigycreatures.chibi.evolve",
+    "sounds": [
+      {
+        "name": "prodigycreatures:chibi/evolve",
+        "stream": false
+      }
+    ]
+  },
   "chibi.ambient": {
     "subtitle": "subtitles.prodigycreatures.chibi.ambient",
     "sounds": [

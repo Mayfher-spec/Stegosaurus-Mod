@@ -22,6 +22,7 @@ public final class ModSounds {
     public static final RegistryObject<SoundEvent> STEGO_TAIL = reg("stegosaurus.tail");
     public static final RegistryObject<SoundEvent> STEGO_STEP = reg("stegosaurus.step");
     public static final RegistryObject<SoundEvent> STEGO_EVOLVE = reg("stegosaurus.evolve");
+    public static final RegistryObject<SoundEvent> CHIBI_EVOLVE = reg("chibi.evolve");
     public static final RegistryObject<SoundEvent> CHIBI_AMBIENT = reg("chibi.ambient");
     public static final RegistryObject<SoundEvent> CHIBI_HURT = reg("chibi.hurt");
     public static final RegistryObject<SoundEvent> CHIBI_DEATH = reg("chibi.death");
