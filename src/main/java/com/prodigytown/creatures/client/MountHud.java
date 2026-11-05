@@ -22,7 +22,6 @@ public final class MountHud {
     public static final class ModBus {
         @SubscribeEvent public static void overlays(RegisterGuiOverlaysEvent event) {
             event.registerAbove(VanillaGuiOverlay.HOTBAR.id(), "mount_hud", (gui, g, partial, w, h) -> render(g, w, h));
-            event.registerAbove(VanillaGuiOverlay.CROSSHAIR.id(), "stego_target", (gui, g, partial, w, h) -> renderTarget(g, w, h));
         }
     }
 
@@ -41,22 +40,6 @@ public final class MountHud {
         new ResourceLocation(ProdigyCreatures.MODID, "textures/gui/ab_bite.png"),
         new ResourceLocation(ProdigyCreatures.MODID, "textures/gui/ab_tail.png"),
         new ResourceLocation(ProdigyCreatures.MODID, "textures/gui/ab_charge.png")};
-
-    private static final String[] VARIANT_NAME = {"Cibernetico", "Albino dorado", "Magma", "Glacial", "Natural"};
-
-    /** Al apuntar a un estegosaurio: sexo, raza y nivel (para reconocer a las hembras). */
-    private static void renderTarget(GuiGraphics g, int w, int h) {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || mc.options.hideGui || mc.player.getVehicle() instanceof StegosaurusEntity) return;
-        if (!(mc.crosshairPickEntity instanceof StegosaurusEntity s)) return;
-        boolean f = s.isFemale();
-        String line = (f ? "Hembra" : "Macho") + "  -  " + VARIANT_NAME[Math.max(0, Math.min(4, s.getVariant()))] + "  Nv." + s.getProgress().level();
-        g.pose().pushPose();
-        g.pose().translate(w / 2.0F, h / 2.0F + 12.0F, 0.0F);
-        g.pose().scale(0.8F, 0.8F, 1.0F);
-        g.drawCenteredString(mc.font, line, 0, 0, f ? 0xFFFF9AD0 : 0xFF9AC8FF);
-        g.pose().popPose();
-    }
 
     private static void render(GuiGraphics g, int w, int h) {
         Minecraft mc = Minecraft.getInstance();

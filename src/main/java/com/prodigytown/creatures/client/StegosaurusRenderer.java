@@ -15,6 +15,10 @@ public final class StegosaurusRenderer extends MobRenderer<StegosaurusEntity, St
     private static final ResourceLocation[] SKINS = {
         texture("cybernetic"), texture("golden"), texture("magma"), texture("glacial"), texture("natural")
     };
+    /** Hembras: mismo diseno con el abdomen crema/blanco (generadas a partir de cada skin). */
+    private static final ResourceLocation[] SKINS_F = {
+        texture("cybernetic_f"), texture("golden_f"), texture("magma_f"), texture("glacial_f"), texture("natural_f")
+    };
     /** Textura 512x512 toda blanca: da la silueta luminosa de la evolucion y el destello final. */
     public static final ResourceLocation WHITE = texture("white");
     private static ResourceLocation texture(String name) {
@@ -29,7 +33,8 @@ public final class StegosaurusRenderer extends MobRenderer<StegosaurusEntity, St
     }
     @Override public ResourceLocation getTextureLocation(StegosaurusEntity entity) {
         if (entity.getEvolveTicks() > 0) return WHITE;
-        return SKINS[Math.max(0, Math.min(SKINS.length - 1, entity.getVariant()))];
+        int v = Math.max(0, Math.min(SKINS.length - 1, entity.getVariant()));
+        return entity.isFemale() ? SKINS_F[v] : SKINS[v];
     }
 
     /** Evolucion: silueta blanca, brillante, que crece de tamano de chibi (x0,25) al adulto con pulsos cada vez mas rapidos. */

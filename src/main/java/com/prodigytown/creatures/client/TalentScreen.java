@@ -51,7 +51,8 @@ public final class TalentScreen extends Screen {
     private int left, top, tab = 0, selected = 0;
     /** Escala para que el panel quepa siempre en pantalla; las coordenadas internas son "virtuales" (divididas por sc). */
     private float sc = 1.0F;
-    private TexButton unlock, sit, rename, dropSaddle, dropArmor;
+    private TexButton unlock, sit, rename, dropSaddle, dropArmor, toChibi;
+    private long chibiConfirmUntil = 0L;
     private HitButton reset;
     private net.minecraft.client.gui.components.EditBox nameBox;
     private final TexButton[] tabButtons = new TexButton[TABS.length];
@@ -99,6 +100,13 @@ public final class TalentScreen extends Screen {
             ModNetwork.CHANNEL.sendToServer(new ModNetwork.TalentAction(stego.getId(), 3, 0))));
         dropArmor = this.addRenderableWidget(new TexButton(left + 240, top + 110, 110, 14, Component.literal("Quitar armadura"), b ->
             ModNetwork.CHANNEL.sendToServer(new ModNetwork.TalentAction(stego.getId(), 4, 0))));
+        toChibi = this.addRenderableWidget(new TexButton(left + 240, top + 128, 110, 14, Component.literal("Volver a chibi"), b -> {
+            long now = System.currentTimeMillis();
+            if (now < chibiConfirmUntil) {
+                ModNetwork.CHANNEL.sendToServer(new ModNetwork.TalentAction(stego.getId(), 5, 0));
+                this.onClose();
+            } else chibiConfirmUntil = now + 3000L; // pide confirmar con un segundo clic
+        }));
         layoutNodes();
     }
 
@@ -193,6 +201,8 @@ public final class TalentScreen extends Screen {
         nameBox.visible = eq; nameBox.active = eq; rename.visible = eq; sit.visible = eq;
         dropSaddle.visible = eq; dropSaddle.active = eq && stego.isSaddled();
         dropArmor.visible = eq; dropArmor.active = eq && stego.getArmorTier() > 0;
+        toChibi.visible = eq; toChibi.gold = System.currentTimeMillis() < chibiConfirmUntil;
+        toChibi.setMessage(Component.literal(toChibi.gold ? "Seguro? Clic otra vez" : "Volver a chibi"));
         if (!eq && nameBox.isFocused()) nameBox.setFocused(false);
         unlock.active = tab == 0 && !ultSel && prog().whyNotUnlock(selected) == null;
         super.render(g, mx, my, pt);

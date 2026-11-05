@@ -126,10 +126,30 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
 
     /** Verdadero si nacio de un huevo glacial: se ve como chibi natural pero crece como adulto glacial. */
     private boolean glacialLine = false;
+    /** Chibi que volvio de adulto: no vuelve a evolucionar solo hasta que el dueno lo permita (agacharse + mano vacia). */
+    private boolean evolveLock = false;
 
     public int variant() { return entityData.get(VARIANT); }
 
     /** Usado al eclosionar un huevo. */
+    /** Al volver de adulto a chibi: la raza chibi equivalente a la variante adulta. */
+    public void initFromAdult(int adultVariant) {
+        switch (adultVariant) {
+            case StegosaurusEntity.CYBERNETIC -> initFromEgg(CYBER, false);
+            case StegosaurusEntity.GOLDEN -> initFromEgg(GOLD, false);
+            case StegosaurusEntity.MAGMA -> initFromEgg(MAGMA, false);
+            case StegosaurusEntity.GLACIAL -> initFromEgg(NATURAL, true);
+            default -> initFromEgg(NATURAL, false);
+        }
+    }
+
+    public void adoptProgress(ProdigyProgress incoming) {
+        if (this.level().isClientSide) return;
+        this.progress = incoming.copy();
+        this.evolveLock = true;
+        applyStats();
+    }
+
     public void initFromEgg(int chibiVariant, boolean glacial) {
         setVariant(chibiVariant);
         this.glacialLine = glacial;
@@ -146,6 +166,7 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
         super.addAdditionalSaveData(tag);
         tag.putInt("ChibiVariant", variant());
         tag.putBoolean("GlacialLine", glacialLine);
+        tag.putBoolean("EvolveLock", evolveLock);
         tag.put("ProdigyProgress", progress.save());
     }
 
@@ -153,6 +174,7 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
         super.readAdditionalSaveData(tag);
         if (tag.contains("ChibiVariant")) setVariant(tag.getInt("ChibiVariant"));
         glacialLine = tag.getBoolean("GlacialLine");
+        evolveLock = tag.getBoolean("EvolveLock");
         // Chibis guardados antes de este sistema: nivel 1.
         progress = ProdigyProgress.load(tag.contains("ProdigyProgress") ? tag.getCompound("ProdigyProgress") : null, 1);
         applyStats();
@@ -216,10 +238,13 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
         }
         if (isTame() && isOwnedBy(player) && stack.isEmpty()) {
             if (!level().isClientSide) {
-                if (player.isShiftKeyDown()) {
+                if (player.isShiftKeyDown() && evolveLock && progress.level() >= EVOLVE_LEVEL) {
+                    evolveLock = false; // vuelve a poder evolucionar (lo hara en cuanto haya espacio)
+                    player.displayClientMessage(Component.literal("Tu chibi volvera a evolucionar a adulto"), true);
+                } else if (player.isShiftKeyDown()) {
                     int need = progress.xpToNext();
                     player.displayClientMessage(Component.literal("Chibi nivel " + progress.level() + "  XP " + progress.xp() + "/" + need
-                        + "  (evoluciona a adulto en el nivel " + EVOLVE_LEVEL + ")"), true);
+                        + (evolveLock ? "  (evolucion en pausa: agachate y mano vacia para activarla)" : "  (evoluciona a adulto en el nivel " + EVOLVE_LEVEL + ")")), true);
                 } else {
                     setOrderedToSit(!isOrderedToSit());
                     getNavigation().stop();
@@ -304,7 +329,7 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
 
     /** Nivel 30: si hay espacio empieza la evolucion (fase 1: el chibi se carga de luz). */
     private void tryEvolve() {
-        if (!(level() instanceof ServerLevel server) || !isAlive() || !isTame() || progress.level() < EVOLVE_LEVEL || chargeTicks() > 0) return;
+        if (!(level() instanceof ServerLevel server) || !isAlive() || !isTame() || progress.level() < EVOLVE_LEVEL || evolveLock || chargeTicks() > 0) return;
         StegosaurusEntity probe = makeAdultIfRoom(server);
         if (probe == null) return;
         probe.discard();

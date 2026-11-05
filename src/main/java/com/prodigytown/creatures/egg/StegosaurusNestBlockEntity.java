@@ -7,7 +7,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.Connection;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
@@ -17,7 +16,6 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.CampfireBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -25,56 +23,59 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
 
-/** Estado de incubacion: avanza solo mientras la fogata de debajo esta apagada. Al terminar nace un chibi del dueno. */
-public class StegosaurusEggBlockEntity extends BlockEntity {
-    /** Los ultimos ticks son la animacion de eclosion (sacudidas fuertes, grietas, sonidos). */
-    public static final int HATCH_ANIM = 200;
+/** Estado de incubacion del nido. Al terminar nace un chibi del dueno y el nido queda vacio. */
+public class StegosaurusNestBlockEntity extends BlockEntity {
+    /** Los ultimos ticks son la animacion de eclosion (balanceo creciente, grietas, sonidos). */
+    public static final int HATCH_ANIM = 240;
 
     public int progress = 0, total = 0;
-    public boolean warm = false;
     @Nullable public UUID owner;
     /** Solo cliente: progreso interpolado entre sincronizaciones. */
     public float shown = 0.0F;
 
-    public StegosaurusEggBlockEntity(BlockPos pos, BlockState state) {
-        super(ProdigyCreatures.EGG_BE.get(), pos, state);
+    public StegosaurusNestBlockEntity(BlockPos pos, BlockState state) {
+        super(ProdigyCreatures.NEST_BE.get(), pos, state);
     }
 
-    public void setOwner(UUID id) { this.owner = id; this.setChanged(); }
+    public boolean hasEgg() { return getBlockState().getValue(StegosaurusNestBlock.EGG) > 0; }
 
-    public boolean isWarm(Level level, BlockPos pos) {
-        BlockState below = level.getBlockState(pos.below());
-        return below.getBlock() instanceof CampfireBlock && below.hasProperty(CampfireBlock.LIT) && !below.getValue(CampfireBlock.LIT);
+    public void startIncubation(UUID who) {
+        this.owner = who;
+        this.progress = 0;
+        this.total = 6000 + (level != null ? level.random.nextInt(6001) : 0); // 5 a 10 minutos
+        this.shown = 0.0F;
+        sync();
     }
 
-    public static void tick(Level level, BlockPos pos, BlockState state, StegosaurusEggBlockEntity be) {
+    public void clearIncubation() {
+        this.progress = 0; this.total = 0; this.owner = null; this.shown = 0.0F;
+        sync();
+    }
+
+    public static void tick(Level level, BlockPos pos, BlockState state, StegosaurusNestBlockEntity be) {
+        if (state.getValue(StegosaurusNestBlock.EGG) <= 0) return;
         if (level.isClientSide) {
-            if (be.warm) be.shown = Math.min(be.total, be.shown + 1.0F);
+            be.shown = Math.min(be.total, be.shown + 1.0F);
             return;
         }
-        if (be.total == 0) { // 5 a 10 minutos
-            be.total = 6000 + level.random.nextInt(6001);
-            be.sync();
-        }
-        boolean warm = be.isWarm(level, pos);
-        if (warm != be.warm) { be.warm = warm; be.sync(); }
-        if (!warm) return;
+        if (be.total == 0) { be.total = 6000 + level.random.nextInt(6001); be.sync(); }
         be.progress++;
         int left = be.total - be.progress;
         if (be.progress % 20 == 0) be.sync();
-        if (left <= HATCH_ANIM && left > 0) {
-            if (left % 20 == 0) {
-                level.playSound(null, pos, SoundEvents.TURTLE_EGG_CRACK, SoundSource.BLOCKS, 0.9F, 0.8F + level.random.nextFloat() * 0.4F);
-                ((ServerLevel) level).sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, Blocks.SNIFFER_EGG.defaultBlockState()),
-                    pos.getX() + 0.5, pos.getY() - 0.25, pos.getZ() + 0.5, 5, 0.18, 0.2, 0.18, 0.03);
-            }
+        if (left <= HATCH_ANIM && left > 0 && left % 24 == 0) {
+            level.playSound(null, pos, SoundEvents.TURTLE_EGG_CRACK, SoundSource.BLOCKS, 0.9F, 0.8F + level.random.nextFloat() * 0.4F);
+            ((ServerLevel) level).sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, Blocks.SNIFFER_EGG.defaultBlockState()),
+                pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 5, 0.18, 0.2, 0.18, 0.03);
         }
         if (left <= 0) be.hatch((ServerLevel) level, pos, state);
     }
 
     private void hatch(ServerLevel level, BlockPos pos, BlockState state) {
-        double x = pos.getX() + 0.5, y = pos.getY() - 0.1, z = pos.getZ() + 0.5;
-        level.removeBlock(pos, false);
+        int variant = state.getValue(StegosaurusNestBlock.EGG) - 1;
+        double x = pos.getX() + 0.5, y = pos.getY() + 0.375, z = pos.getZ() + 0.5;
+        level.setBlock(pos, state.setValue(StegosaurusNestBlock.EGG, 0), 3);
+        UUID who = owner;
+        clearIncubation();
         level.playSound(null, pos, SoundEvents.TURTLE_EGG_HATCH, SoundSource.BLOCKS, 1.4F, 0.9F);
         level.playSound(null, pos, SoundEvents.SNIFFER_EGG_HATCH, SoundSource.BLOCKS, 1.0F, 1.1F);
         level.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, Blocks.SNIFFER_EGG.defaultBlockState()), x, y + 0.3, z, 40, 0.25, 0.3, 0.25, 0.12);
@@ -84,11 +85,11 @@ public class StegosaurusEggBlockEntity extends BlockEntity {
         if (chibi == null) return;
         chibi.moveTo(x, y, z, level.random.nextFloat() * 360.0F, 0.0F);
         chibi.finalizeSpawn(level, level.getCurrentDifficultyAt(pos), MobSpawnType.EVENT, null, null);
-        StegosaurusEggs.applyToChibi(chibi, state.getValue(StegosaurusEggBlock.VARIANT));
-        if (owner != null) { chibi.setOwnerUUID(owner); chibi.setTame(true); }
+        StegosaurusEggs.applyToChibi(chibi, variant);
+        if (who != null) { chibi.setOwnerUUID(who); chibi.setTame(true); }
         level.addFreshEntity(chibi);
-        if (owner != null && level.getPlayerByUUID(owner) != null) {
-            level.getPlayerByUUID(owner).displayClientMessage(net.minecraft.network.chat.Component.literal("Tu huevo de estegosaurio ha eclosionado!"), true);
+        if (who != null && level.getPlayerByUUID(who) != null) {
+            level.getPlayerByUUID(who).displayClientMessage(net.minecraft.network.chat.Component.literal("Tu huevo de estegosaurio ha eclosionado!"), true);
         }
     }
 
@@ -101,7 +102,6 @@ public class StegosaurusEggBlockEntity extends BlockEntity {
         super.saveAdditional(tag);
         tag.putInt("Progress", progress);
         tag.putInt("Total", total);
-        tag.putBoolean("Warm", warm);
         if (owner != null) tag.putUUID("Owner", owner);
     }
 
@@ -109,9 +109,9 @@ public class StegosaurusEggBlockEntity extends BlockEntity {
         super.load(tag);
         progress = tag.getInt("Progress");
         total = tag.getInt("Total");
-        warm = tag.getBoolean("Warm");
         owner = tag.hasUUID("Owner") ? tag.getUUID("Owner") : null;
-        shown = progress;
+        // en el cliente, no saltar hacia atras por la latencia: solo corregir si se desvia mucho
+        if (shown <= 0.0F || Math.abs(shown - progress) > 30.0F) shown = progress;
     }
 
     @Override public CompoundTag getUpdateTag() {
@@ -122,5 +122,5 @@ public class StegosaurusEggBlockEntity extends BlockEntity {
 
     @Nullable @Override public Packet<ClientGamePacketListener> getUpdatePacket() { return ClientboundBlockEntityDataPacket.create(this); }
 
-    @Override public AABB getRenderBoundingBox() { return new AABB(worldPosition).expandTowards(0.0, -1.0, 0.0).inflate(0.3); }
+    @Override public AABB getRenderBoundingBox() { return new AABB(worldPosition).inflate(0.5).expandTowards(0.0, 1.0, 0.0); }
 }

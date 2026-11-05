@@ -10,7 +10,7 @@ import net.minecraftforge.fml.common.Mod;
 public final class ClientModEvents {
     @SubscribeEvent public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(ProdigyCreatures.STEGOSAURUS.get(), StegosaurusRenderer::new);
-        event.registerBlockEntityRenderer(ProdigyCreatures.EGG_BE.get(), StegosaurusEggRenderer::new);
+        event.registerBlockEntityRenderer(ProdigyCreatures.NEST_BE.get(), StegosaurusNestRenderer::new);
     }
     @SubscribeEvent public static void registerLayers(EntityRenderersEvent.RegisterLayerDefinitions event) {
         event.registerLayerDefinition(StegosaurusModel.LAYER_LOCATION, StegosaurusModel::createBodyLayer);

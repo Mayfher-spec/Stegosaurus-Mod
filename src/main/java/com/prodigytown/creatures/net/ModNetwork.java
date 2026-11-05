@@ -29,7 +29,7 @@ public final class ModNetwork {
         CHANNEL.registerMessage(2, RenamePet.class, RenamePet::encode, RenamePet::decode, RenamePet::handle);
     }
 
-    /** action 0 = subir rango de un talento (index), 1 = restablecer, 2 = sentar/levantar, 3 = quitar silla, 4 = quitar armadura. */
+    /** action 0 = subir rango de un talento (index), 1 = restablecer, 2 = sentar/levantar, 3 = quitar silla, 4 = quitar armadura, 5 = volver a chibi. */
     public record TalentAction(int entityId, int action, int index) {
         public static void encode(TalentAction m, FriendlyByteBuf buf) { buf.writeInt(m.entityId); buf.writeByte(m.action); buf.writeByte(m.index); }
         public static TalentAction decode(FriendlyByteBuf buf) { return new TalentAction(buf.readInt(), buf.readByte(), buf.readByte()); }
@@ -44,6 +44,7 @@ public final class ModNetwork {
                 else if (m.action == 2) stego.toggleSit();
                 else if (m.action == 3) stego.removeSaddle();
                 else if (m.action == 4) stego.removeArmor();
+                else if (m.action == 5) stego.revertToChibi();
             });
             ctx.get().setPacketHandled(true);
         }

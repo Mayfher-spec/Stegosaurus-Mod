@@ -377,6 +377,35 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         applyStats();
     }
 
+    /**
+     * Vuelve a chibi: el adulto se convierte en un chibi de su misma raza (conserva dueno, nombre, nivel y progreso),
+     * suelta la silla y la armadura y desmonta al jinete. Solo servidor, solo el dueno (lo comprueba la red).
+     */
+    public void revertToChibi() {
+        if (!(this.level() instanceof ServerLevel server) || !isAlive() || getEvolveTicks() > 0) return;
+        com.prodigytown.chibi.ChibiStego chibi = com.prodigytown.chibi.ChibiAlpha.STEGO.get().create(server);
+        if (chibi == null) return;
+        chibi.moveTo(getX(), getY(), getZ(), getYRot(), 0.0F);
+        if (!server.noCollision(chibi, chibi.getBoundingBox())) return;
+        removeSaddle();
+        removeArmor();
+        this.ejectPassengers();
+        chibi.finalizeSpawn(server, server.getCurrentDifficultyAt(blockPosition()), net.minecraft.world.entity.MobSpawnType.MOB_SUMMONED, null, null);
+        chibi.initFromAdult(getVariant());
+        chibi.setOwnerUUID(getOwnerUUID());
+        chibi.setTame(true);
+        chibi.setOrderedToSit(isOrderedToSit());
+        if (hasCustomName()) chibi.setCustomName(getCustomName());
+        chibi.adoptProgress(progress);
+        chibi.setHealth(chibi.getMaxHealth());
+        server.addFreshEntity(chibi);
+        server.sendParticles(net.minecraft.core.particles.ParticleTypes.END_ROD, getX(), getY() + 1.5, getZ(), 40, 1.2, 1.0, 1.2, 0.05);
+        server.sendParticles(net.minecraft.core.particles.ParticleTypes.POOF, getX(), getY() + 1.0, getZ(), 30, 1.5, 0.8, 1.5, 0.05);
+        server.playSound(null, blockPosition(), ModSounds.CHIBI_EVOLVE.get(), net.minecraft.sounds.SoundSource.NEUTRAL, 2.0F, 1.6F);
+        if (getOwner() instanceof net.minecraft.world.entity.player.Player p) p.displayClientMessage(net.minecraft.network.chat.Component.literal("Tu estegosaurio volvio a ser un chibi"), false);
+        discard();
+    }
+
     public void removeSaddle() {
         if (this.level().isClientSide || !isSaddled()) return;
         this.ejectPassengers();

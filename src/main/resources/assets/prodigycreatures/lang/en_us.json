@@ -27,5 +27,6 @@
   "item.prodigycreatures.stegosaurus_egg_magma": "Magma Stegosaurus Egg",
   "item.prodigycreatures.stegosaurus_egg_glacial": "Glacial Stegosaurus Egg",
   "item.prodigycreatures.stegosaurus_egg_natural": "Natural Stegosaurus Egg",
-  "block.prodigycreatures.stegosaurus_egg": "Stegosaurus Egg"
+  "block.prodigycreatures.stegosaurus_nest": "Stegosaurus nest",
+  "item.prodigycreatures.stegosaurus_nest": "Stegosaurus nest"
 }
