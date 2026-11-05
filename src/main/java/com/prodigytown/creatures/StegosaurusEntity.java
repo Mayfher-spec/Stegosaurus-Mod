@@ -223,16 +223,27 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
     }
     @Nullable public BlockPos guardPos() { return guardPos; }
 
-    /** Los guardianes atacan al jugador que se acerque al nido. */
+    /** Los guardianes son muy agresivos: atacan a todo lo que se acerque al nido (jugadores a 16 bloques, cualquier otro ser a 12). */
     private void guardTick() {
         if (guardPos == null || isTame() || this.tickCount % 10 != 0) return;
-        if (this.getTarget() != null && this.getTarget().isAlive()) return;
-        Player p = this.level().getNearestPlayer(guardPos.getX() + 0.5, guardPos.getY(), guardPos.getZ() + 0.5, 11.0,
-            e -> e instanceof Player pl && !pl.isCreative() && !pl.isSpectator());
-        if (p != null) {
-            this.setTarget(p);
+        double cx = guardPos.getX() + 0.5, cy = guardPos.getY(), cz = guardPos.getZ() + 0.5;
+        LivingEntity cur = this.getTarget();
+        if (cur != null && (!cur.isAlive() || cur.distanceToSqr(cx, cy, cz) > 30.0 * 30.0)) { this.setTarget(null); cur = null; } // no los persigue sin fin
+        if (cur != null) return;
+        LivingEntity best = null;
+        double bd = Double.MAX_VALUE;
+        for (LivingEntity e : this.level().getEntitiesOfClass(LivingEntity.class, new AABB(cx - 16, cy - 8, cz - 16, cx + 16, cy + 8, cz + 16),
+                o -> o != this && o.isAlive() && !(o instanceof StegosaurusEntity) && !(o instanceof com.prodigytown.chibi.ChibiStego)
+                    && !(o instanceof net.minecraft.world.entity.decoration.ArmorStand)
+                    && !(o instanceof Player pl && (pl.isCreative() || pl.isSpectator())))) {
+            double d = e.distanceToSqr(cx, cy, cz);
+            if (!(e instanceof Player) && d > 12.0 * 12.0) continue;
+            if (d < bd) { bd = d; best = e; }
+        }
+        if (best != null) {
+            this.setTarget(best);
             for (StegosaurusEntity o : this.level().getEntitiesOfClass(StegosaurusEntity.class, this.getBoundingBox().inflate(20.0),
-                    o -> o != this && o.isAlive() && !o.isTame())) o.setTarget(p);
+                    o -> o != this && o.isAlive() && !o.isTame() && o.guardPos() != null)) o.setTarget(best);
         }
     }
 
