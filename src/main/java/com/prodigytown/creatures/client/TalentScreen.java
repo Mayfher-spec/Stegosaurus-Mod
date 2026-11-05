@@ -43,7 +43,7 @@ public final class TalentScreen extends Screen {
     private static final int[] BRANCH_COLOR = {0xFFE0605C, 0xFF58B0EE, 0xFF6CCB6C};
     private static final String[] BRANCH_NAME = {"Combate", "Defensa", "Soporte"};
     private static final String[] BRANCH_SUB = {"Ofensiva", "Proteccion", "Utilidad"};
-    private static final String[] VARIANT_NAME = {"Cibernetico", "Dorado", "Magma", "Glacial", "Natural"};
+    private static final String[] VARIANT_NAME = {"Cibernetico", "Dorado", "Magma", "Esmeralda", "Natural"};
     private static final String[] TABS = {"Habilidades", "Resumen", "Equipamiento", "Variantes"};
     private static final int TEXT = 0xFFEDEDED, DIM = 0xFF9AA0A6;
 

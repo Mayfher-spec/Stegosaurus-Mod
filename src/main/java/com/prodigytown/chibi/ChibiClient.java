@@ -34,7 +34,7 @@ class ChibiModel extends GeoModel<ChibiStego> {
             case ChibiStego.CYBER -> "cibernetico";
             case ChibiStego.MAGMA -> "magma";
             case ChibiStego.GOLD -> "dorado";
-            default -> "natural";
+            default -> entity.isGlacial() ? "glacial" : "natural";
         };
         return resource("textures/entity/stegosaurus_chibi_" + texture + ".png");
     }
