@@ -124,7 +124,17 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
         entityData.define(CHARGE, 0);
     }
 
+    /** Verdadero si nacio de un huevo glacial: se ve como chibi natural pero crece como adulto glacial. */
+    private boolean glacialLine = false;
+
     public int variant() { return entityData.get(VARIANT); }
+
+    /** Usado al eclosionar un huevo. */
+    public void initFromEgg(int chibiVariant, boolean glacial) {
+        setVariant(chibiVariant);
+        this.glacialLine = glacial;
+        applyStats();
+    }
 
     public void setVariant(int v) {
         entityData.set(VARIANT, Math.max(NATURAL, Math.min(GOLD, v)));
@@ -135,12 +145,14 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
     @Override public void addAdditionalSaveData(CompoundTag tag) {
         super.addAdditionalSaveData(tag);
         tag.putInt("ChibiVariant", variant());
+        tag.putBoolean("GlacialLine", glacialLine);
         tag.put("ProdigyProgress", progress.save());
     }
 
     @Override public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
         if (tag.contains("ChibiVariant")) setVariant(tag.getInt("ChibiVariant"));
+        glacialLine = tag.getBoolean("GlacialLine");
         // Chibis guardados antes de este sistema: nivel 1.
         progress = ProdigyProgress.load(tag.contains("ProdigyProgress") ? tag.getCompound("ProdigyProgress") : null, 1);
         applyStats();
@@ -181,7 +193,7 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
         if (isSalad(stack)) {
             if (!level().isClientSide) {
                 if (!isTame()) {
-                    if (!player.getAbilities().instabuild) stack.shrink(1);
+                    if (!player.getAbilities().instabuild) return InteractionResult.PASS; // solo se obtiene de un huevo
                     tame(player);
                     setOrderedToSit(false);
                     level().broadcastEntityEvent(this, (byte) 7);
@@ -257,6 +269,7 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
     }
 
     private int adultVariant() {
+        if (glacialLine) return StegosaurusEntity.GLACIAL;
         return switch (variant()) {
             case CYBER -> StegosaurusEntity.CYBERNETIC;
             case MAGMA -> StegosaurusEntity.MAGMA;

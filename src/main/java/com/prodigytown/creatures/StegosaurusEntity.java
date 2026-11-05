@@ -77,6 +77,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
             if (this.biteAnimationState.isStarted() && this.biteAnimationState.getAccumulatedTime() > 1200L) this.biteAnimationState.stop();
             if (this.roarAnimationState.isStarted() && this.roarAnimationState.getAccumulatedTime() > 3000L) this.roarAnimationState.stop();
         } else {
+            if (!sexAssigned) assignSex();
             serverProgressTick();
             evolveTick();
         }
@@ -100,6 +101,9 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
     private static final EntityDataAccessor<Integer> VARIANT = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.INT);
     /** Ticks restantes de la embestida (para animar en el cliente). */
     private static final EntityDataAccessor<Integer> CHARGE_LEFT = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.INT);
+    /** Sexo (solo hembras silvestres sueltan huevo). */
+    private static final EntityDataAccessor<Boolean> FEMALE = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.BOOLEAN);
+    private boolean sexAssigned = false;
     private static final EntityDataAccessor<Integer> ARMOR_TIER = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.INT);
     /** Recargas visibles en el HUD: (tick de juego en que terminan << 12) | duracion en ticks. */
     private static final EntityDataAccessor<Long> CD_CHARGE = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.LONG);
@@ -188,10 +192,17 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         this.entityData.define(SADDLED, Boolean.FALSE);
         this.entityData.define(EVOLVE, 0);
         this.entityData.define(ARMOR_TIER, 0);
+        this.entityData.define(FEMALE, false);
         this.entityData.define(CHARGE_LEFT, 0);
         this.entityData.define(CD_CHARGE, 0L);
         this.entityData.define(CD_TAIL, 0L);
         this.entityData.define(CD_BITE, 0L);
+    }
+
+    public boolean isFemale() { return this.entityData.get(FEMALE); }
+    private void assignSex() {
+        this.entityData.set(FEMALE, this.random.nextBoolean());
+        this.sexAssigned = true;
     }
 
     public int getVariant() { return this.entityData.get(VARIANT); }
@@ -203,6 +214,8 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         tag.put("ProdigyProgress", progress.save());
         tag.putBoolean("Saddled", isSaddled());
         tag.putInt("ArmorTier", getArmorTier());
+        tag.putBoolean("Female", isFemale());
+        tag.putBoolean("SexAssigned", sexAssigned);
     }
     @Override public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
@@ -212,6 +225,8 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         this.entityData.set(PROGRESS, progress.save());
         this.entityData.set(SADDLED, tag.getBoolean("Saddled"));
         this.entityData.set(ARMOR_TIER, Math.max(0, Math.min(4, tag.getInt("ArmorTier"))));
+        this.entityData.set(FEMALE, tag.getBoolean("Female"));
+        this.sexAssigned = tag.getBoolean("SexAssigned");
         applyStats();
     }
 
@@ -228,6 +243,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         // New naturally-colored variant is common. Legacy IDs 0..3 remain unchanged in saved worlds.
         // 65% natural, 20% cybernetic, 9% golden, 3% magma, 3% glacial.
         setVariant(chance < 3 ? MAGMA : chance < 12 ? GOLDEN : chance < 15 ? GLACIAL : chance < 35 ? CYBERNETIC : NATURAL);
+        assignSex();
         return result;
     }
 
@@ -254,7 +270,8 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         if (isSalad(held)) {
             if (!this.level().isClientSide) {
                 if (!this.isTame()) {
-                    if (!player.getAbilities().instabuild) held.shrink(1);
+                    // Los adultos silvestres no se domestican: solo se consiguen de un huevo (creativo puede, para pruebas).
+                    if (!player.getAbilities().instabuild) return InteractionResult.PASS;
                     this.tame(player);
                     this.setOrderedToSit(false);
                     this.level().broadcastEntityEvent(this, (byte)7);
@@ -503,6 +520,10 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
 
     @Override protected void dropCustomDeathLoot(DamageSource source, int looting, boolean recentlyHit) {
         super.dropCustomDeathLoot(source, looting, recentlyHit);
+        if (!this.isTame() && isFemale() && recentlyHit) { // la hembra silvestre derrotada deja un huevo; su raza influye en la del huevo
+            this.spawnAtLocation(new ItemStack(ProdigyCreatures.EGG_ITEMS.get(
+                com.prodigytown.creatures.egg.StegosaurusEggs.rollVariant(this.random, getVariant())).get()));
+        }
         if (isSaddled()) this.spawnAtLocation(Items.SADDLE);
         if (getArmorTier() > 0) this.spawnAtLocation(new ItemStack(ProdigyCreatures.ARMOR_ITEMS.get(getArmorTier() - 1).get()));
     }
@@ -741,6 +762,16 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
             if (this.tickCount < guardUntil) amount *= (1.0F - guardPct / 100.0F);
         }
         boolean result = super.hurt(source, amount);
+        if (result && !this.level().isClientSide && !this.isTame() && source.getEntity() instanceof LivingEntity culprit
+                && !(culprit instanceof StegosaurusEntity) && culprit.isAlive()
+                && !(culprit instanceof Player pl && (pl.isCreative() || pl.isSpectator()))) {
+            // Manada: quien ataque a uno, es atacado por todos los silvestres cercanos
+            this.setTarget(culprit);
+            for (StegosaurusEntity other : this.level().getEntitiesOfClass(StegosaurusEntity.class, this.getBoundingBox().inflate(40.0),
+                    o -> o != this && o.isAlive() && !o.isTame())) {
+                other.setTarget(culprit);
+            }
+        }
         if (result && !this.level().isClientSide) {
             // D4 Instinto defensivo: al bajar del 50 % de vida
             int d4 = progress.rank("D4");

@@ -27,6 +27,25 @@ public class ProdigyCreatures {
     public static final String MODID = "prodigycreatures";
     public static final DeferredRegister<EntityType<?>> ENTITIES = DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, MODID);
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, MODID);
+    public static final DeferredRegister<net.minecraft.world.level.block.Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, MODID);
+    public static final DeferredRegister<net.minecraft.world.level.block.entity.BlockEntityType<?>> BLOCK_ENTITIES = DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES, MODID);
+
+    public static final RegistryObject<net.minecraft.world.level.block.Block> EGG_BLOCK = BLOCKS.register("stegosaurus_egg", () ->
+        new com.prodigytown.creatures.egg.StegosaurusEggBlock(net.minecraft.world.level.block.state.BlockBehaviour.Properties.of()
+            .strength(0.5F).sound(net.minecraft.world.level.block.SoundType.METAL).noOcclusion()
+            .pushReaction(net.minecraft.world.level.material.PushReaction.DESTROY)));
+    public static final RegistryObject<net.minecraft.world.level.block.entity.BlockEntityType<com.prodigytown.creatures.egg.StegosaurusEggBlockEntity>> EGG_BE =
+        BLOCK_ENTITIES.register("stegosaurus_egg", () -> net.minecraft.world.level.block.entity.BlockEntityType.Builder
+            .of(com.prodigytown.creatures.egg.StegosaurusEggBlockEntity::new, EGG_BLOCK.get()).build(null));
+    /** EGG_ITEMS.get(v) es el huevo de la variante adulta v (0 cibernetico, 1 dorado, 2 magma, 3 glacial, 4 natural). */
+    public static final java.util.List<RegistryObject<Item>> EGG_ITEMS = new java.util.ArrayList<>();
+    static {
+        for (int i = 0; i < com.prodigytown.creatures.egg.StegosaurusEggs.NAMES.length; i++) {
+            final int v = i;
+            EGG_ITEMS.add(ITEMS.register("stegosaurus_egg_" + com.prodigytown.creatures.egg.StegosaurusEggs.NAMES[i], () ->
+                new com.prodigytown.creatures.egg.StegosaurusEggItem(EGG_BLOCK.get(), v, new Item.Properties().stacksTo(16))));
+        }
+    }
 
     public static final RegistryObject<EntityType<StegosaurusEntity>> STEGOSAURUS = ENTITIES.register("stegosaurus", () ->
         EntityType.Builder.of(StegosaurusEntity::new, MobCategory.CREATURE)
@@ -53,6 +72,8 @@ public class ProdigyCreatures {
         // Legacy baby registry is initialized by this SAME mod, not by a second @Mod.
         ChibiAlpha.register(bus);
         ENTITIES.register(bus);
+        BLOCKS.register(bus);
+        BLOCK_ENTITIES.register(bus);
         ITEMS.register(bus);
         ModSounds.SOUNDS.register(bus);
     }
@@ -63,6 +84,7 @@ public class ProdigyCreatures {
         public static void registerCreativeTab(BuildCreativeModeTabContentsEvent event) {
             if (event.getTabKey() == CreativeModeTabs.SPAWN_EGGS) {
                 event.accept(STEGOSAURUS_EGG.get());
+                for (RegistryObject<Item> egg : EGG_ITEMS) event.accept(egg.get());
             }
             if (event.getTabKey() == CreativeModeTabs.COMBAT) {
                 for (RegistryObject<Item> armor : ARMOR_ITEMS) event.accept(armor.get());
