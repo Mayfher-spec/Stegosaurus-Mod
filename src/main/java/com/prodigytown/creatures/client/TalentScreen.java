@@ -45,6 +45,19 @@ public final class TalentScreen extends Screen {
     private static final String[] BRANCH_SUB = {"Ofensiva", "Proteccion", "Utilidad"};
     /** Color del texto de la habilidad definitiva segun la raza (cian, dorado, magma, esmeralda, natural). */
     private static final int[] ULT_COLOR = {0xFF5CE8FF, 0xFFFFD24C, 0xFFFF6A3C, 0xFF5CFF9A, 0xFFA6E34C};
+    private static final String[] ULT_NAME = {"Tormenta cibernetica", "Resplandor dorado", "Erupcion de magma", "Llamarada espectral", "Estampida natural"};
+    private static final String[] ULT_DESC = {
+        "Rayos sobre hasta 8 enemigos cercanos (3x dano de ataque).",
+        "Cura 40 % a ti y a tus aliados cercanos, y ciega y danya a los enemigos.",
+        "Onda de fuego: 2,5x dano, enciende 8 s y empuja a los enemigos.",
+        "Fuego espectral verde (el doble de dano que el normal) 8 s, 2x dano y debilidad.",
+        "Pisoton: 1,5x dano, lentitud fuerte y empuje; te regenera."};
+    private static final String[] PASSIVE = {
+        "Cibernetico: el coletazo suelta un rayo que rebota entre enemigos. Dorsal brilla en la oscuridad.",
+        "Dorado: aura que cura a ti y a tus aliados; el coletazo ciega 2 s. Dorsal brilla.",
+        "Magma: inmune al fuego y a la lava; el coletazo quema a los enemigos. Dorsal brilla.",
+        "Esmeralda: la mas fuerte. El coletazo lanza fuego espectral verde (doble dano); inmune al fuego. Dorsal brilla.",
+        "Natural: el coletazo ralentiza a los enemigos durante 2 s."};
     private static final String[] VARIANT_NAME = {"Cibernetico", "Dorado", "Magma", "Esmeralda", "Natural"};
     private static final String[] TABS = {"Habilidades", "Resumen", "Equipamiento", "Variantes"};
     private static final int TEXT = 0xFFEDEDED, DIM = 0xFF9AA0A6;
@@ -307,27 +320,24 @@ public final class TalentScreen extends Screen {
             g.pose().popPose();
             text(g, "Habilidad", ux + 28, uy + 3, 0.85F, ULT_COLOR[VI], false);
             text(g, "Definitiva", ux + 28, uy + 12, 0.85F, ULT_COLOR[VI], false);
-            text(g, "Rango 0 / 1", ux, uy + 28, 0.85F, GOLD, false);
+            text(g, "Rango " + ((p.rank("D5") > 0 && p.rank("C6") > 0 && p.rank("S6") > 0) ? 1 : 0) + " / 1", ux, uy + 28, 0.85F, GOLD, false);
             int uy2 = uy + 40;
-            for (String l : new String[]{"Se desbloquea al completar las 3 ramas principales (Combate, Defensa y Soporte)."}) {
+            for (String l : new String[]{"Se desbloquea al llegar al final de las 3 ramas: Furia protectora, Guardia del Estegosaurio y Proteccion de emergencia."}) {
                 for (FormattedCharSequence line : this.font.split(Component.literal(l), uw * 10 / 8)) {
                     g.pose().pushPose(); g.pose().translate(ux, uy2, 0.0F); g.pose().scale(0.8F, 0.8F, 1.0F);
                     g.drawString(this.font, line, 0, 0, TEXT, false); g.pose().popPose(); uy2 += 8;
                 }
             }
             uy2 += 4;
-            for (FormattedCharSequence line : this.font.split(Component.literal("Aun no esta implementada en esta version."), uw * 10 / 8)) {
+            for (FormattedCharSequence line : this.font.split(Component.literal(ULT_NAME[VI] + ": " + ULT_DESC[VI] + " Solo montado, tecla R, recarga 2 min."), uw * 10 / 8)) {
                 g.pose().pushPose(); g.pose().translate(ux, uy2, 0.0F); g.pose().scale(0.8F, 0.8F, 1.0F);
-                g.drawString(this.font, line, 0, 0, 0xFFE0B04C, false); g.pose().popPose(); uy2 += 8;
+                g.drawString(this.font, line, 0, 0, ULT_COLOR[VI], false); g.pose().popPose(); uy2 += 8;
             }
             int yy = Math.max(uy2 + 3, top + 118);
             text(g, "Requisitos", ux, yy, 0.9F, GOLD, false); yy += 10;
-            String[] bn = {"Combate", "Defensa", "Soporte"};
-            for (int b = 0; b < 3; b++) {
-                int done = 0, tot = 0;
-                for (int i = 0; i < Talents.ALL.length; i++) if (Talents.ALL[i].branch == b) { tot++; if (p.rank(i) >= Talents.ALL[i].maxRank) done++; }
-                yy = req(g, ux, yy, done >= tot, bn[b] + " " + done + "/" + tot);
-            }
+            yy = req(g, ux, yy, p.rank("C6") > 0, "Furia protectora");
+            yy = req(g, ux, yy, p.rank("D5") > 0, "Guardia del Estegosaurio");
+            yy = req(g, ux, yy, p.rank("S6") > 0, "Proteccion de emergencia");
             return;
         }
         Talent t = Talents.ALL[selected];
@@ -434,9 +444,15 @@ public final class TalentScreen extends Screen {
         text(g, "Variantes", x, top + 34, 1.0F, GOLD, true);
         text(g, "Variante actual: " + VARIANT_NAME[VI], x, top + 50, 0.9F, TEXT, false);
         text(g, "La interfaz y el HUD usan los colores de tu variante.", x, top + 62, 0.8F, DIM, false);
-        text(g, "Pasivas por variante y habilidad definitiva:", x, top + 82, 0.85F, DIM, false);
-        text(g, "aun no estan implementadas en esta version.", x, top + 92, 0.85F, DIM, false);
-        text(g, "Hoy la variante Magma es inmune al fuego.", x, top + 108, 0.85F, TEXT, false);
+        int yy = top + 78;
+        for (int v = 0; v < PASSIVE.length; v++) {
+            for (FormattedCharSequence line : this.font.split(Component.literal(PASSIVE[v]), 330)) {
+                g.pose().pushPose(); g.pose().translate(x, yy, 0.0F); g.pose().scale(0.78F, 0.78F, 1.0F);
+                g.drawString(this.font, line, 0, 0, v == VI ? ULT_COLOR[VI] : DIM, false); g.pose().popPose();
+                yy += 8;
+            }
+            yy += 3;
+        }
     }
 
     private void renderTooltip(GuiGraphics g, int mx, int my, int rmx, int rmy) {

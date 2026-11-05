@@ -25,6 +25,7 @@ public final class ClientKeys {
     public static final KeyMapping OPEN = new KeyMapping("key.prodigycreatures.open_talents", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_K, CATEGORY);
     public static final KeyMapping CHARGE = new KeyMapping("key.prodigycreatures.charge", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_V, CATEGORY);
     public static final KeyMapping TAIL = new KeyMapping("key.prodigycreatures.tail", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_B, CATEGORY);
+    public static final KeyMapping ULTIMATE = new KeyMapping("key.prodigycreatures.ultimate", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_R, CATEGORY);
     private ClientKeys() {}
 
     @Mod.EventBusSubscriber(modid = ProdigyCreatures.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
@@ -33,6 +34,7 @@ public final class ClientKeys {
             event.register(OPEN);
             event.register(CHARGE);
             event.register(TAIL);
+            event.register(ULTIMATE);
         }
     }
 
@@ -62,6 +64,7 @@ public final class ClientKeys {
             if (player == null || mc.level == null) return;
             while (CHARGE.consumeClick()) ModNetwork.CHANNEL.sendToServer(new ModNetwork.UseAbility(0));
             while (TAIL.consumeClick()) ModNetwork.CHANNEL.sendToServer(new ModNetwork.UseAbility(1));
+            while (ULTIMATE.consumeClick()) ModNetwork.CHANNEL.sendToServer(new ModNetwork.UseAbility(3));
             while (OPEN.consumeClick()) {
                 if (mc.screen != null) continue;
                 List<StegosaurusEntity> pets = mc.level.getEntitiesOfClass(StegosaurusEntity.class,

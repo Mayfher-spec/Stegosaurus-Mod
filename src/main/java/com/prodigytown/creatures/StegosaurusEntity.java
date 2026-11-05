@@ -716,6 +716,8 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
             if (s5 > 0 && this.tickCount - lastCombatTick > 200) pct += new float[]{0F, 0.3F, 0.5F, 0.7F}[s5];
             if (pct > 0.0F) this.heal(this.getMaxHealth() * pct / 100.0F * supportBoost());
         }
+        goldenAura();
+        spectralTick();
         // Embestida (C3)
         if (chargeTicks > 0) {
             chargeTicks--;
@@ -743,10 +745,14 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
                 this.playSound(ModSounds.STEGO_TAIL.get(), 2.0F, 0.9F + this.random.nextFloat() * 0.2F);
                 this.playSound(ModSounds.STEGO_TAIL_POWER.get(), 2.6F, 0.95F + this.random.nextFloat() * 0.1F);
                 powerFx(this.getX(), this.getY() + 0.9, this.getZ(), 40, 2.4);
+                LivingEntity firstFoe = null;
                 for (LivingEntity e : this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(3.5), this::isFoe)) {
                     e.hurt(this.damageSources().mobAttack(this), dmg);
                     e.knockback(2.6, this.getX() - e.getX(), this.getZ() - e.getZ());
+                    tailEffect(e);
+                    if (firstFoe == null) firstFoe = e;
                 }
+                if (firstFoe != null && this.getVariant() == CYBERNETIC) chainLightning(firstFoe, dmg * 0.6F, 4);
                 this.lastCombatTick = this.tickCount;
             }
         }
@@ -790,6 +796,15 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
             this.level().broadcastEntityEvent(this, (byte) 62);
             return true;
         }
+        if (id == 3) { // definitiva de la raza, solo montado
+            if (player.getVehicle() != this) { player.displayClientMessage(Component.literal("La definitiva solo se usa montado"), true); return false; }
+            if (!ultimateUnlocked()) { player.displayClientMessage(Component.literal("Completa Combate, Defensa y Soporte para la definitiva"), true); return false; }
+            if (this.tickCount < ultReadyAt) { cooldownMsg(player, ultReadyAt); return false; }
+            this.ultReadyAt = this.tickCount + Math.round(2400 * cooldownFactor());
+            this.lastCombatTick = this.tickCount;
+            castUltimate(player);
+            return true;
+        }
         return false;
     }
 
@@ -807,6 +822,171 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         }
         server.sendParticles(main, x, y, z, count, spread, spread * 0.6, spread, 0.04);
         server.sendParticles(extra, x, y, z, Math.max(1, count / 3), spread, spread * 0.6, spread, 0.02);
+    }
+
+    // ---------------------------------------------------------------- pasivas y definitiva por raza
+    private final java.util.Map<Integer, Integer> spectral = new java.util.HashMap<>();
+    private int ultReadyAt = 0;
+
+    private static net.minecraft.core.particles.ParticleOptions emeraldDust() {
+        return new net.minecraft.core.particles.DustParticleOptions(new org.joml.Vector3f(0.2F, 1.0F, 0.45F), 1.3F);
+    }
+
+    /** Magma y esmeralda son inmunes al fuego (y a la lava). */
+    @Override public boolean fireImmune() {
+        return this.getVariant() == MAGMA || this.getVariant() == GLACIAL || super.fireImmune();
+    }
+
+    /** Efecto del coletazo sobre cada enemigo alcanzado, segun la raza. */
+    private void tailEffect(LivingEntity e) {
+        switch (this.getVariant()) {
+            case MAGMA -> e.setSecondsOnFire(6);
+            case GOLDEN -> e.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.BLINDNESS, 40, 0));
+            case GLACIAL -> spectralBurn(e, 100);
+            case NATURAL -> e.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.MOVEMENT_SLOWDOWN, 40, 1));
+            default -> { } // cibernetico: rayo encadenado, ver chainLightning
+        }
+    }
+
+    /** Fuego espectral verde: 2 de dano por segundo (el doble que el fuego normal). */
+    private void spectralBurn(LivingEntity e, int ticks) {
+        if (!e.fireImmune()) spectral.put(e.getId(), ticks);
+    }
+
+    private void spectralTick() {
+        if (spectral.isEmpty() || !(this.level() instanceof net.minecraft.server.level.ServerLevel server)) return;
+        java.util.Iterator<java.util.Map.Entry<Integer, Integer>> it = spectral.entrySet().iterator();
+        while (it.hasNext()) {
+            java.util.Map.Entry<Integer, Integer> en = it.next();
+            net.minecraft.world.entity.Entity x = server.getEntity(en.getKey());
+            if (!(x instanceof LivingEntity le) || !le.isAlive()) { it.remove(); continue; }
+            int left = en.getValue() - 1;
+            if (left % 20 == 0) le.hurt(this.damageSources().onFire(), 2.0F);
+            if (left % 3 == 0) server.sendParticles(emeraldDust(), le.getX(), le.getY() + le.getBbHeight() * 0.5, le.getZ(), 4, 0.25, 0.4, 0.25, 0.01);
+            if (left <= 0) it.remove(); else en.setValue(left);
+        }
+    }
+
+    private void zap(Vec3 a, Vec3 b) {
+        if (!(this.level() instanceof net.minecraft.server.level.ServerLevel server)) return;
+        int n = Math.max(2, (int) (a.distanceTo(b) * 3));
+        for (int k = 0; k <= n; k++) {
+            Vec3 pnt = a.lerp(b, k / (double) n);
+            server.sendParticles(net.minecraft.core.particles.ParticleTypes.ELECTRIC_SPARK, pnt.x, pnt.y, pnt.z, 1, 0.05, 0.05, 0.05, 0.0);
+        }
+    }
+
+    /** Rayo que rebota entre enemigos: el primero ya recibio el golpe de cola; los siguientes reciben dmg. */
+    private void chainLightning(LivingEntity start, float dmg, int bounces) {
+        java.util.Set<Integer> hit = new java.util.HashSet<>();
+        LivingEntity cur = start;
+        Vec3 from = this.position().add(0.0, 1.8, 0.0);
+        for (int i = 0; i <= bounces && cur != null; i++) {
+            hit.add(cur.getId());
+            Vec3 to = cur.position().add(0.0, cur.getBbHeight() * 0.5, 0.0);
+            zap(from, to);
+            if (i > 0) cur.hurt(this.damageSources().mobAttack(this), dmg);
+            from = to;
+            LivingEntity next = null;
+            double best = 49.0;
+            for (LivingEntity e : this.level().getEntitiesOfClass(LivingEntity.class, cur.getBoundingBox().inflate(7.0), this::isFoe)) {
+                if (hit.contains(e.getId())) continue;
+                double d = e.distanceToSqr(cur);
+                if (d < best) { best = d; next = e; }
+            }
+            cur = next;
+        }
+        this.playSound(net.minecraft.sounds.SoundEvents.LIGHTNING_BOLT_THUNDER, 0.8F, 1.6F);
+    }
+
+    /** Aura dorada: cada 2 s regenera un poco al dino, a su dueno y a sus aliados cercanos. */
+    private void goldenAura() {
+        if (this.getVariant() != GOLDEN || !this.isAlive() || this.tickCount % 40 != 0) return;
+        if (this.getHealth() < this.getMaxHealth()) this.heal(1.0F);
+        for (LivingEntity e : this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(7.0),
+                x -> x != this && (x == this.getOwner() || (x instanceof TamableAnimal t && t.isTame() && t.getOwner() == this.getOwner())))) {
+            e.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.REGENERATION, 60, 0, true, false));
+        }
+        if (this.level() instanceof net.minecraft.server.level.ServerLevel server)
+            server.sendParticles(net.minecraft.core.particles.ParticleTypes.WAX_ON, this.getX(), this.getY() + 1.5, this.getZ(), 8, 3.0, 1.0, 3.0, 0.0);
+    }
+
+    private void ring(net.minecraft.core.particles.ParticleOptions type, double radius, int count) {
+        if (!(this.level() instanceof net.minecraft.server.level.ServerLevel server)) return;
+        for (int k = 0; k < count; k++) {
+            double a = k * Math.PI * 2.0 / count;
+            server.sendParticles(type, this.getX() + Math.cos(a) * radius, this.getY() + 0.4, this.getZ() + Math.sin(a) * radius, 1, 0.1, 0.3, 0.1, 0.02);
+        }
+    }
+
+    private boolean ultimateUnlocked() {
+        return progress.rank("D5") > 0 && progress.rank("C6") > 0 && progress.rank("S6") > 0;
+    }
+
+    /** Habilidad definitiva de cada raza (solo montado). */
+    private void castUltimate(Player player) {
+        float atk = (float) this.getAttributeValue(Attributes.ATTACK_DAMAGE);
+        java.util.List<LivingEntity> foes = this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(10.0), this::isFoe);
+        this.playSound(ModSounds.STEGO_ROAR.get(), 2.5F, 0.7F);
+        switch (this.getVariant()) {
+            case CYBERNETIC -> { // Tormenta cibernetica: rayos sobre hasta 8 enemigos
+                this.playSound(net.minecraft.sounds.SoundEvents.LIGHTNING_BOLT_THUNDER, 2.5F, 1.0F);
+                int n = 0;
+                for (LivingEntity e : foes) {
+                    if (n++ >= 8) break;
+                    zap(this.position().add(0.0, 4.0, 0.0), e.position().add(0.0, e.getBbHeight() * 0.5, 0.0));
+                    e.hurt(this.damageSources().mobAttack(this), atk * 3.0F);
+                }
+                ring(net.minecraft.core.particles.ParticleTypes.ELECTRIC_SPARK, 6.0, 48);
+            }
+            case GOLDEN -> { // Resplandor dorado: cura a los aliados y ciega a los enemigos
+                this.playSound(net.minecraft.sounds.SoundEvents.BEACON_ACTIVATE, 2.5F, 1.2F);
+                this.heal(this.getMaxHealth() * 0.4F * supportBoost());
+                for (LivingEntity e : this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(10.0),
+                        x -> x != this && (x == this.getOwner() || (x instanceof TamableAnimal t && t.isTame() && t.getOwner() == this.getOwner())))) {
+                    e.heal(e.getMaxHealth() * 0.4F * supportBoost());
+                    e.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.REGENERATION, 160, 1));
+                }
+                for (LivingEntity e : foes) {
+                    e.hurt(this.damageSources().mobAttack(this), atk);
+                    e.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.BLINDNESS, 80, 0));
+                }
+                ring(net.minecraft.core.particles.ParticleTypes.WAX_ON, 5.0, 40);
+                ring(net.minecraft.core.particles.ParticleTypes.END_ROD, 8.0, 40);
+            }
+            case MAGMA -> { // Erupcion: onda de fuego
+                this.playSound(net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE, 2.0F, 0.6F);
+                for (LivingEntity e : foes) {
+                    e.hurt(this.damageSources().mobAttack(this), atk * 2.5F);
+                    e.setSecondsOnFire(8);
+                    e.knockback(1.6, this.getX() - e.getX(), this.getZ() - e.getZ());
+                }
+                ring(net.minecraft.core.particles.ParticleTypes.FLAME, 4.0, 40);
+                ring(net.minecraft.core.particles.ParticleTypes.LAVA, 7.0, 40);
+            }
+            case GLACIAL -> { // Llamarada espectral verde
+                this.playSound(net.minecraft.sounds.SoundEvents.ENDER_DRAGON_GROWL, 2.0F, 0.9F);
+                for (LivingEntity e : foes) {
+                    e.hurt(this.damageSources().mobAttack(this), atk * 2.0F);
+                    spectralBurn(e, 160);
+                    e.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.WEAKNESS, 120, 0));
+                }
+                ring(emeraldDust(), 3.0, 40);
+                ring(emeraldDust(), 6.0, 60);
+                ring(net.minecraft.core.particles.ParticleTypes.SCULK_SOUL, 8.0, 30);
+            }
+            default -> { // Estampida natural: pisotón que frena y empuja
+                this.playSound(net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE, 1.8F, 0.5F);
+                for (LivingEntity e : foes) {
+                    e.hurt(this.damageSources().mobAttack(this), atk * 1.5F);
+                    e.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.MOVEMENT_SLOWDOWN, 100, 2));
+                    e.knockback(2.0, this.getX() - e.getX(), this.getZ() - e.getZ());
+                }
+                this.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.REGENERATION, 100, 1));
+                ring(net.minecraft.core.particles.ParticleTypes.COMPOSTER, 4.0, 40);
+                ring(net.minecraft.core.particles.ParticleTypes.SPORE_BLOSSOM_AIR, 7.0, 40);
+            }
+        }
     }
 
     /** Mordida: golpea al enemigo mas cercano delante de la boca (daño = 40 % del ataque). */
