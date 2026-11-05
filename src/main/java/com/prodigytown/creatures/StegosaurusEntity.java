@@ -80,6 +80,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
             if (!sexAssigned) assignSex();
             serverProgressTick();
             evolveTick();
+            revertTick();
         }
         if (!this.level().isClientSide && this.getTarget() != null && !this.isOrderedToSit() && this.tickCount % 240 == 0 && this.random.nextInt(4) == 0) {
             // Periodic roar while in combat, synced to nearby clients. Not every tick.
@@ -109,6 +110,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
     private static final EntityDataAccessor<Long> CD_CHARGE = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.LONG);
     private static final EntityDataAccessor<Long> CD_TAIL = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.LONG);
     private static final EntityDataAccessor<Long> CD_BITE = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.LONG);
+    private static final EntityDataAccessor<Integer> REVERT = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> EVOLVE = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> SADDLED = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<CompoundTag> PROGRESS = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.COMPOUND_TAG);
@@ -191,6 +193,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         this.entityData.define(PROGRESS, new ProdigyProgress().save());
         this.entityData.define(SADDLED, Boolean.FALSE);
         this.entityData.define(EVOLVE, 0);
+        this.entityData.define(REVERT, 0);
         this.entityData.define(ARMOR_TIER, 0);
         this.entityData.define(FEMALE, false);
         this.entityData.define(CHARGE_LEFT, 0);
@@ -382,14 +385,33 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
      * suelta la silla y la armadura y desmonta al jinete. Solo servidor, solo el dueno (lo comprueba la red).
      */
     public void revertToChibi() {
-        if (!(this.level() instanceof ServerLevel server) || !isAlive() || getEvolveTicks() > 0) return;
-        com.prodigytown.chibi.ChibiStego chibi = com.prodigytown.chibi.ChibiAlpha.STEGO.get().create(server);
-        if (chibi == null) return;
-        chibi.moveTo(getX(), getY(), getZ(), getYRot(), 0.0F);
-        if (!server.noCollision(chibi, chibi.getBoundingBox())) return;
+        if (!(this.level() instanceof ServerLevel server) || !isAlive() || getEvolveTicks() > 0 || getRevertTicks() > 0) return;
+        com.prodigytown.chibi.ChibiStego probe = com.prodigytown.chibi.ChibiAlpha.STEGO.get().create(server);
+        if (probe == null) return;
+        probe.moveTo(getX(), getY(), getZ(), getYRot(), 0.0F);
+        if (!server.noCollision(probe, probe.getBoundingBox())) return;
+        probe.discard();
         removeSaddle();
         removeArmor();
         this.ejectPassengers();
+        this.getNavigation().stop();
+        this.entityData.set(REVERT, REVERT_LEN);
+        this.playSound(ModSounds.CHIBI_EVOLVE.get(), 2.0F, 1.6F);
+    }
+
+    /** Cuenta atras corta: el adulto se encoge como silueta blanca y al final aparece el chibi. */
+    private void revertTick() {
+        int left = getRevertTicks();
+        if (left <= 0 || !(this.level() instanceof ServerLevel server)) return;
+        if (left % 4 == 0) server.sendParticles(net.minecraft.core.particles.ParticleTypes.END_ROD, getX(), getY() + 1.5, getZ(), 6, 1.5, 1.0, 1.5, 0.03);
+        this.entityData.set(REVERT, left - 1);
+        if (left == 1) finishRevert(server);
+    }
+
+    private void finishRevert(ServerLevel server) {
+        com.prodigytown.chibi.ChibiStego chibi = com.prodigytown.chibi.ChibiAlpha.STEGO.get().create(server);
+        if (chibi == null) { this.entityData.set(REVERT, 0); return; }
+        chibi.moveTo(getX(), getY(), getZ(), getYRot(), 0.0F);
         chibi.finalizeSpawn(server, server.getCurrentDifficultyAt(blockPosition()), net.minecraft.world.entity.MobSpawnType.MOB_SUMMONED, null, null);
         chibi.initFromAdult(getVariant());
         chibi.setOwnerUUID(getOwnerUUID());
@@ -399,9 +421,8 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         chibi.adoptProgress(progress);
         chibi.setHealth(chibi.getMaxHealth());
         server.addFreshEntity(chibi);
-        server.sendParticles(net.minecraft.core.particles.ParticleTypes.END_ROD, getX(), getY() + 1.5, getZ(), 40, 1.2, 1.0, 1.2, 0.05);
-        server.sendParticles(net.minecraft.core.particles.ParticleTypes.POOF, getX(), getY() + 1.0, getZ(), 30, 1.5, 0.8, 1.5, 0.05);
-        server.playSound(null, blockPosition(), ModSounds.CHIBI_EVOLVE.get(), net.minecraft.sounds.SoundSource.NEUTRAL, 2.0F, 1.6F);
+        server.sendParticles(net.minecraft.core.particles.ParticleTypes.POOF, getX(), getY() + 0.4, getZ(), 18, 0.4, 0.3, 0.4, 0.04);
+        server.sendParticles(net.minecraft.core.particles.ParticleTypes.END_ROD, getX(), getY() + 0.5, getZ(), 12, 0.3, 0.3, 0.3, 0.06);
         if (getOwner() instanceof net.minecraft.world.entity.player.Player p) p.displayClientMessage(net.minecraft.network.chat.Component.literal("Tu estegosaurio volvio a ser un chibi"), false);
         discard();
     }
@@ -452,9 +473,12 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
     public int flashFade = 0;
 
     /** Ticks que le faltan a la transicion (0 = no esta evolucionando). Se sincroniza al cliente; no se guarda en el mundo. */
+    /** Duracion corta (1,25 s) de la transformacion adulto -> chibi. */
+    public static final int REVERT_LEN = 25;
+    public int getRevertTicks() { return this.entityData.get(REVERT); }
     public int getEvolveTicks() { return this.entityData.get(EVOLVE); }
 
-    @Override protected boolean isImmobile() { return super.isImmobile() || getEvolveTicks() > 0; }
+    @Override protected boolean isImmobile() { return super.isImmobile() || getEvolveTicks() > 0 || getRevertTicks() > 0; }
 
     /** La llama el chibi al convertirse en adulto (solo servidor). */
     public void startEvolution() {

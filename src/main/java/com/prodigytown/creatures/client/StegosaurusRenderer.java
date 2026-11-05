@@ -32,14 +32,14 @@ public final class StegosaurusRenderer extends MobRenderer<StegosaurusEntity, St
         this.addLayer(new StegosaurusFlashLayer(this));
     }
     @Override public ResourceLocation getTextureLocation(StegosaurusEntity entity) {
-        if (entity.getEvolveTicks() > 0) return WHITE;
+        if (entity.getEvolveTicks() > 0 || entity.getRevertTicks() > 0 && entity.getRevertTicks() < StegosaurusEntity.REVERT_LEN * 0.65F) return WHITE;
         int v = Math.max(0, Math.min(SKINS.length - 1, entity.getVariant()));
         return entity.isFemale() ? SKINS_F[v] : SKINS[v];
     }
 
     /** Evolucion: silueta blanca, brillante, que crece de tamano de chibi (x0,25) al adulto con pulsos cada vez mas rapidos. */
     @Nullable @Override protected RenderType getRenderType(StegosaurusEntity entity, boolean visible, boolean translucent, boolean glowing) {
-        if (entity.getEvolveTicks() > 0) return RenderType.eyes(WHITE);
+        if (entity.getEvolveTicks() > 0 || entity.getRevertTicks() > 0 && entity.getRevertTicks() < StegosaurusEntity.REVERT_LEN * 0.65F) return RenderType.eyes(WHITE);
         return super.getRenderType(entity, visible, translucent, glowing);
     }
 
@@ -52,6 +52,12 @@ public final class StegosaurusRenderer extends MobRenderer<StegosaurusEntity, St
             float ease = t * t * (3.0F - 2.0F * t);
             s = 0.25F + 0.75F * ease;
             s *= 1.0F + 0.05F * (1.0F - 0.5F * t) * Mth.sin(e * (0.5F + 1.2F * t));
+        }
+        int rv = entity.getRevertTicks();
+        if (rv > 0) { // adulto -> chibi: se encoge rapido hasta el tamano chibi (x0,25)
+            float e = Mth.clamp((StegosaurusEntity.REVERT_LEN - rv + partialTick) / StegosaurusEntity.REVERT_LEN, 0.0F, 1.0F);
+            float ease = e * e * (3.0F - 2.0F * e);
+            s = 1.0F - 0.75F * ease;
         }
         stack.scale(s, s, s);
         this.shadowRadius = 3.0F * s;
