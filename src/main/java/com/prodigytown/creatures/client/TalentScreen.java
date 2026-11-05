@@ -42,7 +42,8 @@ public final class TalentScreen extends Screen {
     private int left, top, tab = 0, selected = 0;
     /** Escala para que el panel quepa siempre en pantalla; las coordenadas internas son "virtuales" (divididas por sc). */
     private float sc = 1.0F;
-    private TexButton unlock, reset, sit, rename, dropSaddle, dropArmor;
+    private TexButton unlock, sit, rename, dropSaddle, dropArmor;
+    private HitButton reset;
     private net.minecraft.client.gui.components.EditBox nameBox;
     private final TexButton[] tabButtons = new TexButton[TABS.length];
     private final int[] nodeX = new int[Talents.ALL.length], nodeY = new int[Talents.ALL.length];
