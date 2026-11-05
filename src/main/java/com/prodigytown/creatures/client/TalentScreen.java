@@ -71,7 +71,7 @@ public final class TalentScreen extends Screen {
     }
 
     @Override protected void init() {
-        sc = Math.max(0.4F, Math.min(1.0F, Math.min((this.width - 8.0F) / W, (this.height - 8.0F) / H)));
+        sc = Math.max(0.4F, Math.min(0.78F, Math.min((this.width - 8.0F) / W, (this.height - 8.0F) / H)));
         VI = Math.max(0, Math.min(4, stego.getVariant()));
         GOLD = ACCENT[VI];
         left = (int) ((this.width / sc - W) / 2.0F);

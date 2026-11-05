@@ -47,8 +47,8 @@ public final class MountHud {
         Font font = mc.font;
 
         // ---- marco con la vida (encima de la barra de objetos); textura 512x171, interior x148..451 y83..118
-        final int fw = 124, fh = Math.round(fw * 171.0F / 512.0F);
-        int fx = w / 2 - fw / 2, fy = h - 54 - fh;
+        final int fw = 88, fh = Math.round(fw * 171.0F / 512.0F);
+        int fx = w / 2 + 9, fy = h - 34 - fh; // hueco sobre los slots 6-9 de la barra rapida
         float k = fw / 512.0F;
         int ix = fx + Math.round(148 * k), iw = Math.round((451 - 148) * k), iy = fy + Math.round(83 * k), ih = Math.round((118 - 83) * k);
         float hp = Math.max(0.0F, s.getHealth()), max = Math.max(1.0F, s.getMaxHealth());
@@ -67,14 +67,14 @@ public final class MountHud {
         }
         String num = Math.round(hp) + " / " + Math.round(max);
         g.pose().pushPose();
-        g.pose().translate(ix + iw / 2.0F, iy + (ih - 6.0F) / 2.0F + 0.5F, 0.0F);
-        g.pose().scale(0.72F, 0.72F, 1.0F);
+        g.pose().translate(ix + iw / 2.0F, iy + (ih - 4.5F) / 2.0F + 0.5F, 0.0F);
+        g.pose().scale(0.55F, 0.55F, 1.0F);
         g.drawCenteredString(font, num, 0, 0, 0xFFFFFFFF);
         g.pose().popPose();
         String name = s.hasCustomName() ? s.getCustomName().getString() : "Estegosaurio";
         g.pose().pushPose();
-        g.pose().translate(fx + fw / 2.0F + 9.0F, fy - 1.0F, 0.0F);
-        g.pose().scale(0.72F, 0.72F, 1.0F);
+        g.pose().translate(fx + fw / 2.0F + 6.0F, fy - 1.0F, 0.0F);
+        g.pose().scale(0.6F, 0.6F, 1.0F);
         g.drawCenteredString(font, name + "  " + Component.translatable("prodigycreatures.hud.level").getString() + s.getProgress().level(), 0, 0, 0xFFF2D27A);
         g.pose().popPose();
 
