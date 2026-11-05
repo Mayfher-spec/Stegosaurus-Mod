@@ -45,6 +45,76 @@ public final class MountHud {
                 ICON[v][k] = new ResourceLocation(ProdigyCreatures.MODID, "textures/gui/ab_" + kinds[k] + "_" + v + ".png");
     }
 
+    private static final ResourceLocation[] ULT_ICON = new ResourceLocation[5];
+    static { for (int v = 0; v < 5; v++) ULT_ICON[v] = new ResourceLocation(ProdigyCreatures.MODID, "textures/gui/ab_ult_" + v + ".png"); }
+
+    /** Boton de la definitiva: encima de la mordida. Apagado con el nivel que falta hasta el 50; con barrido de recarga y nivel (I/II/III). */
+    private static void renderUltimate(GuiGraphics g, Font font, StegosaurusEntity s, int cx, int cy, int r) {
+        int ul = s.ultimateLevel();
+        int x = cx - r, y = cy - r;
+        g.blit(ULT_ICON[Math.max(0, Math.min(4, s.getVariant()))], x, y, 2 * r, 2 * r, 0.0F, 0.0F, 64, 64, 64, 64);
+        if (ul <= 0) {
+            fillCircle(g, cx, cy, r, 0xC0081018);
+            g.pose().pushPose();
+            g.pose().translate(cx, cy - 3.0F, 0.0F);
+            g.pose().scale(0.7F, 0.7F, 1.0F);
+            g.drawCenteredString(font, "Nv.50", 0, 0, 0xFFFFFFFF);
+            g.pose().popPose();
+        } else {
+            float left = s.cooldownLeft(3);
+            if (left > 0.0F) {
+                fillSweep(g, cx, cy, r, left);
+                g.pose().pushPose();
+                g.pose().translate(cx, cy - 3.0F, 0.0F);
+                g.pose().scale(0.85F, 0.85F, 1.0F);
+                g.drawCenteredString(font, Integer.toString(s.cooldownSeconds(3)), 0, 0, 0xFFFFFFFF);
+                g.pose().popPose();
+            }
+            String lv = ul == 1 ? "I" : ul == 2 ? "II" : "III";
+            g.pose().pushPose();
+            g.pose().translate(cx - r + 1.0F, cy - r + 1.0F, 0.0F);
+            g.pose().scale(0.6F, 0.6F, 1.0F);
+            g.drawString(font, lv, 0, 0, 0xFFFFE08A, true);
+            g.pose().popPose();
+        }
+        String key = ClientKeys.ULTIMATE.getTranslatedKeyMessage().getString();
+        float kw = font.width(key) * 0.55F;
+        int bx2 = cx + r - 3, by2 = cy + r - 5;
+        g.fill((int) (bx2 - kw / 2 - 1), by2 - 1, (int) (bx2 + kw / 2 + 2), by2 + 5, 0xCC000000);
+        g.pose().pushPose();
+        g.pose().translate(bx2 - kw / 2.0F, by2, 0.0F);
+        g.pose().scale(0.55F, 0.55F, 1.0F);
+        g.drawString(font, key, 0, 0, 0xFFF2D27A, false);
+        g.pose().popPose();
+    }
+
+    private static void fillCircle(GuiGraphics g, int cx, int cy, int r, int color) {
+        for (int dy = -r; dy <= r; dy++) {
+            int half = (int) Math.floor(Math.sqrt(r * r - dy * dy));
+            g.fill(cx - half, cy + dy, cx + half + 1, cy + dy + 1, color);
+        }
+    }
+
+    private static void fillSweep(GuiGraphics g, int cx, int cy, int r, float left) {
+        double start = (1.0 - left) * Math.PI * 2.0;
+        for (int dy = -r; dy <= r; dy++) {
+            int runStart = Integer.MIN_VALUE;
+            for (int dx = -r; dx <= r + 1; dx++) {
+                boolean on = false;
+                if (dx <= r && dx * dx + dy * dy <= r * r) {
+                    double ang = Math.atan2(dx + 0.5, -(dy + 0.5));
+                    if (ang < 0) ang += Math.PI * 2.0;
+                    on = ang >= start;
+                }
+                if (on && runStart == Integer.MIN_VALUE) runStart = dx;
+                if (!on && runStart != Integer.MIN_VALUE) {
+                    g.fill(cx + runStart, cy + dy, cx + dx, cy + dy + 1, 0xB0081018);
+                    runStart = Integer.MIN_VALUE;
+                }
+            }
+        }
+    }
+
     private static void render(GuiGraphics g, int w, int h) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.options.hideGui || !(mc.player.getVehicle() instanceof StegosaurusEntity s)) return;
@@ -81,6 +151,8 @@ public final class MountHud {
         g.pose().scale(0.6F, 0.6F, 1.0F);
         g.drawCenteredString(font, name + "  " + Component.translatable("prodigycreatures.hud.level").getString() + s.getProgress().level(), 0, 0, 0xFFF2D27A);
         g.pose().popPose();
+
+        renderUltimate(g, font, s, w - 19, h - 52, 11);
 
         // ---- poderes: iconos circulares a la derecha, con barrido de recarga (mordida grande, coletazo y embestida pequenos)
         String[] keys = {"Izq", "Der", ClientKeys.CHARGE.getTranslatedKeyMessage().getString()};

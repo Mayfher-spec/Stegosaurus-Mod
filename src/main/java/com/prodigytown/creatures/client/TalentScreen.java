@@ -319,7 +319,7 @@ public final class TalentScreen extends Screen {
 
     private boolean ultReady() {
         ProdigyProgress p = prog();
-        return p.rank("D5") > 0 && p.rank("C6") > 0 && p.rank("S6") > 0;
+        return p.level() >= 50;
     }
 
     private void renderDetail(GuiGraphics g) {
@@ -333,24 +333,24 @@ public final class TalentScreen extends Screen {
             g.pose().popPose();
             text(g, "Habilidad", ux + 28, uy + 3, 0.85F, ULT_COLOR[VI], false);
             text(g, "Definitiva", ux + 28, uy + 12, 0.85F, ULT_COLOR[VI], false);
-            text(g, "Rango " + ((p.rank("D5") > 0 && p.rank("C6") > 0 && p.rank("S6") > 0) ? 1 : 0) + " / 1", ux, uy + 28, 0.85F, GOLD, false);
+            text(g, "Nivel " + (p.level() >= 100 ? 3 : p.level() >= 75 ? 2 : p.level() >= 50 ? 1 : 0) + " / 3", ux, uy + 28, 0.85F, GOLD, false);
             int uy2 = uy + 40;
-            for (String l : new String[]{ultReady() ? "Desbloqueada. Pulsa R montado para lanzarla." : "Se desbloquea al llegar al final de las 3 ramas: Furia protectora, Guardia del Estegosaurio y Proteccion de emergencia."}) {
+            for (String l : new String[]{ultReady() ? "Desbloqueada. Pulsa R montado para lanzarla." : "Se obtiene por nivel del dino: nivel I a nivel 50, II a nivel 75 y III a nivel 100. Cada nivel la hace mas fuerte."}) {
                 for (FormattedCharSequence line : this.font.split(Component.literal(l), uw * 10 / 8)) {
                     g.pose().pushPose(); g.pose().translate(ux, uy2, 0.0F); g.pose().scale(0.8F, 0.8F, 1.0F);
                     g.drawString(this.font, line, 0, 0, TEXT, false); g.pose().popPose(); uy2 += 8;
                 }
             }
             uy2 += 4;
-            for (FormattedCharSequence line : this.font.split(Component.literal(ULT_NAME[VI] + ": " + ULT_DESC[VI] + " Solo montado, tecla R, recarga 2 min."), uw * 10 / 8)) {
+            for (FormattedCharSequence line : this.font.split(Component.literal(ULT_NAME[VI] + ": " + ULT_DESC[VI] + " Solo montado, tecla R, recarga 1 min."), uw * 10 / 8)) {
                 g.pose().pushPose(); g.pose().translate(ux, uy2, 0.0F); g.pose().scale(0.8F, 0.8F, 1.0F);
                 g.drawString(this.font, line, 0, 0, ULT_COLOR[VI], false); g.pose().popPose(); uy2 += 8;
             }
             int yy = Math.max(uy2 + 3, top + 118);
             text(g, "Requisitos", ux, yy, 0.9F, GOLD, false); yy += 10;
-            yy = req(g, ux, yy, p.rank("C6") > 0, "Furia protectora");
-            yy = req(g, ux, yy, p.rank("D5") > 0, "Guardia del Estegosaurio");
-            yy = req(g, ux, yy, p.rank("S6") > 0, "Proteccion de emergencia");
+            yy = req(g, ux, yy, p.level() >= 50, "Nivel 50: definitiva I");
+            yy = req(g, ux, yy, p.level() >= 75, "Nivel 75: definitiva II (x1,5)");
+            yy = req(g, ux, yy, p.level() >= 100, "Nivel 100: definitiva III (x2)");
             return;
         }
         Talent t = Talents.ALL[selected];

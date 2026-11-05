@@ -110,6 +110,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
     /** Recargas visibles en el HUD: (tick de juego en que terminan << 12) | duracion en ticks. */
     private static final EntityDataAccessor<Long> CD_CHARGE = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.LONG);
     private static final EntityDataAccessor<Long> CD_TAIL = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.LONG);
+    private static final EntityDataAccessor<Long> CD_ULT = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.LONG);
     private static final EntityDataAccessor<Long> CD_BITE = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.LONG);
     private static final EntityDataAccessor<Boolean> EVOLVE_QUICK = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Integer> REVERT = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.INT);
@@ -204,6 +205,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         this.entityData.define(CD_CHARGE, 0L);
         this.entityData.define(CD_TAIL, 0L);
         this.entityData.define(CD_BITE, 0L);
+        this.entityData.define(CD_ULT, 0L);
     }
 
     public boolean isFemale() { return this.entityData.get(FEMALE); }
@@ -494,6 +496,10 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         setSaddled(false);
     }
 
+    private static EntityDataAccessor<Long> cdAcc(int which) {
+        return which == 0 ? CD_CHARGE : which == 1 ? CD_TAIL : which == 3 ? CD_ULT : CD_BITE;
+    }
+
     private void markCooldown(EntityDataAccessor<Long> acc, int ticks) {
         int t = Math.max(1, Math.min(4095, ticks));
         this.entityData.set(acc, ((this.level().getGameTime() + t) << 12) | t);
@@ -501,7 +507,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
 
     /** Fraccion de recarga que falta (1 = recien usada, 0 = lista). which: 0 embestida, 1 coletazo, 2 mordida. Sirve en el cliente. */
     public float cooldownLeft(int which) {
-        long v = this.entityData.get(which == 0 ? CD_CHARGE : which == 1 ? CD_TAIL : CD_BITE);
+        long v = this.entityData.get(cdAcc(which));
         long dur = v & 4095L;
         if (dur == 0L) return 0.0F;
         long remaining = (v >> 12) - this.level().getGameTime();
@@ -510,7 +516,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
 
     /** Segundos que faltan (redondeado hacia arriba), 0 si esta lista. */
     public int cooldownSeconds(int which) {
-        long v = this.entityData.get(which == 0 ? CD_CHARGE : which == 1 ? CD_TAIL : CD_BITE);
+        long v = this.entityData.get(cdAcc(which));
         if ((v & 4095L) == 0L) return 0;
         long remaining = (v >> 12) - this.level().getGameTime();
         return remaining <= 0 ? 0 : (int) ((remaining + 19) / 20);
@@ -857,9 +863,11 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         }
         if (id == 3) { // definitiva de la raza, solo montado
             if (player.getVehicle() != this) { player.displayClientMessage(Component.literal("La definitiva solo se usa montado"), true); return false; }
-            if (!ultimateUnlocked()) { player.displayClientMessage(Component.literal("Completa Combate, Defensa y Soporte para la definitiva"), true); return false; }
+            if (ultimateLevel() <= 0) { player.displayClientMessage(Component.literal("La definitiva se obtiene al nivel 50"), true); return false; }
             if (this.tickCount < ultReadyAt) { cooldownMsg(player, ultReadyAt); return false; }
-            this.ultReadyAt = this.tickCount + Math.round(2400 * cooldownFactor());
+            int ucd = Math.round(1200 * cooldownFactor()); // 1 minuto (solo se reduce con Dominio de combate)
+            this.ultReadyAt = this.tickCount + ucd;
+            markCooldown(CD_ULT, ucd);
             this.lastCombatTick = this.tickCount;
             castUltimate(player);
             return true;
@@ -967,21 +975,25 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         }
     }
 
-    private boolean ultimateUnlocked() {
-        return progress.rank("D5") > 0 && progress.rank("C6") > 0 && progress.rank("S6") > 0;
+    /** Nivel de la definitiva: 1 desde el nivel 50, 2 desde el 75 y 3 en el 100. */
+    public int ultimateLevel() {
+        int lv = progress.level();
+        return lv >= 100 ? 3 : lv >= 75 ? 2 : lv >= 50 ? 1 : 0;
     }
 
     /** Habilidad definitiva de cada raza (solo montado). */
     private void castUltimate(Player player) {
-        float atk = (float) this.getAttributeValue(Attributes.ATTACK_DAMAGE);
-        java.util.List<LivingEntity> foes = this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(10.0), this::isFoe);
+        int ul = Math.max(1, ultimateLevel());
+        float atk = (float) this.getAttributeValue(Attributes.ATTACK_DAMAGE) * new float[]{1.0F, 1.0F, 1.5F, 2.0F}[ul]; // nivel 1/2/3: x1 / x1,5 / x2
+        double reach = 8.0 + 2.0 * ul; // alcance 10 / 12 / 14
+        java.util.List<LivingEntity> foes = this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(reach), this::isFoe);
         this.playSound(ModSounds.STEGO_ROAR.get(), 2.5F, 0.7F);
         switch (this.getVariant()) {
             case CYBERNETIC -> { // Tormenta cibernetica: rayos sobre hasta 8 enemigos
                 this.playSound(net.minecraft.sounds.SoundEvents.LIGHTNING_BOLT_THUNDER, 2.5F, 1.0F);
                 int n = 0;
                 for (LivingEntity e : foes) {
-                    if (n++ >= 8) break;
+                    if (n++ >= 4 + 2 * ul) break;
                     zap(this.position().add(0.0, 4.0, 0.0), e.position().add(0.0, e.getBbHeight() * 0.5, 0.0));
                     e.hurt(this.damageSources().mobAttack(this), atk * 3.0F);
                 }
@@ -990,7 +1002,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
             case GOLDEN -> { // Resplandor dorado: cura a los aliados y ciega a los enemigos
                 this.playSound(net.minecraft.sounds.SoundEvents.BEACON_ACTIVATE, 2.5F, 1.2F);
                 this.heal(this.getMaxHealth() * 0.4F * supportBoost());
-                for (LivingEntity e : this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(10.0),
+                for (LivingEntity e : this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(reach),
                         x -> x != this && (x == this.getOwner() || (x instanceof TamableAnimal t && t.isTame() && t.getOwner() == this.getOwner())))) {
                     e.heal(e.getMaxHealth() * 0.4F * supportBoost());
                     e.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.REGENERATION, 160, 1));
