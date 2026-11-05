@@ -34,9 +34,9 @@ class ChibiModel extends GeoModel<ChibiStego> {
             case ChibiStego.CYBER -> "cibernetico";
             case ChibiStego.MAGMA -> "magma";
             case ChibiStego.GOLD -> "dorado";
-            default -> entity.isGlacial() ? "glacial" : "natural";
+            default -> "natural";
         };
-        return resource("textures/entity/stegosaurus_chibi_" + texture + (entity.isFemale() ? "_f" : "") + ".png");
+        return resource("textures/entity/stegosaurus_chibi_" + texture + ".png");
     }
     @Override public ResourceLocation getAnimationResource(ChibiStego entity) {
         return resource("animations/stegosaurus_chibi.animation.json");
