@@ -36,6 +36,30 @@ public final class ProgressEvents {
         }
     }
 
+    /** Experiencia pasiva: +1 cada 5 s montado y +100 por cada dia de Minecraft para las mascotas cargadas. */
+    private static long lastDay = Long.MIN_VALUE;
+
+    @SubscribeEvent
+    public static void onLevelTick(net.minecraftforge.event.TickEvent.LevelTickEvent event) {
+        if (event.phase != net.minecraftforge.event.TickEvent.Phase.END || !(event.level instanceof net.minecraft.server.level.ServerLevel level)) return;
+        long time = level.getGameTime();
+        boolean overworld = level.dimension() == net.minecraft.world.level.Level.OVERWORLD;
+        boolean newDay = false;
+        if (overworld && time % 20 == 0) {
+            long day = level.getDayTime() / 24000L;
+            if (lastDay == Long.MIN_VALUE) lastDay = day;
+            else if (day > lastDay) { lastDay = day; newDay = true; }
+            else if (day < lastDay) lastDay = day; // el tiempo se retrocedio (comando /time)
+        }
+        boolean ride = time % 100 == 0;
+        if (!ride && !newDay) return;
+        for (net.minecraft.world.entity.Entity e : level.getAllEntities()) {
+            if (!(e instanceof TamableAnimal t) || !(e instanceof ProdigyPet pet) || !t.isTame()) continue;
+            if (newDay) pet.gainXp(100);
+            if (ride && e instanceof StegosaurusEntity s && s.getFirstPassenger() instanceof Player) pet.gainXp(1);
+        }
+    }
+
     @SubscribeEvent
     public static void onFall(LivingFallEvent event) {
         if (!(event.getEntity() instanceof Player player) || player.level().isClientSide) return;

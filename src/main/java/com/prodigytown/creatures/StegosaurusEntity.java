@@ -340,6 +340,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
                 } else if (this.isOwnedBy(player)) {
                     if (!player.getAbilities().instabuild) held.shrink(1);
                     this.heal(40.0f);
+                    this.gainXp(25);
                 } else return InteractionResult.PASS;
             }
             return InteractionResult.sidedSuccess(this.level().isClientSide);
