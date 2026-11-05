@@ -16,5 +16,10 @@
   "subtitles.prodigycreatures.chibi.hurt": "Chibi estegosaurio chilla",
   "subtitles.prodigycreatures.chibi.death": "Chibi estegosaurio muere",
   "subtitles.prodigycreatures.stegosaurus.evolve": "Estegosaurio evoluciona",
-  "subtitles.prodigycreatures.chibi.evolve": "Chibi estegosaurio se llena de luz"
+  "subtitles.prodigycreatures.chibi.evolve": "Chibi estegosaurio se llena de luz",
+  "item.prodigycreatures.stegosaurus_armor_iron": "Armadura de hierro para estegosaurio",
+  "item.prodigycreatures.stegosaurus_armor_gold": "Armadura de oro para estegosaurio",
+  "item.prodigycreatures.stegosaurus_armor_diamond": "Armadura de diamante para estegosaurio",
+  "item.prodigycreatures.stegosaurus_armor_netherite": "Armadura de netherita para estegosaurio",
+  "prodigycreatures.hud.level": "Nv."
 }

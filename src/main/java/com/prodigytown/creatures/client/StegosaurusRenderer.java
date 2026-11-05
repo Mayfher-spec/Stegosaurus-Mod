@@ -23,6 +23,7 @@ public final class StegosaurusRenderer extends MobRenderer<StegosaurusEntity, St
     public StegosaurusRenderer(EntityRendererProvider.Context context) {
         super(context, new StegosaurusModel<>(context.bakeLayer(StegosaurusModel.LAYER_LOCATION)), 3.0F);
         this.addLayer(new StegosaurusSaddleLayer(this, context.getModelSet()));
+        this.addLayer(new StegosaurusArmorLayer(this, context.getModelSet()));
         this.addLayer(new StegosaurusGlowLayer(this));
         this.addLayer(new StegosaurusFlashLayer(this));
     }

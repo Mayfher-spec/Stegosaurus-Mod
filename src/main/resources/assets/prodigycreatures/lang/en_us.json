@@ -16,5 +16,10 @@
   "subtitles.prodigycreatures.chibi.hurt": "Chibi Stegosaurus squeals",
   "subtitles.prodigycreatures.chibi.death": "Chibi Stegosaurus dies",
   "subtitles.prodigycreatures.stegosaurus.evolve": "Stegosaurus evolves",
-  "subtitles.prodigycreatures.chibi.evolve": "Chibi Stegosaurus fills with light"
+  "subtitles.prodigycreatures.chibi.evolve": "Chibi Stegosaurus fills with light",
+  "item.prodigycreatures.stegosaurus_armor_iron": "Iron Stegosaurus Armor",
+  "item.prodigycreatures.stegosaurus_armor_gold": "Golden Stegosaurus Armor",
+  "item.prodigycreatures.stegosaurus_armor_diamond": "Diamond Stegosaurus Armor",
+  "item.prodigycreatures.stegosaurus_armor_netherite": "Netherite Stegosaurus Armor",
+  "prodigycreatures.hud.level": "Lv."
 }

@@ -98,6 +98,11 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
     }
 
     private static final EntityDataAccessor<Integer> VARIANT = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> ARMOR_TIER = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.INT);
+    /** Recargas visibles en el HUD: (tick de juego en que terminan << 12) | duracion en ticks. */
+    private static final EntityDataAccessor<Long> CD_CHARGE = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.LONG);
+    private static final EntityDataAccessor<Long> CD_TAIL = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.LONG);
+    private static final EntityDataAccessor<Long> CD_BITE = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.LONG);
     private static final EntityDataAccessor<Integer> EVOLVE = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> SADDLED = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<CompoundTag> PROGRESS = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.COMPOUND_TAG);
@@ -110,6 +115,8 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
     private static final UUID M_DMG_MUL = UUID.fromString("a7d1c0de-0004-4d1e-9a10-5e90a5a00004");
     private static final UUID M_ARM_ADD = UUID.fromString("a7d1c0de-0005-4d1e-9a10-5e90a5a00005");
     private static final UUID M_KB_ADD = UUID.fromString("a7d1c0de-0006-4d1e-9a10-5e90a5a00006");
+    private static final UUID M_ARM_GEAR = UUID.fromString("a7d1c0de-0008-4d1e-9a10-5e90a5a00008");
+    private static final UUID M_TGH_GEAR = UUID.fromString("a7d1c0de-0009-4d1e-9a10-5e90a5a00009");
     private static final UUID M_SPD_MUL = UUID.fromString("a7d1c0de-0007-4d1e-9a10-5e90a5a00007");
 
     private ProdigyProgress progress = new ProdigyProgress();
@@ -164,6 +171,10 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         this.entityData.define(PROGRESS, new ProdigyProgress().save());
         this.entityData.define(SADDLED, Boolean.FALSE);
         this.entityData.define(EVOLVE, 0);
+        this.entityData.define(ARMOR_TIER, 0);
+        this.entityData.define(CD_CHARGE, 0L);
+        this.entityData.define(CD_TAIL, 0L);
+        this.entityData.define(CD_BITE, 0L);
     }
 
     public int getVariant() { return this.entityData.get(VARIANT); }
@@ -174,6 +185,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         tag.putInt("SkinVariant", getVariant());
         tag.put("ProdigyProgress", progress.save());
         tag.putBoolean("Saddled", isSaddled());
+        tag.putInt("ArmorTier", getArmorTier());
     }
     @Override public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
@@ -182,6 +194,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         progress = ProdigyProgress.load(tag.contains("ProdigyProgress") ? tag.getCompound("ProdigyProgress") : null);
         this.entityData.set(PROGRESS, progress.save());
         this.entityData.set(SADDLED, tag.getBoolean("Saddled"));
+        this.entityData.set(ARMOR_TIER, Math.max(0, Math.min(4, tag.getInt("ArmorTier"))));
         applyStats();
     }
 
@@ -233,6 +246,16 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
                     if (!player.getAbilities().instabuild) held.shrink(1);
                     this.heal(40.0f);
                 } else return InteractionResult.PASS;
+            }
+            return InteractionResult.sidedSuccess(this.level().isClientSide);
+        }
+        if (this.isTame() && this.isOwnedBy(player) && held.getItem() instanceof StegosaurusArmorItem armor) {
+            if (!this.level().isClientSide) {
+                if (armor.tier != getArmorTier()) {
+                    equipArmor(armor.tier);
+                    if (!player.getAbilities().instabuild) held.shrink(1);
+                    this.playSound(SoundEvents.ARMOR_EQUIP_IRON, 1.0F, 0.8F);
+                }
             }
             return InteractionResult.sidedSuccess(this.level().isClientSide);
         }
@@ -294,6 +317,68 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
             }
         }
         return hit;
+    }
+
+    // ------------------------------------------------------------------ armadura, recargas del HUD, quitar equipo
+
+    /** Armadura por nivel (0 = sin armadura, 1 hierro, 2 oro, 3 diamante, 4 netherite). */
+    public static final int[] ARMOR_VALUE = {0, 6, 7, 12, 16};
+    public static final int[] TOUGHNESS_VALUE = {0, 0, 0, 2, 3};
+
+    public int getArmorTier() { return this.entityData.get(ARMOR_TIER); }
+
+    /** Equipa una armadura (devuelve la anterior al suelo). Solo servidor. */
+    public void equipArmor(int tier) {
+        if (this.level().isClientSide) return;
+        int old = getArmorTier();
+        this.entityData.set(ARMOR_TIER, Math.max(0, Math.min(4, tier)));
+        if (old > 0 && old != tier) this.spawnAtLocation(new ItemStack(ProdigyCreatures.ARMOR_ITEMS.get(old - 1).get()));
+        applyStats();
+    }
+
+    public void removeArmor() {
+        if (this.level().isClientSide || getArmorTier() == 0) return;
+        this.spawnAtLocation(new ItemStack(ProdigyCreatures.ARMOR_ITEMS.get(getArmorTier() - 1).get()));
+        this.entityData.set(ARMOR_TIER, 0);
+        applyStats();
+    }
+
+    public void removeSaddle() {
+        if (this.level().isClientSide || !isSaddled()) return;
+        this.ejectPassengers();
+        this.spawnAtLocation(Items.SADDLE);
+        setSaddled(false);
+    }
+
+    private void markCooldown(EntityDataAccessor<Long> acc, int ticks) {
+        int t = Math.max(1, Math.min(4095, ticks));
+        this.entityData.set(acc, ((this.level().getGameTime() + t) << 12) | t);
+    }
+
+    /** Fraccion de recarga que falta (1 = recien usada, 0 = lista). which: 0 embestida, 1 coletazo, 2 mordida. Sirve en el cliente. */
+    public float cooldownLeft(int which) {
+        long v = this.entityData.get(which == 0 ? CD_CHARGE : which == 1 ? CD_TAIL : CD_BITE);
+        long dur = v & 4095L;
+        if (dur == 0L) return 0.0F;
+        long remaining = (v >> 12) - this.level().getGameTime();
+        return remaining <= 0 ? 0.0F : Math.min(1.0F, remaining / (float) dur);
+    }
+
+    /** Segundos que faltan (redondeado hacia arriba), 0 si esta lista. */
+    public int cooldownSeconds(int which) {
+        long v = this.entityData.get(which == 0 ? CD_CHARGE : which == 1 ? CD_TAIL : CD_BITE);
+        if ((v & 4095L) == 0L) return 0;
+        long remaining = (v >> 12) - this.level().getGameTime();
+        return remaining <= 0 ? 0 : (int) ((remaining + 19) / 20);
+    }
+
+    /** Renombrar desde la pantalla (solo servidor). Vacio = quitar el nombre. */
+    public void rename(String name) {
+        if (this.level().isClientSide) return;
+        String n = name == null ? "" : name.trim();
+        if (n.length() > 32) n = n.substring(0, 32);
+        this.setCustomName(n.isEmpty() ? null : Component.literal(n));
+        this.setCustomNameVisible(!n.isEmpty());
     }
 
     // ------------------------------------------------------------------ transicion de evolucion (chibi -> adulto)
@@ -402,6 +487,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
     @Override protected void dropCustomDeathLoot(DamageSource source, int looting, boolean recentlyHit) {
         super.dropCustomDeathLoot(source, looting, recentlyHit);
         if (isSaddled()) this.spawnAtLocation(Items.SADDLE);
+        if (getArmorTier() > 0) this.spawnAtLocation(new ItemStack(ProdigyCreatures.ARMOR_ITEMS.get(getArmorTier() - 1).get()));
     }
 
     public void toggleSit() {
@@ -464,6 +550,8 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         setMod(Attributes.ATTACK_DAMAGE, M_DMG_MUL, 0.05 * progress.rank("C1") + 0.10 * progress.rank("C7"), AttributeModifier.Operation.MULTIPLY_TOTAL);
         setMod(Attributes.ARMOR, M_ARM_ADD, GrowthTable.ARMOR[lv] - BASE_ARMOR + progress.rank("D1"), AttributeModifier.Operation.ADDITION);
         setMod(Attributes.KNOCKBACK_RESISTANCE, M_KB_ADD, 0.05 * progress.rank("D3"), AttributeModifier.Operation.ADDITION);
+        setMod(Attributes.ARMOR, M_ARM_GEAR, ARMOR_VALUE[getArmorTier()], AttributeModifier.Operation.ADDITION);
+        setMod(Attributes.ARMOR_TOUGHNESS, M_TGH_GEAR, TOUGHNESS_VALUE[getArmorTier()], AttributeModifier.Operation.ADDITION);
         setMod(Attributes.MOVEMENT_SPEED, M_SPD_MUL, 0.02 * progress.rank("S1"), AttributeModifier.Operation.MULTIPLY_TOTAL);
         if (this.getHealth() > this.getMaxHealth()) this.setHealth(this.getMaxHealth());
     }
@@ -569,6 +657,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
             this.chargeHit.clear();
             this.chargeTicks = blocks * 2;
             this.chargeReadyAt = this.tickCount + Math.round(240 * cooldownFactor());
+            markCooldown(CD_CHARGE, Math.round(240 * cooldownFactor()));
             this.lastCombatTick = this.tickCount;
             return true;
         }
@@ -579,12 +668,14 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
             this.tailWindup = 18; // 0,9 s: el latigazo de la animacion golpea a ese tiempo
             this.level().broadcastEntityEvent(this, (byte) 61);
             this.tailReadyAt = this.tickCount + Math.round(20 * (r > 0 ? new int[]{0, 10, 9, 8}[r] : 5) * cooldownFactor());
+            markCooldown(CD_TAIL, Math.round(20 * (r > 0 ? new int[]{0, 10, 9, 8}[r] : 5) * cooldownFactor()));
             return true;
         }
         if (id == 2) { // mordida con el clic izquierdo montado: dano pequeno, recarga corta
             if (this.tickCount < biteReadyAt || this.biteWindup > 0) return false;
             this.biteWindup = 9; // la mandibula se cierra a ~0,45 s en la animacion
             this.biteReadyAt = this.tickCount + 16;
+            markCooldown(CD_BITE, 16);
             this.level().broadcastEntityEvent(this, (byte) 62);
             return true;
         }

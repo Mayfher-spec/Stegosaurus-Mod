@@ -35,6 +35,17 @@ public class ProdigyCreatures {
     public static final RegistryObject<Item> STEGOSAURUS_EGG = ITEMS.register("stegosaurus_spawn_egg", () ->
         new ProdigyStegosaurusEgg(new Item.Properties()));
 
+    public static final String[] ARMOR_NAMES = {"iron", "gold", "diamond", "netherite"};
+    /** ARMOR_ITEMS.get(tier - 1) es la armadura de ese nivel (1 hierro .. 4 netherite). */
+    public static final java.util.List<RegistryObject<Item>> ARMOR_ITEMS = new java.util.ArrayList<>();
+    static {
+        for (int i = 0; i < ARMOR_NAMES.length; i++) {
+            final int tier = i + 1;
+            ARMOR_ITEMS.add(ITEMS.register("stegosaurus_armor_" + ARMOR_NAMES[i],
+                () -> new StegosaurusArmorItem(tier, new Item.Properties().stacksTo(1))));
+        }
+    }
+
     public ProdigyCreatures() {
         var bus = FMLJavaModLoadingContext.get().getModEventBus();
         GeckoLib.initialize();
@@ -52,6 +63,9 @@ public class ProdigyCreatures {
         public static void registerCreativeTab(BuildCreativeModeTabContentsEvent event) {
             if (event.getTabKey() == CreativeModeTabs.SPAWN_EGGS) {
                 event.accept(STEGOSAURUS_EGG.get());
+            }
+            if (event.getTabKey() == CreativeModeTabs.COMBAT) {
+                for (RegistryObject<Item> armor : ARMOR_ITEMS) event.accept(armor.get());
             }
         }
 

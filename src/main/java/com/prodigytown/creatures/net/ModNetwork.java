@@ -26,9 +26,10 @@ public final class ModNetwork {
         registered = true;
         CHANNEL.registerMessage(0, TalentAction.class, TalentAction::encode, TalentAction::decode, TalentAction::handle);
         CHANNEL.registerMessage(1, UseAbility.class, UseAbility::encode, UseAbility::decode, UseAbility::handle);
+        CHANNEL.registerMessage(2, RenamePet.class, RenamePet::encode, RenamePet::decode, RenamePet::handle);
     }
 
-    /** action 0 = subir rango de un talento (index), 1 = restablecer, 2 = sentar/levantar. */
+    /** action 0 = subir rango de un talento (index), 1 = restablecer, 2 = sentar/levantar, 3 = quitar silla, 4 = quitar armadura. */
     public record TalentAction(int entityId, int action, int index) {
         public static void encode(TalentAction m, FriendlyByteBuf buf) { buf.writeInt(m.entityId); buf.writeByte(m.action); buf.writeByte(m.index); }
         public static TalentAction decode(FriendlyByteBuf buf) { return new TalentAction(buf.readInt(), buf.readByte(), buf.readByte()); }
@@ -41,12 +42,29 @@ public final class ModNetwork {
                 if (m.action == 0) stego.unlockTalent(m.index);
                 else if (m.action == 1) stego.resetTalents();
                 else if (m.action == 2) stego.toggleSit();
+                else if (m.action == 3) stego.removeSaddle();
+                else if (m.action == 4) stego.removeArmor();
             });
             ctx.get().setPacketHandled(true);
         }
     }
 
-    /** id 0 = embestida, 1 = coletazo devastador. Actua el compañero propio mas cercano. */
+    /** Cambia el nombre del estegosaurio propio (cadena vacia = sin nombre). */
+    public record RenamePet(int entityId, String name) {
+        public static void encode(RenamePet m, FriendlyByteBuf buf) { buf.writeInt(m.entityId); buf.writeUtf(m.name, 32); }
+        public static RenamePet decode(FriendlyByteBuf buf) { return new RenamePet(buf.readInt(), buf.readUtf(32)); }
+        public static void handle(RenamePet m, Supplier<NetworkEvent.Context> ctx) {
+            ctx.get().enqueueWork(() -> {
+                ServerPlayer sp = ctx.get().getSender();
+                if (sp == null) return;
+                Entity e = sp.level().getEntity(m.entityId);
+                if (e instanceof StegosaurusEntity stego && stego.isOwnedBy(sp) && stego.distanceTo(sp) <= 40.0F) stego.rename(m.name);
+            });
+            ctx.get().setPacketHandled(true);
+        }
+    }
+
+    /** id 0 = embestida, 1 = coletazo (basico o devastador), 2 = mordida. Actua el compañero propio mas cercano (o la montura). */
     public record UseAbility(int ability) {
         public static void encode(UseAbility m, FriendlyByteBuf buf) { buf.writeByte(m.ability); }
         public static UseAbility decode(FriendlyByteBuf buf) { return new UseAbility(buf.readByte()); }

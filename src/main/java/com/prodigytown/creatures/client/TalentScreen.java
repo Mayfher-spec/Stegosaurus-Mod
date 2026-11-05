@@ -39,7 +39,8 @@ public final class TalentScreen extends Screen {
     private int left, top, tab = 0, selected = 0;
     /** Escala para que el panel quepa siempre en pantalla; las coordenadas internas son "virtuales" (divididas por sc). */
     private float sc = 1.0F;
-    private TexButton unlock, reset, sit;
+    private TexButton unlock, reset, sit, rename, dropSaddle, dropArmor;
+    private net.minecraft.client.gui.components.EditBox nameBox;
     private final TexButton[] tabButtons = new TexButton[TABS.length];
     private final int[] nodeX = new int[Talents.ALL.length], nodeY = new int[Talents.ALL.length];
 
@@ -63,7 +64,27 @@ public final class TalentScreen extends Screen {
             ModNetwork.CHANNEL.sendToServer(new ModNetwork.TalentAction(stego.getId(), 1, 0))));
         sit = this.addRenderableWidget(new TexButton(left + 10, top + H - 26, 92, 18, Component.literal("Sentar / Levantar"), b ->
             ModNetwork.CHANNEL.sendToServer(new ModNetwork.TalentAction(stego.getId(), 2, 0))));
+        nameBox = this.addRenderableWidget(new net.minecraft.client.gui.components.EditBox(this.font, left + 124, top + 62, 200, 18, Component.literal("Nombre")));
+        nameBox.setMaxLength(32);
+        nameBox.setValue(stego.hasCustomName() ? stego.getCustomName().getString() : "");
+        nameBox.setHint(Component.literal("Nombre del estegosaurio"));
+        rename = this.addRenderableWidget(new TexButton(left + 330, top + 62, 100, 18, Component.literal("Poner nombre"), b -> sendName()));
+        rename.gold = true;
+        dropSaddle = this.addRenderableWidget(new TexButton(left + 124, top + 128, 150, 18, Component.literal("Quitar silla"), b ->
+            ModNetwork.CHANNEL.sendToServer(new ModNetwork.TalentAction(stego.getId(), 3, 0))));
+        dropArmor = this.addRenderableWidget(new TexButton(left + 280, top + 128, 150, 18, Component.literal("Quitar armadura"), b ->
+            ModNetwork.CHANNEL.sendToServer(new ModNetwork.TalentAction(stego.getId(), 4, 0))));
         layoutNodes();
+    }
+
+    private void sendName() {
+        ModNetwork.CHANNEL.sendToServer(new ModNetwork.RenamePet(stego.getId(), nameBox.getValue()));
+    }
+
+    @Override public boolean keyPressed(int key, int scan, int mods) {
+        if (tab == 2 && nameBox.isFocused() && (key == 257 || key == 335)) { sendName(); nameBox.setFocused(false); return true; }
+        if (tab == 2 && nameBox.isFocused() && key != 256) return nameBox.keyPressed(key, scan, mods) || true;
+        return super.keyPressed(key, scan, mods);
     }
 
     /** Posicion de cada nodo: {columna -1/0/1, fila}. Pensado para que cada requisito quede siempre mas arriba. */
@@ -122,6 +143,11 @@ public final class TalentScreen extends Screen {
         }
         for (int i = 0; i < tabButtons.length; i++) tabButtons[i].gold = i == tab;
         unlock.visible = tab == 0;
+        boolean eq = tab == 2;
+        nameBox.visible = eq; nameBox.active = eq; rename.visible = eq;
+        dropSaddle.visible = eq; dropSaddle.active = eq && stego.isSaddled();
+        dropArmor.visible = eq; dropArmor.active = eq && stego.getArmorTier() > 0;
+        if (!eq && nameBox.isFocused()) nameBox.setFocused(false);
         unlock.active = tab == 0 && prog().whyNotUnlock(selected) == null;
         super.render(g, mx, my, pt);
         g.pose().popPose();
@@ -311,15 +337,24 @@ public final class TalentScreen extends Screen {
         renderText(g, "Resumen", lines);
     }
 
+    private static final String[] ARMOR_NAME = {"sin armadura", "hierro", "oro", "diamante", "netherita"};
+
     private void renderEquipment(GuiGraphics g) {
-        renderText(g, "Equipamiento", List.of(
-            "Silla: " + (stego.isSaddled() ? "equipada (clic para montar)" : "sin silla (clic con una silla en la mano)"),
-            "Montado: clic izq. = mordida, clic der. = coletazo,",
-            "V = embestida (talento).",
-            "Montado, el talento Guardia absorbe dano por ti.",
-            "",
-            "Armaduras para el estegosaurio: aun no estan",
-            "implementadas en esta version."));
+        int x = left + 120, y = top + 42;
+        g.drawString(this.font, "Nombre", x, y, GOLD, true);
+        g.drawString(this.font, "Equipamiento", x, top + 92, GOLD, true);
+        int t = stego.getArmorTier();
+        g.drawString(this.font, "Silla: " + (stego.isSaddled() ? "equipada" : "sin silla (clic con una silla en la mano)"), x, top + 108, TEXT, false);
+        g.drawString(this.font, "Armadura: " + ARMOR_NAME[Math.max(0, Math.min(4, t))] + (t > 0
+            ? "  (+" + StegosaurusEntity.ARMOR_VALUE[t] + " armadura" + (StegosaurusEntity.TOUGHNESS_VALUE[t] > 0 ? ", +" + StegosaurusEntity.TOUGHNESS_VALUE[t] + " dureza" : "") + ")" : ""), x + 150, top + 108, TEXT, false);
+        int y2 = top + 156;
+        for (String l : new String[]{
+            "Para equipar una armadura, haz clic derecho sobre tu estegosaurio con ella en la mano.",
+            "Montado: clic izq. = mordida, clic der. = coletazo, V = embestida (talento).",
+            "Tambien puedes ponerle nombre con una etiqueta (name tag)."}) {
+            g.drawWordWrap(this.font, Component.literal(l), x, y2, 316, DIM);
+            y2 += this.font.split(Component.literal(l), 316).size() * 10 + 2;
+        }
     }
 
     private void renderVariants(GuiGraphics g) {
