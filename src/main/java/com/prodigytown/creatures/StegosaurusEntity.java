@@ -116,7 +116,10 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
 
     // ---- Marcha (solo cliente): fase ligada a la distancia real recorrida, ver client/AdultGait ----
     public float gaitV = 0.0F, gaitPhase = 0.0F;
+    /** 0..1: cuanto se pliegan las placas dorsales centrales mientras alguien va montado (solo visual). */
+    public float plateFold = 0.0F;
     private void updateGait() {
+        plateFold += ((this.isVehicle() ? 1.0F : 0.0F) - plateFold) * 0.12F;
         double dx = this.getX() - this.xo, dz = this.getZ() - this.zo;
         float v = (float) Math.sqrt(dx * dx + dz * dz);
         gaitV += (v - gaitV) * 0.35F;
@@ -143,7 +146,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
             .add(Attributes.ATTACK_DAMAGE, 27.0)
             .add(Attributes.ARMOR, 14.0)
             .add(Attributes.KNOCKBACK_RESISTANCE, 0.85)
-            .add(Attributes.FOLLOW_RANGE, 32.0);
+            .add(Attributes.FOLLOW_RANGE, 64.0);
     }
 
     @Override protected void defineSynchedData() {
@@ -192,7 +195,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         this.goalSelector.addGoal(0, new FloatGoal(this));
         this.goalSelector.addGoal(1, new SitWhenOrderedToGoal(this));
         this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.22, true));
-        this.goalSelector.addGoal(3, new RejoinFollowGoal(1.25, 7.0f, 3.0f));
+        this.goalSelector.addGoal(3, new RejoinFollowGoal(1.15, 16.0f, 9.0f));
         this.goalSelector.addGoal(5, new RandomStrollGoal(this, 0.85));
         this.goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 12.0f));
         this.goalSelector.addGoal(7, new RandomLookAroundGoal(this));
@@ -294,6 +297,15 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
     }
 
     @Override public double getPassengersRidingOffset() { return this.getBbHeight() * 0.98; }
+
+    /** El jinete se sienta un poco hacia atras, detras del cruce de las placas centrales (0,35 bloques). */
+    private static final double SEAT_BACK = 0.35;
+    @Override public void positionRider(net.minecraft.world.entity.Entity passenger, net.minecraft.world.entity.Entity.MoveFunction callback) {
+        if (!this.hasPassenger(passenger)) return;
+        Vec3 off = new Vec3(0.0, 0.0, -SEAT_BACK).yRot(-this.yBodyRot * ((float) Math.PI / 180.0F));
+        callback.accept(passenger, this.getX() + off.x,
+            this.getY() + this.getPassengersRidingOffset() + passenger.getMyRidingOffset(), this.getZ() + off.z);
+    }
 
     @Override public void travel(Vec3 travelVector) {
         if (this.isAlive() && this.isVehicle() && this.getControllingPassenger() instanceof Player rider) {
@@ -461,8 +473,8 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         if (tailWindup > 0) {
             tailWindup--;
             if (tailWindup == 0) {
-                int r = Math.max(1, progress.rank("C5"));
-                float bonus = new float[]{0F, 1.0F, 1.5F, 2.0F}[r];
+                int r = progress.rank("C5");
+                float bonus = r > 0 ? new float[]{0F, 1.0F, 1.5F, 2.0F}[r] : 0.5F;
                 float dmg = (float)this.getAttributeValue(Attributes.ATTACK_DAMAGE) * (1.0F + bonus);
                 this.level().broadcastEntityEvent(this, (byte) 61);
                 for (LivingEntity e : this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(3.5), this::isFoe)) {
@@ -491,11 +503,11 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
             return true;
         }
         if (id == 1) {
+            // Coletazo basico siempre disponible (carga 0,4 s, +50 % de dano, recarga 5 s); el talento C5 lo vuelve devastador.
             int r = progress.rank("C5");
-            if (r <= 0) { player.displayClientMessage(Component.literal("Coletazo devastador no desbloqueado"), true); return false; }
             if (this.tickCount < tailReadyAt) { cooldownMsg(player, tailReadyAt); return false; }
-            this.tailWindup = 20;
-            this.tailReadyAt = this.tickCount + Math.round(20 * new int[]{0, 10, 9, 8}[r] * cooldownFactor());
+            this.tailWindup = r > 0 ? 20 : 8;
+            this.tailReadyAt = this.tickCount + Math.round(20 * (r > 0 ? new int[]{0, 10, 9, 8}[r] : 5) * cooldownFactor());
             return true;
         }
         return false;
@@ -507,7 +519,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
 
     /** Distancia a partir de la cual el compañero se teletransporta junto al dueño (talento S3). */
     public double rejoinDistance() {
-        return new double[]{32.0, 24.0, 18.0, 12.0}[progress.rank("S3")];
+        return new double[]{64.0, 24.0, 18.0, 12.0}[progress.rank("S3")];
     }
 
     /** Reduccion de dano por caida del dueño (S4) que aporta este compañero, 0..1. */

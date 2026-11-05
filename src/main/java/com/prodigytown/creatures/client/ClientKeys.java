@@ -8,7 +8,10 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.UseAnim;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -16,7 +19,7 @@ import org.lwjgl.glfw.GLFW;
 
 import java.util.List;
 
-/** Teclas: K abre el arbol, V embestida, B coletazo devastador. */
+/** Teclas: K abre el arbol, V embestida, B coletazo (montado tambien con clic derecho). */
 public final class ClientKeys {
     private static final String CATEGORY = "key.categories.prodigycreatures";
     public static final KeyMapping OPEN = new KeyMapping("key.prodigycreatures.open_talents", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_K, CATEGORY);
@@ -35,6 +38,16 @@ public final class ClientKeys {
 
     @Mod.EventBusSubscriber(modid = ProdigyCreatures.MODID, value = Dist.CLIENT)
     public static final class ForgeBus {
+        /** Montado: clic derecho = coletazo (si la mano no lleva comida ni algo que se use, como un arco o un escudo). */
+        @SubscribeEvent public static void rightClick(InputEvent.InteractionKeyMappingTriggered event) {
+            LocalPlayer p = Minecraft.getInstance().player;
+            if (p == null || !event.isUseItem() || !(p.getVehicle() instanceof StegosaurusEntity)) return;
+            ItemStack held = p.getItemInHand(event.getHand());
+            if (!held.isEmpty() && (held.getItem().isEdible() || held.getUseAnimation() != UseAnim.NONE)) return;
+            event.setCanceled(true);
+            event.setSwingHand(false);
+            ModNetwork.CHANNEL.sendToServer(new ModNetwork.UseAbility(1));
+        }
         @SubscribeEvent public static void tick(TickEvent.ClientTickEvent event) {
             if (event.phase != TickEvent.Phase.END) return;
             Minecraft mc = Minecraft.getInstance();

@@ -123,6 +123,15 @@ public final class StegosaurusModel<T extends StegosaurusEntity> extends Hierarc
     this.animate(entity.roarAnimationState, StegosaurusAnimations.ROAR, ageInTicks);
     head.yRot += netHeadYaw * ((float)Math.PI / 180F) * 0.35F;
     head.xRot += headPitch * ((float)Math.PI / 180F) * 0.35F;
+
+    // Con jinete, las placas centrales se pliegan para dejar libre la vista (se cruzan justo sobre el asiento).
+    float fold = entity.plateFold;
+    foldPlate(fore, "plate_p56_l", 0.40F, fold); foldPlate(fore, "plate_p56_r", 0.40F, fold);
+    foldPlate(hind, "plate_p7_l", 0.45F, fold);  foldPlate(hind, "plate_p7_r", 0.45F, fold);
+    foldPlate(tail, "plate_p810_l", 0.55F, fold); foldPlate(tail, "plate_p810_r", 0.55F, fold);
+  }
+  private static void foldPlate(ModelPart parent, String name, float minScale, float fold) {
+    parent.getChild(name).yScale = 1.0F - (1.0F - minScale) * fold;
   }
   @Override public void renderToBuffer(PoseStack pose, VertexConsumer consumer, int light, int overlay,
     float red, float green, float blue, float alpha) {

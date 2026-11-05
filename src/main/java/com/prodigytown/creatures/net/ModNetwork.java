@@ -57,7 +57,8 @@ public final class ModNetwork {
                 List<StegosaurusEntity> pets = sp.level().getEntitiesOfClass(StegosaurusEntity.class,
                     sp.getBoundingBox().inflate(24.0), s -> s.isTame() && s.isOwnedBy(sp));
                 StegosaurusEntity best = null;
-                for (StegosaurusEntity s : pets) if (best == null || s.distanceToSqr(sp) < best.distanceToSqr(sp)) best = s;
+                if (sp.getVehicle() instanceof StegosaurusEntity mount && mount.isOwnedBy(sp)) best = mount;
+                else for (StegosaurusEntity s : pets) if (best == null || s.distanceToSqr(sp) < best.distanceToSqr(sp)) best = s;
                 if (best != null) best.useAbility(sp, m.ability);
             });
             ctx.get().setPacketHandled(true);

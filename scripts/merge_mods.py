@@ -28,7 +28,7 @@ def bundle(compiled_path, chibi_path, output_path):
                 out.writestr(name, legacy.read(name))
                 names.add(name)
             out.writestr("PRODIGY_UNIFIED_BUILD.txt",
-                "Prodigy Creatures v4.5.0 beta - ONE Forge mod id\n"
+                "Prodigy Creatures v4.5.1 beta - ONE Forge mod id\n"
                 "Forge mod id: prodigycreatures\n"
                 "Legacy chibi entity id: prodigychibi:stegosaurus_chibi\n"
                 "Legacy chibi egg id: prodigychibi:stegosaurus_chibi_spawn_egg (hidden from creative)\n"

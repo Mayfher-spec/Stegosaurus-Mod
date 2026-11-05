@@ -37,6 +37,8 @@ public final class TalentScreen extends Screen {
 
     private final StegosaurusEntity stego;
     private int left, top, tab = 0, selected = 0;
+    /** Escala para que el panel quepa siempre en pantalla; las coordenadas internas son "virtuales" (divididas por sc). */
+    private float sc = 1.0F;
     private TexButton unlock, reset, sit;
     private final TexButton[] tabButtons = new TexButton[TABS.length];
     private final int[] nodeX = new int[Talents.ALL.length], nodeY = new int[Talents.ALL.length];
@@ -47,8 +49,9 @@ public final class TalentScreen extends Screen {
     }
 
     @Override protected void init() {
-        left = (this.width - W) / 2;
-        top = (this.height - H) / 2;
+        sc = Math.max(0.4F, Math.min(1.0F, Math.min((this.width - 8.0F) / W, (this.height - 8.0F) / H)));
+        left = (int) ((this.width / sc - W) / 2.0F);
+        top = (int) ((this.height / sc - H) / 2.0F);
         for (int i = 0; i < TABS.length; i++) {
             final int t = i;
             tabButtons[i] = this.addRenderableWidget(new TexButton(left + 118 + i * 76, top + 8, 74, 18, Component.literal(TABS[i]), b -> tab = t));
@@ -105,6 +108,10 @@ public final class TalentScreen extends Screen {
 
     @Override public void render(GuiGraphics g, int mx, int my, float pt) {
         this.renderBackground(g);
+        int rmx = mx, rmy = my;
+        mx = (int) (mx / sc); my = (int) (my / sc);
+        g.pose().pushPose();
+        g.pose().scale(sc, sc, 1.0F);
         drawPanel(g);
         renderInfoPanel(g);
         switch (tab) {
@@ -117,7 +124,8 @@ public final class TalentScreen extends Screen {
         unlock.visible = tab == 0;
         unlock.active = tab == 0 && prog().whyNotUnlock(selected) == null;
         super.render(g, mx, my, pt);
-        if (tab == 0) renderTooltip(g, mx, my);
+        g.pose().popPose();
+        if (tab == 0) renderTooltip(g, mx, my, rmx, rmy);
     }
 
     private void drawPanel(GuiGraphics g) {
@@ -306,6 +314,7 @@ public final class TalentScreen extends Screen {
     private void renderEquipment(GuiGraphics g) {
         renderText(g, "Equipamiento", List.of(
             "Silla: " + (stego.isSaddled() ? "equipada (clic para montar)" : "sin silla (clic con una silla en la mano)"),
+            "Montado: clic derecho = coletazo, V = embestida (talento).",
             "Montado, el talento Guardia absorbe dano por ti.",
             "",
             "Armaduras para el estegosaurio: aun no estan",
@@ -331,16 +340,17 @@ public final class TalentScreen extends Screen {
         }
     }
 
-    private void renderTooltip(GuiGraphics g, int mx, int my) {
+    private void renderTooltip(GuiGraphics g, int mx, int my, int rmx, int rmy) {
         for (int i = 0; i < Talents.ALL.length; i++) {
             if (mx >= nodeX[i] && mx < nodeX[i] + 30 && my >= nodeY[i] && my < nodeY[i] + 30) {
-                g.renderTooltip(this.font, Component.literal(Talents.ALL[i].name + "  " + prog().rank(i) + "/" + Talents.ALL[i].maxRank), mx, my);
+                g.renderTooltip(this.font, Component.literal(Talents.ALL[i].name + "  " + prog().rank(i) + "/" + Talents.ALL[i].maxRank), rmx, rmy);
                 return;
             }
         }
     }
 
     @Override public boolean mouseClicked(double mx, double my, int button) {
+        mx /= sc; my /= sc;
         if (tab == 0 && button == 0) {
             for (int i = 0; i < Talents.ALL.length; i++) {
                 if (mx >= nodeX[i] && mx < nodeX[i] + 30 && my >= nodeY[i] && my < nodeY[i] + 30) {
