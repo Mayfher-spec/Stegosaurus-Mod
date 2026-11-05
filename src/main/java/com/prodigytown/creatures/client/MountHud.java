@@ -47,8 +47,8 @@ public final class MountHud {
         Font font = mc.font;
 
         // ---- marco con la vida (encima de la barra de objetos); textura 512x171, interior x148..451 y83..118
-        final int fw = 196, fh = Math.round(fw * 171.0F / 512.0F);
-        int fx = w / 2 - fw / 2, fy = h - 62 - fh;
+        final int fw = 124, fh = Math.round(fw * 171.0F / 512.0F);
+        int fx = w / 2 - fw / 2, fy = h - 54 - fh;
         float k = fw / 512.0F;
         int ix = fx + Math.round(148 * k), iw = Math.round((451 - 148) * k), iy = fy + Math.round(83 * k), ih = Math.round((118 - 83) * k);
         float hp = Math.max(0.0F, s.getHealth()), max = Math.max(1.0F, s.getMaxHealth());
@@ -66,17 +66,24 @@ public final class MountHud {
             }
         }
         String num = Math.round(hp) + " / " + Math.round(max);
-        g.drawCenteredString(font, num, ix + iw / 2, iy + (ih - 8) / 2 + 1, 0xFFFFFFFF);
+        g.pose().pushPose();
+        g.pose().translate(ix + iw / 2.0F, iy + (ih - 6.0F) / 2.0F + 0.5F, 0.0F);
+        g.pose().scale(0.72F, 0.72F, 1.0F);
+        g.drawCenteredString(font, num, 0, 0, 0xFFFFFFFF);
+        g.pose().popPose();
         String name = s.hasCustomName() ? s.getCustomName().getString() : "Estegosaurio";
-        g.drawCenteredString(font, name + "  " + Component.translatable("prodigycreatures.hud.level").getString() + s.getProgress().level(),
-            fx + fw / 2 + 14, fy - 10, 0xFFF2D27A);
+        g.pose().pushPose();
+        g.pose().translate(fx + fw / 2.0F + 9.0F, fy - 1.0F, 0.0F);
+        g.pose().scale(0.72F, 0.72F, 1.0F);
+        g.drawCenteredString(font, name + "  " + Component.translatable("prodigycreatures.hud.level").getString() + s.getProgress().level(), 0, 0, 0xFFF2D27A);
+        g.pose().popPose();
 
         // ---- poderes: iconos circulares a la derecha, con barrido de recarga (mordida grande, coletazo y embestida pequenos)
-        String[] keys = {"Clic izq", "Clic der", ClientKeys.CHARGE.getTranslatedKeyMessage().getString()};
+        String[] keys = {"Izq", "Der", ClientKeys.CHARGE.getTranslatedKeyMessage().getString()};
         int[] which = {2, 1, 0};
-        int[] cx = {w - 50, w - 98, w - 80};
-        int[] cy = {h - 70, h - 54, h - 104};
-        int[] rad = {18, 14, 14};
+        int[] cx = {w - 19, w - 48, w - 42};
+        int[] cy = {h - 21, h - 14, h - 41};
+        int[] rad = {13, 10, 10};
         for (int i = 0; i < 3; i++) {
             int r = rad[i], x = cx[i] - r, y = cy[i] - r;
             float left = s.cooldownLeft(which[i]);
@@ -99,12 +106,20 @@ public final class MountHud {
                         }
                     }
                 }
-                g.drawCenteredString(font, Integer.toString(s.cooldownSeconds(which[i])), cx[i], cy[i] - 4, 0xFFFFFFFF);
+                g.pose().pushPose();
+                g.pose().translate(cx[i], cy[i] - 3.0F, 0.0F);
+                g.pose().scale(0.85F, 0.85F, 1.0F);
+                g.drawCenteredString(font, Integer.toString(s.cooldownSeconds(which[i])), 0, 0, 0xFFFFFFFF);
+                g.pose().popPose();
             }
+            // etiqueta de la tecla en la esquina inferior derecha del circulo
+            float kw = font.width(keys[i]) * 0.55F;
+            int bx2 = cx[i] + r - 3, by2 = cy[i] + r - 5;
+            g.fill((int) (bx2 - kw / 2 - 1), by2 - 1, (int) (bx2 + kw / 2 + 2), by2 + 5, 0xCC000000);
             g.pose().pushPose();
-            g.pose().translate(cx[i], cy[i] + r + 1, 0);
-            g.pose().scale(0.7F, 0.7F, 1.0F);
-            g.drawCenteredString(font, keys[i], 0, 0, 0xFFD8D8D8);
+            g.pose().translate(bx2 - kw / 2.0F, by2, 0.0F);
+            g.pose().scale(0.55F, 0.55F, 1.0F);
+            g.drawString(font, keys[i], 0, 0, 0xFFF2D27A, false);
             g.pose().popPose();
         }
     }

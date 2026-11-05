@@ -28,15 +28,24 @@ import java.util.List;
 public final class TalentScreen extends Screen {
     private static final ResourceLocation TEX = TexButton.TEX;
     private static final int W = 448, H = 252;
-    private static final ResourceLocation BG = new ResourceLocation(com.prodigytown.creatures.ProdigyCreatures.MODID, "textures/gui/talent_bg.png");
+    /** Fondo por variante (0 cibernetico, 1 dorado, 2 magma, 3 glacial, 4 natural). */
+    private static final ResourceLocation[] BG = new ResourceLocation[5];
+    static { for (int i = 0; i < 5; i++) BG[i] = new ResourceLocation(com.prodigytown.creatures.ProdigyCreatures.MODID, "textures/gui/talent_bg_" + i + ".png"); }
+    private static final int[] ACCENT = {0xFF4FE6FF, 0xFFFFC83A, 0xFFFF7A3A, 0xFFB4ECFF, 0xFFFFD35A};
+    private static final int[] EDGE = {0xFF3CBEDC, 0xFFC88C1E, 0xFFD24A28, 0xFF78AAC8, 0xFF8A6A24};
+    private static final int[] XP_HI = {0xFF40D8FF, 0xFFFFC83A, 0xFFFF6A30, 0xFFA8E8FF, 0xFFB060FF};
+    private static final int[] XP_LO = {0xFF1478A8, 0xFFB87812, 0xFF9A2010, 0xFF5890B8, 0xFF6A2CC0};
+    private int GOLD = 0xFFFFD35A, VI = 4;
+    private boolean ultSel = false;
+    private HitButton ult;
     /** Lado de los nodos del arbol sobre el fondo (los sprites del atlas son de 30 px). */
-    private static final int NS = 22;
+    private static final int NS = 20;
     private static final int[] BRANCH_COLOR = {0xFFE0605C, 0xFF58B0EE, 0xFF6CCB6C};
     private static final String[] BRANCH_NAME = {"Combate", "Defensa", "Soporte"};
     private static final String[] BRANCH_SUB = {"Ofensiva", "Proteccion", "Utilidad"};
     private static final String[] VARIANT_NAME = {"Cibernetico", "Dorado", "Magma", "Glacial", "Natural"};
     private static final String[] TABS = {"Habilidades", "Resumen", "Equipamiento", "Variantes"};
-    private static final int GOLD = 0xFFFFD35A, TEXT = 0xFFEDEDED, DIM = 0xFF9AA0A6;
+    private static final int TEXT = 0xFFEDEDED, DIM = 0xFF9AA0A6;
 
     private final StegosaurusEntity stego;
     private int left, top, tab = 0, selected = 0;
@@ -63,29 +72,32 @@ public final class TalentScreen extends Screen {
 
     @Override protected void init() {
         sc = Math.max(0.4F, Math.min(1.0F, Math.min((this.width - 8.0F) / W, (this.height - 8.0F) / H)));
+        VI = Math.max(0, Math.min(4, stego.getVariant()));
+        GOLD = ACCENT[VI];
         left = (int) ((this.width / sc - W) / 2.0F);
         top = (int) ((this.height / sc - H) / 2.0F);
         for (int i = 0; i < TABS.length; i++) {
             final int t = i;
-            tabButtons[i] = this.addRenderableWidget(new TexButton(left + 146 + i * 61, top + 6, 59, 15, Component.literal(TABS[i]), b -> tab = t));
+            tabButtons[i] = this.addRenderableWidget(new TexButton(left + 134 + i * 64, top + 6, 62, 15, Component.literal(TABS[i]), b -> tab = t));
         }
         this.addRenderableWidget(new HitButton(left + 426, top + 4, 18, 18, b -> this.onClose()));
+        ult = this.addRenderableWidget(new HitButton(left + 196, top + 178, 43, 34, b -> ultSel = true));
         unlock = this.addRenderableWidget(new TexButton(left + 343, top + 191, 90, 15, Component.literal("Desbloquear"), b ->
             ModNetwork.CHANNEL.sendToServer(new ModNetwork.TalentAction(stego.getId(), 0, selected))));
         unlock.gold = true;
         reset = this.addRenderableWidget(new HitButton(left + 13, top + 214, 76, 13, b ->
             ModNetwork.CHANNEL.sendToServer(new ModNetwork.TalentAction(stego.getId(), 1, 0))));
-        sit = this.addRenderableWidget(new TexButton(left + 124, top + 146, 100, 14, Component.literal("Sentar / Levantar"), b ->
+        sit = this.addRenderableWidget(new TexButton(left + 124, top + 128, 110, 14, Component.literal("Sentar / Levantar"), b ->
             ModNetwork.CHANNEL.sendToServer(new ModNetwork.TalentAction(stego.getId(), 2, 0))));
-        nameBox = this.addRenderableWidget(new net.minecraft.client.gui.components.EditBox(this.font, left + 124, top + 72, 130, 14, Component.literal("Nombre")));
+        nameBox = this.addRenderableWidget(new net.minecraft.client.gui.components.EditBox(this.font, left + 124, top + 46, 200, 14, Component.literal("Nombre")));
         nameBox.setMaxLength(32);
         nameBox.setValue(stego.hasCustomName() ? stego.getCustomName().getString() : "");
         nameBox.setHint(Component.literal("Nombre del estegosaurio"));
-        rename = this.addRenderableWidget(new TexButton(left + 258, top + 72, 70, 14, Component.literal("Poner nombre"), b -> sendName()));
+        rename = this.addRenderableWidget(new TexButton(left + 328, top + 46, 84, 14, Component.literal("Poner nombre"), b -> sendName()));
         rename.gold = true;
-        dropSaddle = this.addRenderableWidget(new TexButton(left + 124, top + 128, 100, 14, Component.literal("Quitar silla"), b ->
+        dropSaddle = this.addRenderableWidget(new TexButton(left + 124, top + 110, 110, 14, Component.literal("Quitar silla"), b ->
             ModNetwork.CHANNEL.sendToServer(new ModNetwork.TalentAction(stego.getId(), 3, 0))));
-        dropArmor = this.addRenderableWidget(new TexButton(left + 228, top + 128, 100, 14, Component.literal("Quitar armadura"), b ->
+        dropArmor = this.addRenderableWidget(new TexButton(left + 240, top + 110, 110, 14, Component.literal("Quitar armadura"), b ->
             ModNetwork.CHANNEL.sendToServer(new ModNetwork.TalentAction(stego.getId(), 4, 0))));
         layoutNodes();
     }
@@ -119,7 +131,7 @@ public final class TalentScreen extends Screen {
             int[] sl = slot(t.id);
             int cx = left + new int[]{146, 219, 293}[t.branch];
             nodeX[i] = cx + sl[0] * 14 - NS / 2;
-            nodeY[i] = top + 82 + sl[1] * 22;
+            nodeY[i] = top + 86 + sl[1] * 20;
         }
     }
 
@@ -158,13 +170,16 @@ public final class TalentScreen extends Screen {
         mx = (int) (mx / sc); my = (int) (my / sc);
         g.pose().pushPose();
         g.pose().scale(sc, sc, 1.0F);
-        g.blit(BG, left, top, W, H, 0.0F, 0.0F, 1568, 882, 1568, 882);
+        g.blit(BG[VI], left, top, W, H, 0.0F, 0.0F, 1568, 882, 1568, 882);
         renderInfoPanel(g);
+        renderPortrait(g, mx, my);
         if (tab == 0) {
             renderTree(g);
         } else {
-            g.fill(left + 114, top + 60, left + 332, top + 184, 0xEE0C1418);
-            g.renderOutline(left + 114, top + 60, 218, 124, 0xFF8A6A24);
+            g.fill(left + 112, top + 27, left + 442, top + 251, 0xF20B1016);
+            g.fillGradient(left + 113, top + 28, left + 441, top + 60, (EDGE[VI] & 0x00FFFFFF) | 0x30000000, 0x00000000);
+            g.renderOutline(left + 112, top + 27, 330, 224, EDGE[VI]);
+            g.renderOutline(left + 114, top + 29, 326, 220, (EDGE[VI] & 0x00FFFFFF) | 0x66000000);
             switch (tab) {
                 case 1 -> renderSummary(g);
                 case 2 -> renderEquipment(g);
@@ -173,12 +188,13 @@ public final class TalentScreen extends Screen {
         }
         for (int i = 0; i < tabButtons.length; i++) tabButtons[i].gold = i == tab;
         unlock.visible = tab == 0;
+        ult.visible = tab == 0;
         boolean eq = tab == 2;
         nameBox.visible = eq; nameBox.active = eq; rename.visible = eq; sit.visible = eq;
         dropSaddle.visible = eq; dropSaddle.active = eq && stego.isSaddled();
         dropArmor.visible = eq; dropArmor.active = eq && stego.getArmorTier() > 0;
         if (!eq && nameBox.isFocused()) nameBox.setFocused(false);
-        unlock.active = tab == 0 && prog().whyNotUnlock(selected) == null;
+        unlock.active = tab == 0 && !ultSel && prog().whyNotUnlock(selected) == null;
         super.render(g, mx, my, pt);
         g.pose().popPose();
         if (tab == 0) renderTooltip(g, mx, my, rmx, rmy);
@@ -196,8 +212,8 @@ public final class TalentScreen extends Screen {
         g.fill(bx, by, bx + bw, by + bh, 0xFF1A1030);
         int need = p.xpToNext();
         int fill = need <= 0 ? bw : Math.min(bw, (int) (bw * (p.xp() / (float) need)));
-        if (fill > 0) { g.fillGradient(bx, by, bx + fill, by + bh, 0xFFB060FF, 0xFF6A2CC0); g.fill(bx, by, bx + fill, by + 1, 0x66FFFFFF); }
-        g.renderOutline(bx - 1, by - 1, bw + 2, bh + 2, 0xFF8A6A24);
+        if (fill > 0) { g.fillGradient(bx, by, bx + fill, by + bh, XP_HI[VI], XP_LO[VI]); g.fill(bx, by, bx + fill, by + 1, 0x66FFFFFF); }
+        g.renderOutline(bx - 1, by - 1, bw + 2, bh + 2, EDGE[VI]);
         String xs = need <= 0 ? "Nivel maximo" : "EXP " + p.xp() + " / " + need;
         text(g, xs, bx + (bw - this.font.width(xs) * 0.62F) / 2.0F, by + 1, 0.62F, 0xFFFFFFFF, true);
         // estadisticas
@@ -248,10 +264,11 @@ public final class TalentScreen extends Screen {
                 g.fill(x + 3, y + 3, x + NS - 3, y + NS - 3, 0x99000000);
                 g.blit(TEX, x + 7, y + 6, 8, 10, 40.0F, 30.0F, 8, 10, 256, 256);
             }
-            if (i == selected) g.blit(TEX, x - 2, y - 2, NS + 4, NS + 4, 0.0F, 30.0F, 34, 34, 256, 256);
+            if (i == selected && !ultSel) g.blit(TEX, x - 2, y - 2, NS + 4, NS + 4, 0.0F, 30.0F, 34, 34, 256, 256);
             String rk = p.rank(i) + "/" + t.maxRank;
             text(g, rk, x + NS - this.font.width(rk) * 0.6F + 1, y + NS - 5, 0.6F, owned ? (maxed ? GOLD : TEXT) : DIM, true);
         }
+        if (ultSel) g.renderOutline(left + 195, top + 177, 45, 36, GOLD);
         // progreso del arbol
         int total = Talents.ALL.length, got = p.talentsUnlocked();
         int bx = left + 175, by = top + 239, bw = 102, bh = 6;
@@ -269,6 +286,38 @@ public final class TalentScreen extends Screen {
 
     private void renderDetail(GuiGraphics g) {
         ProdigyProgress p = prog();
+        if (ultSel) {
+            int ux = left + 343, uy = top + 45, uw = 90;
+            g.pose().pushPose();
+            g.pose().translate(ux + 1.0F, uy + 1.0F, 0.0F);
+            g.pose().scale(1.4F, 1.4F, 1.0F);
+            g.renderItem(new ItemStack(Items.NETHER_STAR), 0, 0);
+            g.pose().popPose();
+            text(g, "Habilidad", ux + 28, uy + 3, 0.85F, 0xFFC27BFF, false);
+            text(g, "Definitiva", ux + 28, uy + 12, 0.85F, 0xFFC27BFF, false);
+            text(g, "Rango 0 / 1", ux, uy + 28, 0.85F, GOLD, false);
+            int uy2 = uy + 40;
+            for (String l : new String[]{"Se desbloquea al completar las 3 ramas principales (Combate, Defensa y Soporte)."}) {
+                for (FormattedCharSequence line : this.font.split(Component.literal(l), uw * 10 / 8)) {
+                    g.pose().pushPose(); g.pose().translate(ux, uy2, 0.0F); g.pose().scale(0.8F, 0.8F, 1.0F);
+                    g.drawString(this.font, line, 0, 0, TEXT, false); g.pose().popPose(); uy2 += 8;
+                }
+            }
+            uy2 += 4;
+            for (FormattedCharSequence line : this.font.split(Component.literal("Aun no esta implementada en esta version."), uw * 10 / 8)) {
+                g.pose().pushPose(); g.pose().translate(ux, uy2, 0.0F); g.pose().scale(0.8F, 0.8F, 1.0F);
+                g.drawString(this.font, line, 0, 0, 0xFFE0B04C, false); g.pose().popPose(); uy2 += 8;
+            }
+            int yy = Math.max(uy2 + 3, top + 118);
+            text(g, "Requisitos", ux, yy, 0.9F, GOLD, false); yy += 10;
+            String[] bn = {"Combate", "Defensa", "Soporte"};
+            for (int b = 0; b < 3; b++) {
+                int done = 0, tot = 0;
+                for (int i = 0; i < Talents.ALL.length; i++) if (Talents.ALL[i].branch == b) { tot++; if (p.rank(i) >= Talents.ALL[i].maxRank) done++; }
+                yy = req(g, ux, yy, done >= tot, bn[b] + " " + done + "/" + tot);
+            }
+            return;
+        }
         Talent t = Talents.ALL[selected];
         int x = left + 343, y = top + 45, w = 90;
         // icono
@@ -328,40 +377,54 @@ public final class TalentScreen extends Screen {
         return y + 8;
     }
 
+    /** Estegosaurio real en el retrato (con su variante, silla y armadura), siguiendo al raton. */
+    private void renderPortrait(GuiGraphics g, int mx, int my) {
+        int x0 = left + 15, y0 = top + 36, x1 = left + 97, y1 = top + 103;
+        g.enableScissor((int) (x0 * sc), (int) (y0 * sc), (int) (x1 * sc), (int) (y1 * sc));
+        net.minecraft.client.gui.screens.inventory.InventoryScreen.renderEntityInInventoryFollowsMouse(g, left + 56, top + 100, 11,
+            (float) (left + 56 - mx), (float) (top + 62 - my), stego);
+        g.disableScissor();
+    }
+
     private void renderSummary(GuiGraphics g) {
         ProdigyProgress p = prog();
-        text(g, "Resumen", left + 122, top + 65, 1.0F, GOLD, true);
-        text(g, "Nivel " + p.level() + " (max. 100)   Puntos: ganados " + p.pointsEarned() + ", gastados " + p.pointsSpent() + ", libres " + p.pointsAvailable(), left + 122, top + 77, 0.72F, TEXT, false);
-        text(g, "Talentos desbloqueados:", left + 122, top + 89, 0.8F, DIM, false);
+        int x = left + 124;
+        text(g, "Resumen", x, top + 34, 1.0F, GOLD, true);
+        text(g, "Nivel " + p.level() + " (max. 100)", x, top + 48, 0.85F, TEXT, false);
+        text(g, "Puntos: ganados " + p.pointsEarned() + ", gastados " + p.pointsSpent() + ", libres " + p.pointsAvailable(), x, top + 59, 0.85F, TEXT, false);
+        text(g, "Talentos desbloqueados:", x, top + 74, 0.85F, GOLD, false);
         int n = 0;
         for (int i = 0; i < Talents.ALL.length; i++) if (p.rank(i) > 0) {
             int col = n / 8, row = n % 8;
-            text(g, "- " + shorten(Talents.ALL[i].name, 95) + " " + p.rank(i) + "/" + Talents.ALL[i].maxRank, left + 122 + col * 102, top + 100 + row * 9, 0.78F, TEXT, false);
+            text(g, "- " + shorten(Talents.ALL[i].name, 100) + " " + p.rank(i) + "/" + Talents.ALL[i].maxRank, x + col * 106, top + 86 + row * 10, 0.8F, TEXT, false);
             n++;
         }
-        if (n == 0) text(g, "(ninguno)", left + 122, top + 100, 0.8F, TEXT, false);
+        if (n == 0) text(g, "(ninguno)", x, top + 86, 0.8F, DIM, false);
     }
 
     private static final String[] ARMOR_NAME = {"sin armadura", "hierro", "oro", "diamante", "netherita"};
 
     private void renderEquipment(GuiGraphics g) {
         int x = left + 124;
-        text(g, "Nombre", x, top + 63, 1.0F, GOLD, true);
-        text(g, "Equipamiento", x, top + 92, 1.0F, GOLD, true);
+        text(g, "Nombre", x, top + 34, 1.0F, GOLD, true);
+        text(g, "Equipamiento", x, top + 72, 1.0F, GOLD, true);
         int t = stego.getArmorTier();
-        text(g, "Silla: " + (stego.isSaddled() ? "equipada" : "sin silla (clic con una silla en la mano)"), x, top + 103, 0.8F, TEXT, false);
+        text(g, "Silla: " + (stego.isSaddled() ? "equipada" : "sin silla (clic con una silla en la mano)"), x, top + 84, 0.85F, TEXT, false);
         text(g, "Armadura: " + ARMOR_NAME[Math.max(0, Math.min(4, t))] + (t > 0
-            ? "  (+" + StegosaurusEntity.ARMOR_VALUE[t] + " armadura" + (StegosaurusEntity.TOUGHNESS_VALUE[t] > 0 ? ", +" + StegosaurusEntity.TOUGHNESS_VALUE[t] + " dureza" : "") + ")" : ""), x, top + 114, 0.8F, TEXT, false);
-        text(g, "Armadura: clic derecho sobre el estegosaurio con ella en la mano.", x, top + 166, 0.7F, DIM, false);
-        text(g, "Montado: clic izq. mordida, clic der. coletazo, V embestida.", x, top + 175, 0.7F, DIM, false);
+            ? "  (+" + StegosaurusEntity.ARMOR_VALUE[t] + " armadura" + (StegosaurusEntity.TOUGHNESS_VALUE[t] > 0 ? ", +" + StegosaurusEntity.TOUGHNESS_VALUE[t] + " dureza" : "") + ")" : ""), x, top + 95, 0.85F, TEXT, false);
+        text(g, "Armadura: clic derecho sobre el estegosaurio con ella en la mano.", x, top + 156, 0.75F, DIM, false);
+        text(g, "Montado: clic izq. mordida, clic der. coletazo, V embestida.", x, top + 166, 0.75F, DIM, false);
+        text(g, "Tambien puedes ponerle nombre con una etiqueta (name tag).", x, top + 176, 0.75F, DIM, false);
     }
 
     private void renderVariants(GuiGraphics g) {
-        text(g, "Variantes", left + 122, top + 65, 1.0F, GOLD, true);
-        text(g, "Variante actual: " + VARIANT_NAME[Math.max(0, Math.min(4, stego.getVariant()))], left + 122, top + 80, 0.85F, TEXT, false);
-        text(g, "Pasivas por variante y habilidad definitiva:", left + 122, top + 98, 0.8F, DIM, false);
-        text(g, "aun no estan implementadas en esta version.", left + 122, top + 108, 0.8F, DIM, false);
-        text(g, "Hoy la variante Magma es inmune al fuego.", left + 122, top + 122, 0.8F, TEXT, false);
+        int x = left + 124;
+        text(g, "Variantes", x, top + 34, 1.0F, GOLD, true);
+        text(g, "Variante actual: " + VARIANT_NAME[VI], x, top + 50, 0.9F, TEXT, false);
+        text(g, "La interfaz y el HUD usan los colores de tu variante.", x, top + 62, 0.8F, DIM, false);
+        text(g, "Pasivas por variante y habilidad definitiva:", x, top + 82, 0.85F, DIM, false);
+        text(g, "aun no estan implementadas en esta version.", x, top + 92, 0.85F, DIM, false);
+        text(g, "Hoy la variante Magma es inmune al fuego.", x, top + 108, 0.85F, TEXT, false);
     }
 
     private void renderTooltip(GuiGraphics g, int mx, int my, int rmx, int rmy) {
@@ -379,6 +442,7 @@ public final class TalentScreen extends Screen {
             for (int i = 0; i < Talents.ALL.length; i++) {
                 if (mx >= nodeX[i] && mx < nodeX[i] + NS && my >= nodeY[i] && my < nodeY[i] + NS) {
                     selected = i;
+                    ultSel = false;
                     return true;
                 }
             }
