@@ -290,7 +290,9 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
                 || biome.is(net.minecraft.world.level.biome.Biomes.SNOWY_SLOPES) || biome.is(net.minecraft.world.level.biome.Biomes.FROZEN_PEAKS)) bv = CYBERNETIC;
             setVariant(com.prodigytown.creatures.egg.StegosaurusEggs.rollWild(this.random, bv, natural));
         }
-        assignSex();
+        if (reason == net.minecraft.world.entity.MobSpawnType.STRUCTURE) setFemale(false); // guardianes de nido: siempre machos
+        else if (!this.isTame() && reason != net.minecraft.world.entity.MobSpawnType.SPAWN_EGG && reason != net.minecraft.world.entity.MobSpawnType.COMMAND) setFemale(true); // errantes: siempre hembras
+        else assignSex();
         return result;
     }
 
@@ -626,9 +628,9 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
 
     @Override protected void dropCustomDeathLoot(DamageSource source, int looting, boolean recentlyHit) {
         super.dropCustomDeathLoot(source, looting, recentlyHit);
-        if (!this.isTame() && isFemale() && recentlyHit) { // la hembra silvestre derrotada deja un huevo; su raza influye en la del huevo
+        if (!this.isTame() && isFemale() && guardPos == null && recentlyHit && this.random.nextBoolean()) { // 50 %: errante hembra // la hembra silvestre derrotada deja un huevo; su raza influye en la del huevo
             this.spawnAtLocation(new ItemStack(ProdigyCreatures.EGG_ITEMS.get(
-                com.prodigytown.creatures.egg.StegosaurusEggs.rollVariant(this.random, getVariant())).get()));
+                com.prodigytown.creatures.egg.StegosaurusEggs.rollVariant(this.random)).get()));
         }
         if (isSaddled()) this.spawnAtLocation(Items.SADDLE);
         if (getArmorTier() > 0) this.spawnAtLocation(new ItemStack(ProdigyCreatures.ARMOR_ITEMS.get(getArmorTier() - 1).get()));

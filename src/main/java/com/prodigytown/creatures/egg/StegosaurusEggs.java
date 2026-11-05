@@ -12,23 +12,18 @@ public final class StegosaurusEggs {
     public static final String[] NAMES = {"cybernetic", "golden", "magma", "glacial", "natural"};
     /** Mezcla base (%) por variante adulta: cibernetico 18, dorado 15, magma 12, esmeralda 5, natural 50. */
     private static final int[] BASE = {18, 15, 12, 5, 50};
-    /** Puntos de herencia que suma cada progenitor a su propia raza. */
-    private static final int HERITAGE = 20;
 
-    /** Raza del huevo: mezcla base + 20 puntos por cada progenitor conocido (-1 = desconocido), normalizado. */
-    public static int rollVariant(RandomSource rnd, int mother, int father) {
-        double[] w = new double[5];
-        double total = 0.0;
-        for (int i = 0; i < 5; i++) w[i] = BASE[i];
-        if (mother >= 0 && mother < 5) w[mother] += HERITAGE;
-        if (father >= 0 && father < 5) w[father] += HERITAGE;
-        for (double d : w) total += d;
-        double r = rnd.nextDouble() * total, acc = 0.0;
-        for (int i = 0; i < 5; i++) { acc += w[i]; if (r < acc) return i; }
+    /** Raza del huevo que suelta una errante: mezcla fija 50/18/15/12/5, sin herencia. */
+    public static int rollVariant(RandomSource rnd) {
+        int r = rnd.nextInt(100), acc = 0;
+        for (int i = 0; i < 5; i++) { acc += BASE[i]; if (r < acc) return i; }
         return 4;
     }
 
-    public static int rollVariant(RandomSource rnd, int motherVariant) { return rollVariant(rnd, motherVariant, -1); }
+    /** Huevo de un nido silvestre: casi siempre el del tipo de nido; ~1 % sale otra raza (la rareza es encontrarlo). */
+    public static int nestEgg(RandomSource rnd, int nestVariant) {
+        return rnd.nextInt(100) == 0 ? rollVariant(rnd) : nestVariant;
+    }
 
     /** Raza de un adulto silvestre: bonus = raza propia del bioma (20 %), -1 si el bioma solo da natural; sin esmeralda salvo bioma esmeralda. */
     public static int rollWild(RandomSource rnd, int biomeVariant, boolean naturalOnly) {

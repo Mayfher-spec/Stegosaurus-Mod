@@ -1,7 +1,10 @@
 {
   "type": "forge:add_features",
   "biomes": [
-    "minecraft:desert"
+    "minecraft:desert",
+    "minecraft:savanna",
+    "minecraft:savanna_plateau",
+    "minecraft:windswept_savanna"
   ],
   "features": "prodigycreatures:desert_nest",
   "step": "surface_structures"

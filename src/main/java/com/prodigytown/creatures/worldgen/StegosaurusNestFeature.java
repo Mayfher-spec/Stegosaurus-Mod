@@ -31,19 +31,19 @@ public final class StegosaurusNestFeature extends Feature<NoneFeatureConfigurati
         if (!level.getBlockState(pos.above()).isAir() || !level.getBlockState(pos.above(2)).isAir()) return false;
 
         boolean deep = pos.getY() < 0;
-        boolean desert = !deep && level.getBiome(pos).is(Biomes.DESERT);
+        boolean desert = !deep && (level.getBiome(pos).is(Biomes.DESERT) || level.getBiome(pos).is(net.minecraft.tags.BiomeTags.IS_SAVANNA));
         int eggVariant;
         int[] parents;
         if (deep) {
-            eggVariant = StegosaurusEntity.GLACIAL; // esmeralda
+            eggVariant = com.prodigytown.creatures.egg.StegosaurusEggs.nestEgg(rnd, StegosaurusEntity.GLACIAL); // esmeralda
             parents = new int[3 + rnd.nextInt(2)];
             java.util.Arrays.fill(parents, StegosaurusEntity.GLACIAL);
         } else if (desert) {
-            eggVariant = rnd.nextInt(100) < 15 ? StegosaurusEntity.GOLDEN : StegosaurusEntity.NATURAL;
+            eggVariant = rnd.nextInt(100) < 15 ? StegosaurusEntity.GOLDEN : com.prodigytown.creatures.egg.StegosaurusEggs.nestEgg(rnd, StegosaurusEntity.NATURAL);
             int[] pool = {StegosaurusEntity.GOLDEN, StegosaurusEntity.NATURAL, StegosaurusEntity.MAGMA, StegosaurusEntity.NATURAL};
             parents = new int[]{pool[rnd.nextInt(pool.length)], pool[rnd.nextInt(pool.length)]};
         } else {
-            eggVariant = StegosaurusEntity.NATURAL;
+            eggVariant = com.prodigytown.creatures.egg.StegosaurusEggs.nestEgg(rnd, StegosaurusEntity.NATURAL);
             parents = new int[]{StegosaurusEntity.NATURAL, StegosaurusEntity.NATURAL};
         }
 
