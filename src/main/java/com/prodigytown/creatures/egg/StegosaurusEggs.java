@@ -20,9 +20,11 @@ public final class StegosaurusEggs {
         return 4;
     }
 
-    /** Huevo de un nido silvestre: casi siempre el del tipo de nido; ~1 % sale otra raza (la rareza es encontrarlo). */
+    /** Huevo de un nido silvestre: 99 % el del tipo de nido; 1 % una raza distinta elegida al azar (todas igual de probables). */
     public static int nestEgg(RandomSource rnd, int nestVariant) {
-        return rnd.nextInt(100) == 0 ? rollVariant(rnd) : nestVariant;
+        if (rnd.nextInt(100) != 0) return nestVariant;
+        int o = rnd.nextInt(4);
+        return o >= nestVariant ? o + 1 : o;
     }
 
     /** Raza de un adulto silvestre: bonus = raza propia del bioma (20 %), -1 si el bioma solo da natural; sin esmeralda salvo bioma esmeralda. */

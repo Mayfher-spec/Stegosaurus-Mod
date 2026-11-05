@@ -31,17 +31,24 @@ public final class StegosaurusNestFeature extends Feature<NoneFeatureConfigurati
         if (!level.getBlockState(pos.above()).isAir() || !level.getBlockState(pos.above(2)).isAir()) return false;
 
         boolean deep = pos.getY() < 0;
-        boolean desert = !deep && (level.getBiome(pos).is(Biomes.DESERT) || level.getBiome(pos).is(net.minecraft.tags.BiomeTags.IS_SAVANNA));
+        var biome = level.getBiome(pos);
+        // raza propia del bioma y probabilidad de que el huevo sea de esa raza (el resto es natural)
+        int biomeRace = -1, biomeChance = 0;
+        if (!deep) {
+            if (biome.is(Biomes.DESERT)) { biomeRace = StegosaurusEntity.GOLDEN; biomeChance = 15; }
+            else if (biome.is(net.minecraft.tags.BiomeTags.IS_SAVANNA) || biome.is(net.minecraft.tags.BiomeTags.IS_BADLANDS)) { biomeRace = StegosaurusEntity.MAGMA; biomeChance = 20; }
+            else if (biome.is(Biomes.SNOWY_PLAINS) || biome.is(Biomes.SNOWY_TAIGA) || biome.is(Biomes.ICE_SPIKES) || biome.is(Biomes.GROVE) || biome.is(Biomes.SNOWY_SLOPES)) { biomeRace = StegosaurusEntity.CYBERNETIC; biomeChance = 20; }
+        }
         int eggVariant;
         int[] parents;
         if (deep) {
             eggVariant = com.prodigytown.creatures.egg.StegosaurusEggs.nestEgg(rnd, StegosaurusEntity.GLACIAL); // esmeralda
             parents = new int[3 + rnd.nextInt(2)];
             java.util.Arrays.fill(parents, StegosaurusEntity.GLACIAL);
-        } else if (desert) {
-            eggVariant = rnd.nextInt(100) < 15 ? StegosaurusEntity.GOLDEN : com.prodigytown.creatures.egg.StegosaurusEggs.nestEgg(rnd, StegosaurusEntity.NATURAL);
-            int[] pool = {StegosaurusEntity.GOLDEN, StegosaurusEntity.NATURAL, StegosaurusEntity.MAGMA, StegosaurusEntity.NATURAL};
-            parents = new int[]{pool[rnd.nextInt(pool.length)], pool[rnd.nextInt(pool.length)]};
+        } else if (biomeRace >= 0) {
+            eggVariant = rnd.nextInt(100) < biomeChance ? biomeRace : StegosaurusEntity.NATURAL;
+            int[] pool = {biomeRace, StegosaurusEntity.NATURAL};
+            parents = new int[]{pool[rnd.nextInt(2)], pool[rnd.nextInt(2)]};
         } else {
             eggVariant = com.prodigytown.creatures.egg.StegosaurusEggs.nestEgg(rnd, StegosaurusEntity.NATURAL);
             parents = new int[]{StegosaurusEntity.NATURAL, StegosaurusEntity.NATURAL};

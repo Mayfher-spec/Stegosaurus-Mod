@@ -4,7 +4,15 @@
     "minecraft:desert",
     "minecraft:savanna",
     "minecraft:savanna_plateau",
-    "minecraft:windswept_savanna"
+    "minecraft:windswept_savanna",
+    "minecraft:badlands",
+    "minecraft:eroded_badlands",
+    "minecraft:wooded_badlands",
+    "minecraft:snowy_plains",
+    "minecraft:snowy_taiga",
+    "minecraft:ice_spikes",
+    "minecraft:grove",
+    "minecraft:snowy_slopes"
   ],
   "features": "prodigycreatures:desert_nest",
   "step": "surface_structures"
