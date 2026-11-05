@@ -98,6 +98,8 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
     }
 
     private static final EntityDataAccessor<Integer> VARIANT = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.INT);
+    /** Ticks restantes de la embestida (para animar en el cliente). */
+    private static final EntityDataAccessor<Integer> CHARGE_LEFT = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> ARMOR_TIER = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.INT);
     /** Recargas visibles en el HUD: (tick de juego en que terminan << 12) | duracion en ticks. */
     private static final EntityDataAccessor<Long> CD_CHARGE = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.LONG);
@@ -134,8 +136,22 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
     public float gaitV = 0.0F, gaitPhase = 0.0F;
     /** 0..1: cuanto se pliegan las placas dorsales centrales mientras alguien va montado (solo visual). */
     public float plateFold = 0.0F;
+    /** 0..1 suavizado: pose de embestida (solo visual, cliente). */
+    public float chargeAnim = 0.0F, chargeAnimO = 0.0F;
+    public boolean isCharging() { return this.entityData.get(CHARGE_LEFT) > 0; }
     private void updateGait() {
         plateFold += ((this.isVehicle() ? 1.0F : 0.0F) - plateFold) * 0.12F;
+        chargeAnimO = chargeAnim;
+        chargeAnim += ((isCharging() ? 1.0F : 0.0F) - chargeAnim) * 0.35F;
+        if (chargeAnim > 0.4F && this.onGround()) { // polvo y chispas bajo las patas
+            for (int i = 0; i < 3; i++) {
+                double ox = (this.random.nextDouble() - 0.5) * 3.0, oz = (this.random.nextDouble() - 0.5) * 3.0;
+                this.level().addParticle(net.minecraft.core.particles.ParticleTypes.CAMPFIRE_COSY_SMOKE, this.getX() + ox, this.getY() + 0.1, this.getZ() + oz,
+                    -chargeDir.x * 0.05, 0.02, -chargeDir.z * 0.05);
+            }
+            if (this.tickCount % 2 == 0) this.level().addParticle(net.minecraft.core.particles.ParticleTypes.CRIT,
+                this.getX() + (this.random.nextDouble() - 0.5) * 3.5, this.getY() + 0.3 + this.random.nextDouble(), this.getZ() + (this.random.nextDouble() - 0.5) * 3.5, 0.0, 0.05, 0.0);
+        }
         double dx = this.getX() - this.xo, dz = this.getZ() - this.zo;
         float v = (float) Math.sqrt(dx * dx + dz * dz);
         gaitV += (v - gaitV) * 0.35F;
@@ -172,6 +188,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         this.entityData.define(SADDLED, Boolean.FALSE);
         this.entityData.define(EVOLVE, 0);
         this.entityData.define(ARMOR_TIER, 0);
+        this.entityData.define(CHARGE_LEFT, 0);
         this.entityData.define(CD_CHARGE, 0L);
         this.entityData.define(CD_TAIL, 0L);
         this.entityData.define(CD_BITE, 0L);
@@ -615,6 +632,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         // Embestida (C3)
         if (chargeTicks > 0) {
             chargeTicks--;
+            this.entityData.set(CHARGE_LEFT, chargeTicks);
             Vec3 mv = this.getDeltaMovement();
             this.setDeltaMovement(chargeDir.x * 0.5, mv.y, chargeDir.z * 0.5);
             float dmg = (float)this.getAttributeValue(Attributes.ATTACK_DAMAGE) * new float[]{0F, 0.5F, 0.75F, 1.0F}[Math.max(1, progress.rank("C3"))];
@@ -656,6 +674,8 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
             this.setYRot(player.getYRot()); this.yBodyRot = player.getYRot(); this.setYHeadRot(player.getYRot());
             this.chargeHit.clear();
             this.chargeTicks = blocks * 2;
+            this.entityData.set(CHARGE_LEFT, chargeTicks);
+            this.playSound(ModSounds.STEGO_ROAR.get(), 1.4F, 1.25F);
             this.chargeReadyAt = this.tickCount + Math.round(240 * cooldownFactor());
             markCooldown(CD_CHARGE, Math.round(240 * cooldownFactor()));
             this.lastCombatTick = this.tickCount;

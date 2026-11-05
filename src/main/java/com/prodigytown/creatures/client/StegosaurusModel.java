@@ -51,7 +51,7 @@ public final class StegosaurusModel<T extends StegosaurusEntity> extends Hierarc
     if (moving) {
       // Marcha ligada a la distancia real recorrida (ver AdultGait): el pie de apoyo no patina.
       float w = net.minecraft.util.Mth.clamp((gv - AdultGait.MIN_V) / 0.03F, 0.0F, 1.0F);
-      float amp = AdultGait.amp(gv), duty = AdultGait.duty(gv);
+      float amp = AdultGait.amp(gv) * (1.0F + 0.5F * entity.chargeAnim), duty = AdultGait.duty(gv);
       float phase = entity.gaitPhase + AdultGait.phaseRate(gv) * (ageInTicks - entity.tickCount);
       float[] p = new float[2];
       float hip = AdultGait.LEG_UNITS;
@@ -67,7 +67,7 @@ public final class StegosaurusModel<T extends StegosaurusEntity> extends Hierarc
         legs[k].y += (dip - 3.0F * p[1]) * w;
         lower[k].xRot += knee[k] * p[1] * w;
       }
-      float bob = 0.5F * net.minecraft.util.Mth.sin(phase * 2.0F);
+      float bob = 0.5F * (1.0F + entity.chargeAnim) * net.minecraft.util.Mth.sin(phase * 2.0F);
       base.y += bob * w;
       base.zRot += 0.012F * net.minecraft.util.Mth.sin(phase) * w;
       neck.xRot += 0.027F * w * net.minecraft.util.Mth.sin(phase + 0.4F);
@@ -114,6 +114,22 @@ public final class StegosaurusModel<T extends StegosaurusEntity> extends Hierarc
       float stomp = net.minecraft.util.Mth.sin(ageInTicks * 0.48F);
       if (!moving) frontR.xRot += Math.max(0F, stomp) * 0.10F;
       jaw.xRot += 0.018F * Math.abs(stomp);
+    }
+
+    // Embestida: cuerpo agachado hacia delante, cuello y cabeza adelantados, cola en alto y mandibula abierta
+    float cw = net.minecraft.util.Mth.lerp(net.minecraft.client.Minecraft.getInstance().getFrameTime(), entity.chargeAnimO, entity.chargeAnim);
+    if (cw > 0.01F) {
+      base.xRot += 0.07F * cw;
+      base.y += 2.5F * cw;
+      neckBase.xRot += 0.30F * cw;
+      neck.xRot += 0.22F * cw;
+      head.xRot += 0.16F * cw;
+      jaw.xRot += 0.28F * cw;
+      tail.xRot -= 0.28F * cw;
+      tail2.xRot -= 0.10F * cw;
+      tail.yRot += 0.12F * cw * net.minecraft.util.Mth.sin(ageInTicks * 0.9F);
+      tail2.yRot += 0.10F * cw * net.minecraft.util.Mth.sin(ageInTicks * 0.9F + 0.5F);
+      frontL.xRot -= 0.12F * cw; frontR.xRot -= 0.12F * cw;
     }
 
     // Original bite, roar, tail-swipe animations remain; after locomotion so

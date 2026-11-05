@@ -6,6 +6,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
 import net.minecraftforge.client.event.RenderGuiOverlayEvent;
@@ -34,50 +35,77 @@ public final class MountHud {
         }
     }
 
+    private static final ResourceLocation FRAME = new ResourceLocation(ProdigyCreatures.MODID, "textures/gui/hud_frame.png");
+    private static final ResourceLocation[] ICON = {
+        new ResourceLocation(ProdigyCreatures.MODID, "textures/gui/ab_bite.png"),
+        new ResourceLocation(ProdigyCreatures.MODID, "textures/gui/ab_tail.png"),
+        new ResourceLocation(ProdigyCreatures.MODID, "textures/gui/ab_charge.png")};
+
     private static void render(GuiGraphics g, int w, int h) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.options.hideGui || !(mc.player.getVehicle() instanceof StegosaurusEntity s)) return;
         Font font = mc.font;
-        int cx = w / 2;
-        int top = h - 98;
 
-        // nombre y nivel
-        String name = s.hasCustomName() ? s.getCustomName().getString() : "Estegosaurio";
-        String title = name + "  " + Component.translatable("prodigycreatures.hud.level").getString() + s.getProgress().level();
-        g.drawCenteredString(font, title, cx, top, 0xFFF2D27A);
-
-        // barra de vida
-        int bw = 182, bx = cx - bw / 2, by = top + 12;
+        // ---- marco con la vida (encima de la barra de objetos); textura 512x171, interior x148..451 y83..118
+        final int fw = 196, fh = Math.round(fw * 171.0F / 512.0F);
+        int fx = w / 2 - fw / 2, fy = h - 62 - fh;
+        float k = fw / 512.0F;
+        int ix = fx + Math.round(148 * k), iw = Math.round((451 - 148) * k), iy = fy + Math.round(83 * k), ih = Math.round((118 - 83) * k);
         float hp = Math.max(0.0F, s.getHealth()), max = Math.max(1.0F, s.getMaxHealth());
         float frac = Math.min(1.0F, hp / max);
-        g.fill(bx - 1, by - 1, bx + bw + 1, by + 11, 0xFF101010);
-        g.fill(bx, by, bx + bw, by + 10, 0xFF3A1414);
-        int col = frac > 0.5F ? 0xFF5CC24A : frac > 0.25F ? 0xFFE0B030 : 0xFFD83A30;
-        int fw = Math.round(bw * frac);
-        g.fill(bx, by, bx + fw, by + 10, col);
-        g.fill(bx, by, bx + fw, by + 3, 0x55FFFFFF);
+        g.blit(FRAME, fx, fy, fw, fh, 0.0F, 0.0F, 512, 171, 512, 171);
+        int fillW = Math.round(iw * frac);
+        if (fillW > 0) {
+            int hi = frac > 0.5F ? 0xFFE23A34 : frac > 0.25F ? 0xFFE88A2A : 0xFFD02020;
+            int lo = frac > 0.5F ? 0xFF8E1414 : frac > 0.25F ? 0xFF9A5210 : 0xFF700C0C;
+            g.fillGradient(ix, iy, ix + fillW, iy + ih, hi, lo);
+            g.fill(ix, iy, ix + fillW, iy + 1, 0x66FFFFFF);
+            for (int t = 1; t < 10; t++) { // marcas cada 10 %
+                int tx = ix + iw * t / 10;
+                if (tx < ix + fillW) g.fill(tx, iy, tx + 1, iy + ih, 0x33000000);
+            }
+        }
         String num = Math.round(hp) + " / " + Math.round(max);
-        g.drawCenteredString(font, num, cx, by + 1, 0xFFFFFFFF);
+        g.drawCenteredString(font, num, ix + iw / 2, iy + (ih - 8) / 2 + 1, 0xFFFFFFFF);
+        String name = s.hasCustomName() ? s.getCustomName().getString() : "Estegosaurio";
+        g.drawCenteredString(font, name + "  " + Component.translatable("prodigycreatures.hud.level").getString() + s.getProgress().level(),
+            fx + fw / 2 + 14, fy - 10, 0xFFF2D27A);
 
-        // habilidades: mordida (clic izq), coletazo (clic der), embestida (V)
-        String[] labels = {"Mordida", "Coletazo", "Embestida"};
+        // ---- poderes: iconos circulares a la derecha, con barrido de recarga (mordida grande, coletazo y embestida pequenos)
         String[] keys = {"Clic izq", "Clic der", ClientKeys.CHARGE.getTranslatedKeyMessage().getString()};
         int[] which = {2, 1, 0};
-        int[] tint = {0xFFB8483C, 0xFFC8A040, 0xFF4A86C8};
-        int sw = 58, gap = 4, total = sw * 3 + gap * 2, sx = cx - total / 2, sy = by + 15;
+        int[] cx = {w - 50, w - 98, w - 80};
+        int[] cy = {h - 70, h - 54, h - 104};
+        int[] rad = {18, 14, 14};
         for (int i = 0; i < 3; i++) {
-            int x = sx + i * (sw + gap);
+            int r = rad[i], x = cx[i] - r, y = cy[i] - r;
             float left = s.cooldownLeft(which[i]);
-            g.fill(x - 1, sy - 1, x + sw + 1, sy + 21, 0xFF101010);
-            g.fill(x, sy, x + sw, sy + 20, left > 0 ? 0xFF2A2A2A : tint[i]);
-            if (left > 0) { // barrido: la parte inferior se va llenando de color a medida que recarga
-                int filled = Math.round(20 * (1.0F - left));
-                g.fill(x, sy + 20 - filled, x + sw, sy + 20, (tint[i] & 0x00FFFFFF) | 0xAA000000);
-                g.drawCenteredString(font, s.cooldownSeconds(which[i]) + "s", x + sw / 2, sy + 6, 0xFFFFFFFF);
-            } else {
-                g.drawCenteredString(font, labels[i], x + sw / 2, sy + 6, 0xFFFFFFFF);
+            g.blit(ICON[i], x, y, 2 * r, 2 * r, 0.0F, 0.0F, 64, 64, 64, 64);
+            if (left > 0.0F) {
+                double start = (1.0 - left) * Math.PI * 2.0;
+                for (int dy = -r; dy <= r; dy++) {
+                    int runStart = Integer.MIN_VALUE;
+                    for (int dx = -r; dx <= r + 1; dx++) {
+                        boolean on = false;
+                        if (dx <= r && dx * dx + dy * dy <= r * r) {
+                            double ang = Math.atan2(dx + 0.5, -(dy + 0.5));
+                            if (ang < 0) ang += Math.PI * 2.0;
+                            on = ang >= start;
+                        }
+                        if (on && runStart == Integer.MIN_VALUE) runStart = dx;
+                        if (!on && runStart != Integer.MIN_VALUE) {
+                            g.fill(cx[i] + runStart, cy[i] + dy, cx[i] + dx, cy[i] + dy + 1, 0xB0081018);
+                            runStart = Integer.MIN_VALUE;
+                        }
+                    }
+                }
+                g.drawCenteredString(font, Integer.toString(s.cooldownSeconds(which[i])), cx[i], cy[i] - 4, 0xFFFFFFFF);
             }
-            g.drawCenteredString(font, keys[i], x + sw / 2, sy + 22, 0xFFBFBFBF);
+            g.pose().pushPose();
+            g.pose().translate(cx[i], cy[i] + r + 1, 0);
+            g.pose().scale(0.7F, 0.7F, 1.0F);
+            g.drawCenteredString(font, keys[i], 0, 0, 0xFFD8D8D8);
+            g.pose().popPose();
         }
     }
 }
