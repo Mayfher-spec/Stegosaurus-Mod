@@ -1,5 +1,6 @@
 package com.prodigytown.chibi;
 
+import com.prodigytown.creatures.ModSounds;
 import com.prodigytown.creatures.ProdigyCreatures;
 import com.prodigytown.creatures.StegosaurusEntity;
 import com.prodigytown.creatures.progress.GrowthTable;
@@ -14,6 +15,7 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import net.minecraft.world.DifficultyInstance;
@@ -284,9 +286,15 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
         server.sendParticles(ParticleTypes.HAPPY_VILLAGER, getX(), getY() + 1.0, getZ(), 40, 0.8, 0.8, 0.8, 0.1);
         server.sendParticles(ParticleTypes.END_ROD, getX(), getY() + 1.0, getZ(), 30, 0.8, 1.0, 0.8, 0.05);
         adult.playSound(SoundEvents.PLAYER_LEVELUP, 1.5F, 0.6F);
+        server.broadcastEntityEvent(adult, (byte) 63); // rugido de adulto
         if (getOwner() instanceof Player p) p.displayClientMessage(Component.literal("Tu chibi evoluciono a Estegosaurio adulto"), false);
         discard();
     }
+
+    @Nullable @Override protected SoundEvent getAmbientSound() { return ModSounds.CHIBI_AMBIENT.get(); }
+    @Override protected SoundEvent getHurtSound(net.minecraft.world.damagesource.DamageSource source) { return ModSounds.CHIBI_HURT.get(); }
+    @Override protected SoundEvent getDeathSound() { return ModSounds.CHIBI_DEATH.get(); }
+    @Override public int getAmbientSoundInterval() { return 160; }
 
     @Override public void tick() {
         super.tick();

@@ -50,7 +50,7 @@ public final class MountCamera {
             move.invoke(cam, -dist, EXTRA_UP, 0.0);
         } catch (Throwable t) {
             failed = true;
-            LOG.warn("Prodigy Creatures: no se pudo alejar la camara al montar ({})", t.toString());
+            LOG.warn("The Stegosaurus Mod: no se pudo alejar la camara al montar ({})", t.toString());
         }
     }
 }

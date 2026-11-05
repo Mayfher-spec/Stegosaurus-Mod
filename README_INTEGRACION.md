@@ -1,4 +1,9 @@
-# Prodigy Creatures — Beta Integrada v4.2.0
+# The Stegosaurus Mod — v4.6.0 beta
+
+(Antes "Prodigy Creatures". El id interno `prodigycreatures` y los ids de entidad se conservan para no romper mundos guardados.)
+
+---
+
 
 **Minecraft Java 1.20.1 · Forge 47.x · Java 17 · GeckoLib 4.4.9+ · ROR beta 0.71**
 

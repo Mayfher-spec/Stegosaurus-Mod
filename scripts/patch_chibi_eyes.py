@@ -10,6 +10,7 @@ def apply(jar_in, jar_out):
     with ZipFile(jar_in) as src:
         originals = [(info,src.read(info.filename)) for info in src.infolist() if not info.is_dir()]
     replacement = {}
+    patched = {}
     for skin, compressed in DELTAS.items():
         name = f"assets/prodigychibi/textures/entity/stegosaurus_chibi_{skin}.png"
         old = next(raw for info, raw in originals if info.filename == name)
@@ -22,7 +23,27 @@ def apply(jar_in, jar_out):
         new_png = io.BytesIO()
         im.save(new_png, format="PNG")
         replacement[name] = new_png.getvalue()
+        patched[skin] = im
         print(f"Updated {skin}: {len(payload)//8} corrected eye pixels")
+    # El chibi dorado no tenia ojos propios (cara con "bigote"): se le pone el mismo ojo ambar del natural.
+    name = "assets/prodigychibi/textures/entity/stegosaurus_chibi_dorado.png"
+    gold = Image.open(io.BytesIO(next(raw for info, raw in originals if info.filename == name))).convert("RGBA")
+    nat = patched["natural"]
+    dark = lambda px, lim: sum(px[:3]) < lim
+    cream = gold.getpixel((12, 24))
+    for y in range(16, 25):                      # borra el dibujo de ojos viejo
+        for x in range(3, 30):
+            if dark(gold.getpixel((x, y)), 200): gold.putpixel((x, y), cream)
+    for x0, x1 in ((6, 14), (17, 25)):           # copia cada ojo del natural (contorno, esclera, iris, pupila)
+        for y in range(20, 27):
+            xs = [x for x in range(x0, x1 + 1) if dark(nat.getpixel((x, y)), 150)]
+            if not xs: continue
+            for x in range(min(xs), max(xs) + 1):
+                if y in (20, 26) and not dark(nat.getpixel((x, y)), 150): continue
+                gold.putpixel((x, y), nat.getpixel((x, y)))
+    buf = io.BytesIO(); gold.save(buf, format="PNG")
+    replacement[name] = buf.getvalue()
+    print("Updated dorado: ojo del natural")
     with ZipFile(jar_out, "w", compression=ZIP_DEFLATED, compresslevel=9) as out:
         for info, raw in originals:
             out.writestr(info.filename, replacement.get(info.filename, raw))

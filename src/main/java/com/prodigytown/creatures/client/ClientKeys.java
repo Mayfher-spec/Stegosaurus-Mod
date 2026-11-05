@@ -19,7 +19,7 @@ import org.lwjgl.glfw.GLFW;
 
 import java.util.List;
 
-/** Teclas: K abre el arbol, V embestida, B coletazo (montado tambien con clic derecho). */
+/** Teclas: K abre el arbol, V embestida, B coletazo; montado: clic izquierdo muerde y clic derecho da el coletazo. */
 public final class ClientKeys {
     private static final String CATEGORY = "key.categories.prodigycreatures";
     public static final KeyMapping OPEN = new KeyMapping("key.prodigycreatures.open_talents", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_K, CATEGORY);
@@ -38,10 +38,17 @@ public final class ClientKeys {
 
     @Mod.EventBusSubscriber(modid = ProdigyCreatures.MODID, value = Dist.CLIENT)
     public static final class ForgeBus {
-        /** Montado: clic derecho = coletazo (si la mano no lleva comida ni algo que se use, como un arco o un escudo). */
+        /** Montado: clic izquierdo = mordida; clic derecho = coletazo (si la mano no lleva comida ni algo que se use, como un arco o un escudo). */
         @SubscribeEvent public static void rightClick(InputEvent.InteractionKeyMappingTriggered event) {
             LocalPlayer p = Minecraft.getInstance().player;
-            if (p == null || !event.isUseItem() || !(p.getVehicle() instanceof StegosaurusEntity)) return;
+            if (p == null || !(p.getVehicle() instanceof StegosaurusEntity)) return;
+            if (event.isAttack()) { // clic izquierdo montado: mordida
+                event.setCanceled(true);
+                event.setSwingHand(false);
+                ModNetwork.CHANNEL.sendToServer(new ModNetwork.UseAbility(2));
+                return;
+            }
+            if (!event.isUseItem()) return;
             ItemStack held = p.getItemInHand(event.getHand());
             if (!held.isEmpty() && (held.getItem().isEdible() || held.getUseAnimation() != UseAnim.NONE)) return;
             event.setCanceled(true);

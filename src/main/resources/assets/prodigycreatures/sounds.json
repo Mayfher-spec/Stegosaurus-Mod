@@ -1,0 +1,120 @@
+{
+  "stegosaurus.ambient": {
+    "subtitle": "subtitles.prodigycreatures.stegosaurus.ambient",
+    "sounds": [
+      {
+        "name": "prodigycreatures:stegosaurus/ambient1",
+        "stream": false
+      },
+      {
+        "name": "prodigycreatures:stegosaurus/ambient2",
+        "stream": false
+      },
+      {
+        "name": "prodigycreatures:stegosaurus/ambient3",
+        "stream": false
+      }
+    ]
+  },
+  "stegosaurus.hurt": {
+    "subtitle": "subtitles.prodigycreatures.stegosaurus.hurt",
+    "sounds": [
+      {
+        "name": "prodigycreatures:stegosaurus/hurt1",
+        "stream": false
+      },
+      {
+        "name": "prodigycreatures:stegosaurus/hurt2",
+        "stream": false
+      }
+    ]
+  },
+  "stegosaurus.death": {
+    "subtitle": "subtitles.prodigycreatures.stegosaurus.death",
+    "sounds": [
+      {
+        "name": "prodigycreatures:stegosaurus/death",
+        "stream": false
+      }
+    ]
+  },
+  "stegosaurus.roar": {
+    "subtitle": "subtitles.prodigycreatures.stegosaurus.roar",
+    "sounds": [
+      {
+        "name": "prodigycreatures:stegosaurus/roar",
+        "stream": false
+      }
+    ]
+  },
+  "stegosaurus.bite": {
+    "subtitle": "subtitles.prodigycreatures.stegosaurus.bite",
+    "sounds": [
+      {
+        "name": "prodigycreatures:stegosaurus/bite",
+        "stream": false
+      }
+    ]
+  },
+  "stegosaurus.tail": {
+    "subtitle": "subtitles.prodigycreatures.stegosaurus.tail",
+    "sounds": [
+      {
+        "name": "prodigycreatures:stegosaurus/tail",
+        "stream": false
+      }
+    ]
+  },
+  "stegosaurus.step": {
+    "subtitle": "subtitles.prodigycreatures.stegosaurus.step",
+    "sounds": [
+      {
+        "name": "prodigycreatures:stegosaurus/step1",
+        "stream": false
+      },
+      {
+        "name": "prodigycreatures:stegosaurus/step2",
+        "stream": false
+      },
+      {
+        "name": "prodigycreatures:stegosaurus/step3",
+        "stream": false
+      }
+    ]
+  },
+  "chibi.ambient": {
+    "subtitle": "subtitles.prodigycreatures.chibi.ambient",
+    "sounds": [
+      {
+        "name": "prodigycreatures:chibi/ambient1",
+        "stream": false
+      },
+      {
+        "name": "prodigycreatures:chibi/ambient2",
+        "stream": false
+      },
+      {
+        "name": "prodigycreatures:chibi/ambient3",
+        "stream": false
+      }
+    ]
+  },
+  "chibi.hurt": {
+    "subtitle": "subtitles.prodigycreatures.chibi.hurt",
+    "sounds": [
+      {
+        "name": "prodigycreatures:chibi/hurt",
+        "stream": false
+      }
+    ]
+  },
+  "chibi.death": {
+    "subtitle": "subtitles.prodigycreatures.chibi.death",
+    "sounds": [
+      {
+        "name": "prodigycreatures:chibi/death",
+        "stream": false
+      }
+    ]
+  }
+}

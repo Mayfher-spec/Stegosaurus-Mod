@@ -10,7 +10,7 @@ import net.minecraft.world.item.context.UseOnContext;
 import net.minecraftforge.common.ForgeSpawnEggItem;
 
 /**
- * One visible Prodigy Creatures egg:
+ * One visible The Stegosaurus Mod egg:
  * right-click block -> chibi, shift + right-click block -> adult.
  * Existing adult egg registry id remains unchanged.
  */

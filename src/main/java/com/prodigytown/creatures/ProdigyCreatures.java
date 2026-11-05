@@ -43,6 +43,7 @@ public class ProdigyCreatures {
         ChibiAlpha.register(bus);
         ENTITIES.register(bus);
         ITEMS.register(bus);
+        ModSounds.SOUNDS.register(bus);
     }
 
     @Mod.EventBusSubscriber(modid = MODID, bus = Mod.EventBusSubscriber.Bus.MOD)

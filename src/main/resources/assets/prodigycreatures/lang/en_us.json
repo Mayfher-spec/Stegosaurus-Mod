@@ -1,8 +1,18 @@
 {
   "entity.prodigycreatures.stegosaurus": "Stegosaurus",
-  "item.prodigycreatures.stegosaurus_spawn_egg": "Stegosaurus Spawn Egg",
-  "key.categories.prodigycreatures": "Prodigy Creatures",
+  "item.prodigycreatures.stegosaurus_spawn_egg": "The Stegosaurus Mod Spawn Egg (click: chibi / sneak: adult)",
+  "key.categories.prodigycreatures": "The Stegosaurus Mod",
   "key.prodigycreatures.open_talents": "Open skill tree",
-  "key.prodigycreatures.charge": "Charge (Embestida)",
-  "key.prodigycreatures.tail": "Devastating tail strike"
+  "key.prodigycreatures.charge": "Charge",
+  "key.prodigycreatures.tail": "Tail strike",
+  "subtitles.prodigycreatures.stegosaurus.ambient": "Stegosaurus grunts",
+  "subtitles.prodigycreatures.stegosaurus.hurt": "Stegosaurus hurt",
+  "subtitles.prodigycreatures.stegosaurus.death": "Stegosaurus dies",
+  "subtitles.prodigycreatures.stegosaurus.roar": "Stegosaurus roars",
+  "subtitles.prodigycreatures.stegosaurus.bite": "Stegosaurus bites",
+  "subtitles.prodigycreatures.stegosaurus.tail": "Stegosaurus tail strike",
+  "subtitles.prodigycreatures.stegosaurus.step": "Stegosaurus walks",
+  "subtitles.prodigycreatures.chibi.ambient": "Chibi Stegosaurus chirps",
+  "subtitles.prodigycreatures.chibi.hurt": "Chibi Stegosaurus squeals",
+  "subtitles.prodigycreatures.chibi.death": "Chibi Stegosaurus dies"
 }

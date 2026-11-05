@@ -14,6 +14,7 @@ import net.minecraft.client.renderer.entity.layers.RenderLayer;
 /** Dibuja la silla sobre el lomo cuando el estegosaurio la lleva puesta (sin brillo, sin GeckoLib). */
 public final class StegosaurusSaddleLayer extends RenderLayer<StegosaurusEntity, StegosaurusModel<StegosaurusEntity>> {
     private final StegosaurusSaddleModel saddle;
+    private ModelPart[] theirs;
 
     public StegosaurusSaddleLayer(RenderLayerParent<StegosaurusEntity, StegosaurusModel<StegosaurusEntity>> renderer, EntityModelSet models) {
         super(renderer);
@@ -24,10 +25,12 @@ public final class StegosaurusSaddleLayer extends RenderLayer<StegosaurusEntity,
                                 float limbSwing, float limbSwingAmount, float partialTick, float ageInTicks,
                                 float netHeadYaw, float headPitch) {
         if (!entity.isSaddled() || entity.isInvisible()) return;
-        // la silla sigue el balanceo del cuerpo
-        ModelPart body = this.getParentModel().root().getChild("all");
-        ModelPart mine = saddle.all();
-        mine.y = body.y; mine.xRot = body.xRot; mine.zRot = body.zRot;
+        // el equipo copia la pose de cada hueso (cuello, cola, patas...) para moverse con el estegosaurio
+        if (theirs == null) {
+            theirs = new ModelPart[StegosaurusSaddleModel.TRACK.length];
+            for (int i = 0; i < theirs.length; i++) theirs[i] = StegosaurusSaddleModel.walk(this.getParentModel().root(), StegosaurusSaddleModel.TRACK[i]);
+        }
+        saddle.sync(theirs);
         VertexConsumer vc = buffers.getBuffer(RenderType.entityCutoutNoCull(StegosaurusSaddleModel.TEXTURE));
         saddle.renderToBuffer(stack, vc, packedLight, LivingEntityRenderer.getOverlayCoords(entity, 0.0F), 1.0F, 1.0F, 1.0F, 1.0F);
     }

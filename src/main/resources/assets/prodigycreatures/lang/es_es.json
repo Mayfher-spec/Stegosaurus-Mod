@@ -1,8 +1,18 @@
 {
   "entity.prodigycreatures.stegosaurus": "Estegosaurio",
-  "item.prodigycreatures.stegosaurus_spawn_egg": "Huevo de Prodigy Creatures (clic: chibi / agachado: adulto)",
-  "key.categories.prodigycreatures": "Prodigy Creatures",
+  "item.prodigycreatures.stegosaurus_spawn_egg": "Huevo de The Stegosaurus Mod (clic: chibi / agachado: adulto)",
+  "key.categories.prodigycreatures": "The Stegosaurus Mod",
   "key.prodigycreatures.open_talents": "Abrir arbol de habilidades",
   "key.prodigycreatures.charge": "Embestida",
-  "key.prodigycreatures.tail": "Coletazo devastador"
+  "key.prodigycreatures.tail": "Coletazo",
+  "subtitles.prodigycreatures.stegosaurus.ambient": "Estegosaurio gruñe",
+  "subtitles.prodigycreatures.stegosaurus.hurt": "Estegosaurio herido",
+  "subtitles.prodigycreatures.stegosaurus.death": "Estegosaurio muere",
+  "subtitles.prodigycreatures.stegosaurus.roar": "Estegosaurio ruge",
+  "subtitles.prodigycreatures.stegosaurus.bite": "Estegosaurio muerde",
+  "subtitles.prodigycreatures.stegosaurus.tail": "Estegosaurio da un coletazo",
+  "subtitles.prodigycreatures.stegosaurus.step": "Estegosaurio camina",
+  "subtitles.prodigycreatures.chibi.ambient": "Chibi estegosaurio gorjea",
+  "subtitles.prodigycreatures.chibi.hurt": "Chibi estegosaurio chilla",
+  "subtitles.prodigycreatures.chibi.death": "Chibi estegosaurio muere"
 }

@@ -314,7 +314,8 @@ public final class TalentScreen extends Screen {
     private void renderEquipment(GuiGraphics g) {
         renderText(g, "Equipamiento", List.of(
             "Silla: " + (stego.isSaddled() ? "equipada (clic para montar)" : "sin silla (clic con una silla en la mano)"),
-            "Montado: clic derecho = coletazo, V = embestida (talento).",
+            "Montado: clic izq. = mordida, clic der. = coletazo,",
+            "V = embestida (talento).",
             "Montado, el talento Guardia absorbe dano por ti.",
             "",
             "Armaduras para el estegosaurio: aun no estan",

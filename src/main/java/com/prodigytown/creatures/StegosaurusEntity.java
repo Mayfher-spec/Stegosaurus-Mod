@@ -86,7 +86,11 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
     @Override public void handleEntityEvent(byte id) {
         if (id == 61) this.tailWhipAnimationState.start(this.tickCount);
         else if (id == 62) this.biteAnimationState.start(this.tickCount);
-        else if (id == 63) this.roarAnimationState.start(this.tickCount);
+        else if (id == 63) {
+            this.roarAnimationState.start(this.tickCount);
+            this.level().playLocalSound(this.getX(), this.getY(), this.getZ(), ModSounds.STEGO_ROAR.get(),
+                net.minecraft.sounds.SoundSource.NEUTRAL, 2.5F, 0.95F + this.random.nextFloat() * 0.1F, false);
+        }
         else super.handleEntityEvent(id);
     }
 
@@ -111,6 +115,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
     private Vec3 chargeDir = Vec3.ZERO;
     private final Set<Integer> chargeHit = new HashSet<>();
     private int chargeReadyAt = 0, tailReadyAt = 0;
+    private int biteWindup = 0, biteReadyAt = 0;
 
     public ProdigyProgress getProgress() { return progress; }
 
@@ -269,7 +274,11 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         // Defensive tail strike: slower than a rex, but heavy impact.
         boolean hit = entity.hurt(this.damageSources().mobAttack(this), damage);
         if (hit) {
-            if (!this.level().isClientSide) this.level().broadcastEntityEvent(this, (byte)(this.random.nextInt(5) == 0 ? 62 : 61));
+            if (!this.level().isClientSide) {
+                boolean bite = this.random.nextInt(5) == 0;
+                this.level().broadcastEntityEvent(this, (byte)(bite ? 62 : 61));
+                this.playSound((bite ? ModSounds.STEGO_BITE : ModSounds.STEGO_TAIL).get(), 1.3F, 0.9F + this.random.nextFloat() * 0.2F);
+            }
             living.knockback(1.9, this.getX()-entity.getX(), this.getZ()-entity.getZ());
             int sweep = progress.rank("C2");
             if (sweep > 0 && !this.level().isClientSide) {
@@ -469,14 +478,15 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
             }
             if (chargeTicks == 0) chargeHit.clear();
         }
-        // Coletazo devastador (C5): 1 s de carga y golpe en area
+        if (biteWindup > 0 && --biteWindup == 0) doBite();
+        // Coletazo (basico, o devastador con C5): carga y golpe en area
         if (tailWindup > 0) {
             tailWindup--;
             if (tailWindup == 0) {
                 int r = progress.rank("C5");
                 float bonus = r > 0 ? new float[]{0F, 1.0F, 1.5F, 2.0F}[r] : 0.5F;
                 float dmg = (float)this.getAttributeValue(Attributes.ATTACK_DAMAGE) * (1.0F + bonus);
-                this.level().broadcastEntityEvent(this, (byte) 61);
+                this.playSound(ModSounds.STEGO_TAIL.get(), 1.6F, 0.9F + this.random.nextFloat() * 0.2F);
                 for (LivingEntity e : this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(3.5), this::isFoe)) {
                     e.hurt(this.damageSources().mobAttack(this), dmg);
                     e.knockback(2.6, this.getX() - e.getX(), this.getZ() - e.getZ());
@@ -486,7 +496,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         }
     }
 
-    /** @param id 0 = embestida (C3), 1 = coletazo devastador (C5) */
+    /** @param id 0 = embestida (C3), 1 = coletazo (basico; devastador con C5), 2 = mordida (clic izquierdo montado) */
     public boolean useAbility(Player player, int id) {
         if (this.level().isClientSide || this.isOrderedToSit() || !this.isAlive()) return false;
         if (id == 0) {
@@ -506,11 +516,36 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
             // Coletazo basico siempre disponible (carga 0,4 s, +50 % de dano, recarga 5 s); el talento C5 lo vuelve devastador.
             int r = progress.rank("C5");
             if (this.tickCount < tailReadyAt) { cooldownMsg(player, tailReadyAt); return false; }
-            this.tailWindup = r > 0 ? 20 : 8;
+            this.tailWindup = 18; // 0,9 s: el latigazo de la animacion golpea a ese tiempo
+            this.level().broadcastEntityEvent(this, (byte) 61);
             this.tailReadyAt = this.tickCount + Math.round(20 * (r > 0 ? new int[]{0, 10, 9, 8}[r] : 5) * cooldownFactor());
             return true;
         }
+        if (id == 2) { // mordida con el clic izquierdo montado: dano pequeno, recarga corta
+            if (this.tickCount < biteReadyAt || this.biteWindup > 0) return false;
+            this.biteWindup = 9; // la mandibula se cierra a ~0,45 s en la animacion
+            this.biteReadyAt = this.tickCount + 16;
+            this.level().broadcastEntityEvent(this, (byte) 62);
+            return true;
+        }
         return false;
+    }
+
+    /** Mordida: golpea al enemigo mas cercano delante de la boca (daño = 40 % del ataque). */
+    private void doBite() {
+        Vec3 fwd = Vec3.directionFromRotation(0.0F, this.getYRot());
+        Vec3 mouth = this.position().add(fwd.x * 5.0, 2.0, fwd.z * 5.0);
+        LivingEntity best = null;
+        for (LivingEntity e : this.level().getEntitiesOfClass(LivingEntity.class, new AABB(mouth, mouth).inflate(2.6, 2.4, 2.6), this::isFoe)) {
+            if (best == null || e.distanceToSqr(mouth) < best.distanceToSqr(mouth)) best = e;
+        }
+        this.playSound(ModSounds.STEGO_BITE.get(), 1.4F, 0.9F + this.random.nextFloat() * 0.2F);
+        if (best == null) return;
+        float dmg = (float) this.getAttributeValue(Attributes.ATTACK_DAMAGE) * 0.4F * furyMultiplier();
+        if (best.hurt(this.damageSources().mobAttack(this), dmg)) {
+            best.knockback(0.5, this.getX() - best.getX(), this.getZ() - best.getZ());
+            this.lastCombatTick = this.tickCount;
+        }
     }
 
     private void cooldownMsg(Player p, int readyAt) {
@@ -614,9 +649,14 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         return (this.getVariant() == MAGMA && damage.is(DamageTypeTags.IS_FIRE)) || super.isInvulnerableTo(damage);
     }
 
-    @Nullable @Override protected SoundEvent getAmbientSound() { return SoundEvents.RAVAGER_AMBIENT; }
-    @Override protected SoundEvent getHurtSound(DamageSource source) { return SoundEvents.RAVAGER_HURT; }
-    @Override protected SoundEvent getDeathSound() { return SoundEvents.RAVAGER_DEATH; }
+    @Nullable @Override protected SoundEvent getAmbientSound() { return ModSounds.STEGO_AMBIENT.get(); }
+    @Override protected SoundEvent getHurtSound(DamageSource source) { return ModSounds.STEGO_HURT.get(); }
+    @Override protected SoundEvent getDeathSound() { return ModSounds.STEGO_DEATH.get(); }
+    @Override protected void playStepSound(BlockPos pos, net.minecraft.world.level.block.state.BlockState state) {
+        this.playSound(ModSounds.STEGO_STEP.get(), 0.9F, 0.9F + this.random.nextFloat() * 0.2F);
+    }
+    @Override protected float getSoundVolume() { return 1.5F; }
+    @Override public int getAmbientSoundInterval() { return 220; }
 
     @Nullable @Override public AgeableMob getBreedOffspring(ServerLevel level, AgeableMob partner) {
         return null; // Incubation/breeding intentionally planned for v0.2.

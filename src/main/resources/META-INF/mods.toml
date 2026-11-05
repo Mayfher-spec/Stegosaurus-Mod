@@ -4,9 +4,9 @@ license="MIT"
 [[mods]]
 modId="prodigycreatures"
 version="${mod_version}"
-displayName="Prodigy Creatures"
+displayName="The Stegosaurus Mod"
 authors="The Prodigy Town"
-description="One mod for adult and chibi Stegosaurus. One dual-stage egg: normal click baby, sneak + click adult. Preserves both legacy entity IDs, includes ROR-style adults and 0.5.4 chibi art."
+description="The Stegosaurus Mod: adult and chibi Stegosaurus in one mod. The chibi is tamed, grows, evolves into the adult, and the adult can be saddled and ridden. Talent tree, custom sounds and armored saddle. Keeps the legacy entity ids so old worlds still load."
 [[dependencies.prodigycreatures]]
 modId="forge"
 mandatory=true
