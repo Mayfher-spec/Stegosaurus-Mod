@@ -630,7 +630,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         super.dropCustomDeathLoot(source, looting, recentlyHit);
         if (!this.isTame() && isFemale() && guardPos == null && recentlyHit && this.random.nextBoolean()) { // 50 %: errante hembra // la hembra silvestre derrotada deja un huevo; su raza influye en la del huevo
             this.spawnAtLocation(new ItemStack(ProdigyCreatures.EGG_ITEMS.get(
-                com.prodigytown.creatures.egg.StegosaurusEggs.rollVariant(this.random)).get()));
+                com.prodigytown.creatures.egg.StegosaurusEggs.rollVariant(this.random, getVariant())).get()));
         }
         if (isSaddled()) this.spawnAtLocation(Items.SADDLE);
         if (getArmorTier() > 0) this.spawnAtLocation(new ItemStack(ProdigyCreatures.ARMOR_ITEMS.get(getArmorTier() - 1).get()));

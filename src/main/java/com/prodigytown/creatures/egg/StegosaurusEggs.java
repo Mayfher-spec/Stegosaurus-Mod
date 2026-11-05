@@ -13,16 +13,26 @@ public final class StegosaurusEggs {
     /** Mezcla base (%) por variante adulta: cibernetico 18, dorado 15, magma 12, esmeralda 5, natural 50. */
     private static final int[] BASE = {18, 15, 12, 5, 50};
 
-    /** Raza del huevo que suelta una errante: mezcla fija 50/18/15/12/5, sin herencia. */
-    public static int rollVariant(RandomSource rnd) {
-        int r = rnd.nextInt(100), acc = 0;
-        for (int i = 0; i < 5; i++) { acc += BASE[i]; if (r < acc) return i; }
+    /** Puntos de bonus que suma la raza de la madre a la mezcla 50/18/15/12/5. */
+    private static final int HERITAGE = 15;
+
+    /** Huevo de una hembra (errante o domesticada): mezcla 50/18/15/12/5 con bonus a la raza de la madre (-1 = sin bonus). */
+    public static int rollVariant(RandomSource rnd, int mother) {
+        double[] w = new double[5];
+        double total = 0.0;
+        for (int i = 0; i < 5; i++) w[i] = BASE[i];
+        if (mother >= 0 && mother < 5) w[mother] += HERITAGE;
+        for (double d : w) total += d;
+        double r = rnd.nextDouble() * total, acc = 0.0;
+        for (int i = 0; i < 5; i++) { acc += w[i]; if (r < acc) return i; }
         return 4;
     }
 
-    /** Huevo de un nido silvestre: 99 % el del tipo de nido; 1 % una raza distinta elegida al azar (todas igual de probables). */
+    public static int rollVariant(RandomSource rnd) { return rollVariant(rnd, -1); }
+
+    /** Nido basico: 80 % huevo natural, 20 % otra raza al azar (todas igual de probables). */
     public static int nestEgg(RandomSource rnd, int nestVariant) {
-        if (rnd.nextInt(100) != 0) return nestVariant;
+        if (rnd.nextInt(100) >= 20) return nestVariant;
         int o = rnd.nextInt(4);
         return o >= nestVariant ? o + 1 : o;
     }

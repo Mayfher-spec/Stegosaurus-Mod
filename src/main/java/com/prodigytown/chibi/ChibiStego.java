@@ -72,6 +72,7 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
     /** Duracion de la fase de carga del chibi (2,5 s) antes de convertirse en la silueta del adulto. */
     public static final int EVOLVE_PRE = 50;
     private static final EntityDataAccessor<Boolean> FEMALE = SynchedEntityData.defineId(ChibiStego.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> GLACIAL_LINE = SynchedEntityData.defineId(ChibiStego.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> QUICK = SynchedEntityData.defineId(ChibiStego.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Integer> CHARGE = SynchedEntityData.defineId(ChibiStego.class, EntityDataSerializers.INT);
     private static final UUID M_HP = UUID.fromString("c41b1000-0001-4d1e-9a10-5e90a5a10001");
@@ -126,11 +127,11 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
         entityData.define(VARIANT, NATURAL);
         entityData.define(CHARGE, 0);
         entityData.define(QUICK, false);
+        entityData.define(GLACIAL_LINE, false);
         entityData.define(FEMALE, false);
     }
 
     /** Verdadero si nacio de un huevo glacial: se ve como chibi natural pero crece como adulto glacial. */
-    private boolean glacialLine = false;
     /** Chibi que volvio de adulto: no vuelve a evolucionar solo hasta que el dueno lo permita (agacharse + mano vacia). */
     private boolean evolveLock = false;
 
@@ -158,7 +159,7 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
 
     public void initFromEgg(int chibiVariant, boolean glacial) {
         setVariant(chibiVariant);
-        this.glacialLine = glacial;
+        entityData.set(GLACIAL_LINE, glacial);
         applyStats();
     }
 
@@ -171,7 +172,7 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
     @Override public void addAdditionalSaveData(CompoundTag tag) {
         super.addAdditionalSaveData(tag);
         tag.putInt("ChibiVariant", variant());
-        tag.putBoolean("GlacialLine", glacialLine);
+        tag.putBoolean("GlacialLine", entityData.get(GLACIAL_LINE));
         tag.putBoolean("EvolveLock", evolveLock);
         tag.putBoolean("QuickEvolve", isQuickEvolve());
         tag.putBoolean("Female", isFemale());
@@ -181,7 +182,7 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
     @Override public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
         if (tag.contains("ChibiVariant")) setVariant(tag.getInt("ChibiVariant"));
-        glacialLine = tag.getBoolean("GlacialLine");
+        entityData.set(GLACIAL_LINE, tag.getBoolean("GlacialLine"));
         evolveLock = tag.getBoolean("EvolveLock");
         entityData.set(QUICK, tag.getBoolean("QuickEvolve"));
         entityData.set(FEMALE, tag.contains("Female") ? tag.getBoolean("Female") : random.nextBoolean());
@@ -317,7 +318,7 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
     }
 
     private int adultVariant() {
-        if (glacialLine) return StegosaurusEntity.GLACIAL;
+        if (entityData.get(GLACIAL_LINE)) return StegosaurusEntity.GLACIAL;
         return switch (variant()) {
             case CYBER -> StegosaurusEntity.CYBERNETIC;
             case MAGMA -> StegosaurusEntity.MAGMA;
@@ -331,7 +332,7 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
     /** Chibi que ya fue adulto: sus nuevas evoluciones son cortas (la primera, la larga, ocurre una sola vez). */
     public boolean isFemale() { return entityData.get(FEMALE); }
     public void setFemale(boolean f) { entityData.set(FEMALE, f); }
-    public boolean isGlacial() { return glacialLine; }
+    public boolean isGlacial() { return entityData.get(GLACIAL_LINE); }
     public boolean isQuickEvolve() { return entityData.get(QUICK); }
     public int chargeTotal() { return isQuickEvolve() ? 20 : EVOLVE_PRE; }
     @Override protected boolean isImmobile() { return super.isImmobile() || chargeTicks() > 0; }

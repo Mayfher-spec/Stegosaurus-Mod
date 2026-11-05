@@ -35,14 +35,14 @@ public final class StegosaurusNestFeature extends Feature<NoneFeatureConfigurati
         // raza propia del bioma y probabilidad de que el huevo sea de esa raza (el resto es natural)
         int biomeRace = -1, biomeChance = 0;
         if (!deep) {
-            if (biome.is(Biomes.DESERT)) { biomeRace = StegosaurusEntity.GOLDEN; biomeChance = 15; }
+            if (biome.is(Biomes.DESERT)) { biomeRace = StegosaurusEntity.GOLDEN; biomeChance = 20; }
             else if (biome.is(net.minecraft.tags.BiomeTags.IS_SAVANNA) || biome.is(net.minecraft.tags.BiomeTags.IS_BADLANDS)) { biomeRace = StegosaurusEntity.MAGMA; biomeChance = 20; }
             else if (biome.is(Biomes.SNOWY_PLAINS) || biome.is(Biomes.SNOWY_TAIGA) || biome.is(Biomes.ICE_SPIKES) || biome.is(Biomes.GROVE) || biome.is(Biomes.SNOWY_SLOPES)) { biomeRace = StegosaurusEntity.CYBERNETIC; biomeChance = 20; }
         }
         int eggVariant;
         int[] parents;
         if (deep) {
-            eggVariant = com.prodigytown.creatures.egg.StegosaurusEggs.nestEgg(rnd, StegosaurusEntity.GLACIAL); // esmeralda
+            eggVariant = rnd.nextInt(100) < 20 ? StegosaurusEntity.GLACIAL : StegosaurusEntity.NATURAL; // 20 % esmeralda
             parents = new int[3 + rnd.nextInt(2)];
             java.util.Arrays.fill(parents, StegosaurusEntity.GLACIAL);
         } else if (biomeRace >= 0) {
