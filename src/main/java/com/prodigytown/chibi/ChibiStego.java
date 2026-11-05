@@ -110,6 +110,7 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
     public ChibiStego(EntityType<? extends ChibiStego> type, Level world) {
         super(type, world);
         setMaxUpStep(0.65F);
+        this.moveControl = new com.prodigytown.creatures.SmoothMoveControl(this, 7.0F);
     }
 
     public static AttributeSupplier.Builder attributes() {

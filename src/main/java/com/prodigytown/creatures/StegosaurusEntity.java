@@ -176,6 +176,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
     public StegosaurusEntity(EntityType<? extends StegosaurusEntity> type, Level level) {
         super(type, level);
         this.setMaxUpStep(1.0F);
+        this.moveControl = new SmoothMoveControl(this, 4.0F);
     }
 
     public static AttributeSupplier.Builder createAttributes() {
@@ -560,7 +561,9 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
 
     @Override public void travel(Vec3 travelVector) {
         if (this.isAlive() && this.isVehicle() && this.getControllingPassenger() instanceof Player rider) {
-            this.setYRot(rider.getYRot());
+            // giro amplio: sigue la mirada del jinete con un limite por tick (en marcha, mas lento)
+            float turnCap = rider.zza > 0.0F ? 3.5F : 7.0F;
+            this.setYRot(this.getYRot() + Mth.clamp(Mth.wrapDegrees(rider.getYRot() - this.getYRot()), -turnCap, turnCap));
             this.yRotO = this.getYRot();
             this.setXRot(rider.getXRot() * 0.5F);
             this.setRot(this.getYRot(), this.getXRot());
