@@ -14,7 +14,9 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.Material;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RenderLivingEvent;
+import net.minecraftforge.client.event.RenderLevelStageEvent;
+import net.minecraft.util.Mth;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import org.joml.Matrix3f;
@@ -27,11 +29,28 @@ public final class SpectralFireRender {
     private static final Material FIRE_0 = new Material(TextureAtlas.LOCATION_BLOCKS, new ResourceLocation(ProdigyCreatures.MODID, "block/spectral_fire_0"));
     private static final Material FIRE_1 = new Material(TextureAtlas.LOCATION_BLOCKS, new ResourceLocation(ProdigyCreatures.MODID, "block/spectral_fire_1"));
 
-    @SubscribeEvent public static void onRender(RenderLivingEvent.Post<?, ?> event) {
-        var e = event.getEntity();
-        if (!e.hasEffect(ModEffects.SPECTRAL_BURN.get()) || e.isInvisible()) return;
+    /** Se dibuja tras las entidades (y no en RenderLivingEvent) para que tambien funcione con mobs de otros mods, p. ej. los de GeckoLib. */
+    @SubscribeEvent public static void onRender(RenderLevelStageEvent event) {
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_ENTITIES) return;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null) return;
         try {
-            flame(event.getPoseStack(), event.getMultiBufferSource(), e);
+            Vec3 cam = event.getCamera().getPosition();
+            float pt = event.getPartialTick();
+            MultiBufferSource.BufferSource buf = mc.renderBuffers().bufferSource();
+            boolean any = false;
+            for (net.minecraft.world.entity.Entity ent : mc.level.entitiesForRendering()) {
+                if (!(ent instanceof net.minecraft.world.entity.LivingEntity le) || le.isInvisible() || !le.hasEffect(ModEffects.SPECTRAL_BURN.get())) continue;
+                double x = Mth.lerp(pt, le.xOld, le.getX()) - cam.x, y = Mth.lerp(pt, le.yOld, le.getY()) - cam.y, z = Mth.lerp(pt, le.zOld, le.getZ()) - cam.z;
+                if (x * x + y * y + z * z > 96.0 * 96.0) continue;
+                PoseStack ps = event.getPoseStack();
+                ps.pushPose();
+                ps.translate(x, y, z);
+                flame(ps, buf, le);
+                ps.popPose();
+                any = true;
+            }
+            if (any) buf.endBatch(Sheets.cutoutBlockSheet());
         } catch (RuntimeException ex) { /* un fallo grafico no debe tirar el juego */ }
     }
 

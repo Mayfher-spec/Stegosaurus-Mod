@@ -219,6 +219,7 @@ public final class TalentScreen extends Screen {
         toChibi.visible = eq; toChibi.gold = System.currentTimeMillis() < chibiConfirmUntil;
         toChibi.setMessage(Component.literal(toChibi.gold ? "Seguro? Clic otra vez" : "Volver a chibi"));
         if (!eq && nameBox.isFocused()) nameBox.setFocused(false);
+        unlock.setMessage(Component.literal(ultSel && ultReady() ? "Desbloqueada" : "Desbloquear"));
         unlock.active = tab == 0 && !ultSel && prog().whyNotUnlock(selected) == null;
         super.render(g, mx, my, pt);
         g.pose().popPose();
@@ -294,6 +295,13 @@ public final class TalentScreen extends Screen {
             text(g, rk, x + NS - this.font.width(rk) * 0.6F + 1, y + NS - 5, 0.6F, owned ? (maxed ? GOLD : TEXT) : DIM, true);
         }
         if (ultSel) g.renderOutline(left + 195, top + 177, 45, 36, GOLD);
+        if (ultReady()) { // tapa el candado dibujado en el fondo y marca la definitiva como lista
+            int cx = left + 235, cy = top + 200;
+            g.fill(cx, cy, cx + 12, cy + 14, 0xFF16432A);
+            g.renderOutline(cx, cy, 12, 14, 0xFFFFD24C);
+            int[][] ck = {{3,7},{4,8},{5,9},{6,8},{7,7},{8,6},{9,5}};
+            for (int[] c : ck) g.fill(cx + c[0], cy + c[1] - 1, cx + c[0] + 1, cy + c[1] + 1, 0xFF7DFFB0);
+        }
         // progreso del arbol
         int total = Talents.ALL.length, got = p.talentsUnlocked();
         int bx = left + 175, by = top + 239, bw = 102, bh = 6;
@@ -309,6 +317,11 @@ public final class TalentScreen extends Screen {
         return s;
     }
 
+    private boolean ultReady() {
+        ProdigyProgress p = prog();
+        return p.rank("D5") > 0 && p.rank("C6") > 0 && p.rank("S6") > 0;
+    }
+
     private void renderDetail(GuiGraphics g) {
         ProdigyProgress p = prog();
         if (ultSel) {
@@ -322,7 +335,7 @@ public final class TalentScreen extends Screen {
             text(g, "Definitiva", ux + 28, uy + 12, 0.85F, ULT_COLOR[VI], false);
             text(g, "Rango " + ((p.rank("D5") > 0 && p.rank("C6") > 0 && p.rank("S6") > 0) ? 1 : 0) + " / 1", ux, uy + 28, 0.85F, GOLD, false);
             int uy2 = uy + 40;
-            for (String l : new String[]{"Se desbloquea al llegar al final de las 3 ramas: Furia protectora, Guardia del Estegosaurio y Proteccion de emergencia."}) {
+            for (String l : new String[]{ultReady() ? "Desbloqueada. Pulsa R montado para lanzarla." : "Se desbloquea al llegar al final de las 3 ramas: Furia protectora, Guardia del Estegosaurio y Proteccion de emergencia."}) {
                 for (FormattedCharSequence line : this.font.split(Component.literal(l), uw * 10 / 8)) {
                     g.pose().pushPose(); g.pose().translate(ux, uy2, 0.0F); g.pose().scale(0.8F, 0.8F, 1.0F);
                     g.drawString(this.font, line, 0, 0, TEXT, false); g.pose().popPose(); uy2 += 8;
