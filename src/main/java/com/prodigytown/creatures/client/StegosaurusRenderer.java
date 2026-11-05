@@ -47,7 +47,7 @@ public final class StegosaurusRenderer extends MobRenderer<StegosaurusEntity, St
         int left = entity.getEvolveTicks();
         float s = 1.0F;
         if (left > 0) {
-            float e = StegosaurusEntity.EVOLVE_LEN - left + partialTick;
+            float e = (entity.evolveLen() - left + partialTick) * (StegosaurusEntity.EVOLVE_LEN / (float) entity.evolveLen());
             float t = Mth.clamp(e / 70.0F, 0.0F, 1.0F);
             float ease = t * t * (3.0F - 2.0F * t);
             s = 0.25F + 0.75F * ease;

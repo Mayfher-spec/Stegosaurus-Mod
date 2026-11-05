@@ -27,7 +27,7 @@ class ChibiModel extends GeoModel<ChibiStego> {
     @Override public ResourceLocation getTextureResource(ChibiStego entity) {
         int c = entity.chargeTicks();
         if (c > 0) { // parpadea entre su color y blanco, cada vez mas rapido, y termina fijo en blanco
-            int e = ChibiStego.EVOLVE_PRE - c;
+            int e = (entity.chargeTotal() - c) * (ChibiStego.EVOLVE_PRE / entity.chargeTotal());
             if (c <= 8 || (e / Math.max(2, 10 - e / 6)) % 2 == 0) return WHITE;
         }
         String texture = switch (entity.variant()) {

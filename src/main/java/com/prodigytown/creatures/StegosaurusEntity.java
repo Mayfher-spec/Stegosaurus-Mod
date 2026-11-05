@@ -110,6 +110,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
     private static final EntityDataAccessor<Long> CD_CHARGE = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.LONG);
     private static final EntityDataAccessor<Long> CD_TAIL = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.LONG);
     private static final EntityDataAccessor<Long> CD_BITE = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.LONG);
+    private static final EntityDataAccessor<Boolean> EVOLVE_QUICK = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Integer> REVERT = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> EVOLVE = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> SADDLED = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.BOOLEAN);
@@ -194,6 +195,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         this.entityData.define(SADDLED, Boolean.FALSE);
         this.entityData.define(EVOLVE, 0);
         this.entityData.define(REVERT, 0);
+        this.entityData.define(EVOLVE_QUICK, false);
         this.entityData.define(ARMOR_TIER, 0);
         this.entityData.define(FEMALE, false);
         this.entityData.define(CHARGE_LEFT, 0);
@@ -481,17 +483,22 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
     @Override protected boolean isImmobile() { return super.isImmobile() || getEvolveTicks() > 0 || getRevertTicks() > 0; }
 
     /** La llama el chibi al convertirse en adulto (solo servidor). */
-    public void startEvolution() {
+    public static final int EVOLVE_LEN_QUICK = 30;
+    public int evolveLen() { return this.entityData.get(EVOLVE_QUICK) ? EVOLVE_LEN_QUICK : EVOLVE_LEN; }
+
+    public void startEvolution(boolean quick) {
         if (this.level().isClientSide) return;
-        this.entityData.set(EVOLVE, EVOLVE_LEN);
-        this.playSound(ModSounds.STEGO_EVOLVE.get(), 3.0F, 1.0F);
+        this.entityData.set(EVOLVE_QUICK, quick);
+        this.entityData.set(EVOLVE, quick ? EVOLVE_LEN_QUICK : EVOLVE_LEN);
+        this.playSound(ModSounds.STEGO_EVOLVE.get(), quick ? 1.5F : 3.0F, quick ? 1.5F : 1.0F);
     }
 
     private void evolveTick() {
         int left = getEvolveTicks();
         if (left <= 0 || !(this.level() instanceof ServerLevel server)) return;
-        int e = EVOLVE_LEN - left;
-        double p = e / (double) EVOLVE_LEN;
+        int len = evolveLen();
+        int e = len - left;
+        double p = e / (double) len;
         this.getNavigation().stop();
         Vec3 mv = this.getDeltaMovement();
         this.setDeltaMovement(0.0, Math.min(0.0, mv.y), 0.0);
