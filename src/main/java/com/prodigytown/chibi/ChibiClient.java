@@ -30,13 +30,20 @@ class ChibiModel extends GeoModel<ChibiStego> {
             int e = (entity.chargeTotal() - c) * (ChibiStego.EVOLVE_PRE / entity.chargeTotal());
             if (c <= 8 || (e / Math.max(2, 10 - e / 6)) % 2 == 0) return WHITE;
         }
-        String texture = switch (entity.variant()) {
+        return resource("textures/entity/stegosaurus_chibi_" + race(entity) + ".png");
+    }
+    /** Nombre de la raza en los archivos de textura. */
+    static String race(ChibiStego entity) {
+        return switch (entity.variant()) {
             case ChibiStego.CYBER -> "cibernetico";
             case ChibiStego.MAGMA -> "magma";
             case ChibiStego.GOLD -> "dorado";
             default -> entity.isGlacial() ? "glacial" : "natural";
         };
-        return resource("textures/entity/stegosaurus_chibi_" + texture + ".png");
+    }
+    /** Textura de brillo (solo pixeles que brillan; el resto negro). */
+    static ResourceLocation glow(ChibiStego entity) {
+        return resource("textures/entity/stegosaurus_chibi_" + race(entity) + "_glow.png");
     }
     @Override public ResourceLocation getAnimationResource(ChibiStego entity) {
         return resource("animations/stegosaurus_chibi.animation.json");
@@ -46,6 +53,7 @@ class ChibiRenderer extends GeoEntityRenderer<ChibiStego> {
     public ChibiRenderer(EntityRendererProvider.Context context) {
         super(context, new ChibiModel());
         shadowRadius = 0.55F;
+        addRenderLayer(new ChibiGlowLayer(this));
     }
     /** El parpadeo blanco se dibuja brillante (sin sombreado), como una silueta de luz. */
     @Override public RenderType getRenderType(ChibiStego animatable, ResourceLocation texture, @Nullable MultiBufferSource bufferSource, float partialTick) {
