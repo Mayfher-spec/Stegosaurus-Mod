@@ -201,6 +201,18 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
         return result;
     }
 
+    /** Los adultos silvestres defienden a las crias: atacan a quien lastime a un chibi. */
+    @Override public boolean hurt(net.minecraft.world.damagesource.DamageSource source, float amount) {
+        boolean r = super.hurt(source, amount);
+        if (r && !this.level().isClientSide && source.getEntity() instanceof Player pl && !pl.isCreative() && !pl.isSpectator()) {
+            for (com.prodigytown.creatures.StegosaurusEntity adult : this.level().getEntitiesOfClass(com.prodigytown.creatures.StegosaurusEntity.class,
+                    this.getBoundingBox().inflate(32.0), a -> a.isAlive() && !a.isTame())) {
+                adult.setTarget(pl);
+            }
+        }
+        return r;
+    }
+
     @Override protected void registerGoals() {
         goalSelector.addGoal(0, new FloatGoal(this));
         goalSelector.addGoal(1, new SitWhenOrderedToGoal(this));

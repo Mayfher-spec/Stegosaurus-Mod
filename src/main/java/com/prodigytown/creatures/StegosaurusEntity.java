@@ -79,6 +79,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         } else {
             if (!sexAssigned) assignSex();
             serverProgressTick();
+            guardTick();
             evolveTick();
             revertTick();
         }
@@ -213,6 +214,33 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         this.sexAssigned = true;
     }
 
+    /** Nido silvestre que vigila este adulto (null si no es guardian). */
+    @Nullable private BlockPos guardPos;
+    public void setGuard(BlockPos nest) {
+        this.guardPos = nest;
+        this.restrictTo(nest, 9);
+        this.setPersistenceRequired();
+    }
+    @Nullable public BlockPos guardPos() { return guardPos; }
+
+    /** Los guardianes atacan al jugador que se acerque al nido. */
+    private void guardTick() {
+        if (guardPos == null || isTame() || this.tickCount % 10 != 0) return;
+        if (this.getTarget() != null && this.getTarget().isAlive()) return;
+        Player p = this.level().getNearestPlayer(guardPos.getX() + 0.5, guardPos.getY(), guardPos.getZ() + 0.5, 11.0,
+            e -> e instanceof Player pl && !pl.isCreative() && !pl.isSpectator());
+        if (p != null) {
+            this.setTarget(p);
+            for (StegosaurusEntity o : this.level().getEntitiesOfClass(StegosaurusEntity.class, this.getBoundingBox().inflate(20.0),
+                    o -> o != this && o.isAlive() && !o.isTame())) o.setTarget(p);
+        }
+    }
+
+    @Override public boolean canAttack(LivingEntity target) {
+        if (isTame() && target == this.getOwner()) return false;
+        return super.canAttack(target);
+    }
+
     public int getVariant() { return this.entityData.get(VARIANT); }
     public void setVariant(int variant) { this.entityData.set(VARIANT, Math.max(0, Math.min(NATURAL, variant))); }
 
@@ -224,6 +252,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         tag.putInt("ArmorTier", getArmorTier());
         tag.putBoolean("Female", isFemale());
         tag.putBoolean("SexAssigned", sexAssigned);
+        if (guardPos != null) tag.putLong("GuardPos", guardPos.asLong());
     }
     @Override public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
@@ -235,6 +264,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         this.entityData.set(ARMOR_TIER, Math.max(0, Math.min(4, tag.getInt("ArmorTier"))));
         this.entityData.set(FEMALE, tag.getBoolean("Female"));
         this.sexAssigned = tag.getBoolean("SexAssigned");
+        if (tag.contains("GuardPos")) setGuard(BlockPos.of(tag.getLong("GuardPos")));
         applyStats();
     }
 
@@ -247,10 +277,19 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
     @Override public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, net.minecraft.world.DifficultyInstance difficulty,
             MobSpawnType reason, @Nullable SpawnGroupData previous, @Nullable CompoundTag tag) {
         SpawnGroupData result = super.finalizeSpawn(level, difficulty, reason, previous, tag);
-        int chance = this.random.nextInt(100);
-        // New naturally-colored variant is common. Legacy IDs 0..3 remain unchanged in saved worlds.
-        // 65% natural, 20% cybernetic, 9% golden, 3% magma, 3% glacial.
-        setVariant(chance < 3 ? MAGMA : chance < 12 ? GOLDEN : chance < 15 ? GLACIAL : chance < 35 ? CYBERNETIC : NATURAL);
+        if (reason != net.minecraft.world.entity.MobSpawnType.STRUCTURE) {
+            var biome = level.getBiome(this.blockPosition());
+            boolean deep = biome.is(net.minecraft.world.level.biome.Biomes.DEEP_DARK);
+            int bv = -1;
+            boolean natural = biome.is(net.minecraft.world.level.biome.Biomes.PLAINS) || biome.is(net.minecraft.tags.BiomeTags.IS_FOREST);
+            if (deep) bv = GLACIAL; // GLACIAL = esmeralda
+            else if (biome.is(net.minecraft.tags.BiomeTags.IS_SAVANNA) || biome.is(net.minecraft.tags.BiomeTags.IS_BADLANDS)) bv = MAGMA;
+            else if (biome.is(net.minecraft.world.level.biome.Biomes.DESERT)) bv = GOLDEN;
+            else if (biome.is(net.minecraft.world.level.biome.Biomes.SNOWY_PLAINS) || biome.is(net.minecraft.world.level.biome.Biomes.SNOWY_TAIGA)
+                || biome.is(net.minecraft.world.level.biome.Biomes.ICE_SPIKES) || biome.is(net.minecraft.world.level.biome.Biomes.GROVE)
+                || biome.is(net.minecraft.world.level.biome.Biomes.SNOWY_SLOPES) || biome.is(net.minecraft.world.level.biome.Biomes.FROZEN_PEAKS)) bv = CYBERNETIC;
+            setVariant(com.prodigytown.creatures.egg.StegosaurusEggs.rollWild(this.random, bv, natural));
+        }
         assignSex();
         return result;
     }
@@ -260,6 +299,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         this.goalSelector.addGoal(1, new SitWhenOrderedToGoal(this));
         this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.22, true));
         this.goalSelector.addGoal(3, new RejoinFollowGoal(1.15, 16.0f, 9.0f));
+        this.goalSelector.addGoal(4, new net.minecraft.world.entity.ai.goal.MoveTowardsRestrictionGoal(this, 0.8));
         this.goalSelector.addGoal(5, new RandomStrollGoal(this, 0.85));
         this.goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 12.0f));
         this.goalSelector.addGoal(7, new RandomLookAroundGoal(this));

@@ -84,7 +84,32 @@ public final class StegosaurusNestRenderer implements BlockEntityRenderer<Stegos
         model.root.render(pose, vc, light, OverlayTexture.NO_OVERLAY);
         pose.popPose();
 
-        if (be.total > 0) renderTimer(be, left, frac, pose, buffers);
+        if (st.getValue(StegosaurusNestBlock.WILD)) renderWildLabel(be, v, pose, buffers);
+        else if (be.total > 0) renderTimer(be, left, frac, pose, buffers);
+    }
+
+    private static final String[] LABEL = {"Cibernetico", "Dorado", "Magma", "Esmeralda", "Natural"};
+    private static final int[] LABEL_COLOR = {0xFF5CC8FF, 0xFFFFD84A, 0xFFFF6A2A, 0xFF3DE08A, 0xFFB8E986};
+
+    /** Cartel del huevo silvestre dormido: su raza se ve desde lejos. */
+    private void renderWildLabel(StegosaurusNestBlockEntity be, int v, PoseStack pose, MultiBufferSource buffers) {
+        Minecraft mc = Minecraft.getInstance();
+        double dx = mc.gameRenderer.getMainCamera().getPosition().x - (be.getBlockPos().getX() + 0.5);
+        double dy = mc.gameRenderer.getMainCamera().getPosition().y - (be.getBlockPos().getY() + 1.2);
+        double dz = mc.gameRenderer.getMainCamera().getPosition().z - (be.getBlockPos().getZ() + 0.5);
+        double d = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if (d > 48.0) return;
+        float sc = (float) Math.max(0.022, 0.022 * d / 8.0); // crece con la distancia para seguir legible
+        String t1 = "Huevo silvestre", t2 = LABEL[v];
+        pose.pushPose();
+        pose.translate(0.5, FLOOR + 1.12, 0.5);
+        pose.mulPose(mc.getEntityRenderDispatcher().cameraOrientation());
+        pose.scale(-sc, -sc, sc);
+        Matrix4f m = pose.last().pose();
+        int full = 0xF000F0;
+        font.drawInBatch(t1, -font.width(t1) / 2.0F, -10.0F, 0xFFFFFFFF, false, m, buffers, Font.DisplayMode.SEE_THROUGH, 0x66000000, full);
+        font.drawInBatch(t2, -font.width(t2) / 2.0F, 0.0F, LABEL_COLOR[v], false, m, buffers, Font.DisplayMode.SEE_THROUGH, 0x66000000, full);
+        pose.popPose();
     }
 
     /** Cartel que mira a la camara: tiempo restante y barra de avance. Solo si el jugador esta cerca. */

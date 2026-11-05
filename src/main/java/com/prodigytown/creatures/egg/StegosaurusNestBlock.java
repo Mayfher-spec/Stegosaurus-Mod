@@ -22,6 +22,8 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import com.prodigytown.creatures.StegosaurusEntity;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
@@ -38,14 +40,16 @@ import java.util.List;
  */
 public final class StegosaurusNestBlock extends BaseEntityBlock {
     public static final IntegerProperty EGG = IntegerProperty.create("egg", 0, 5);
+    /** Huevo silvestre dormido (generado en un nido natural): no incuba hasta que se reclame y se ponga en un nido propio. */
+    public static final BooleanProperty WILD = BooleanProperty.create("wild");
     private static final VoxelShape SHAPE = Block.box(0.0, 0.0, 0.0, 16.0, 6.0, 16.0);
 
     public StegosaurusNestBlock(Properties props) {
         super(props);
-        this.registerDefaultState(this.stateDefinition.any().setValue(EGG, 0));
+        this.registerDefaultState(this.stateDefinition.any().setValue(EGG, 0).setValue(WILD, false));
     }
 
-    @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> b) { b.add(EGG); }
+    @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> b) { b.add(EGG, WILD); }
     @Override public RenderShape getRenderShape(BlockState state) { return RenderShape.MODEL; } // el nido es modelo normal; solo el huevo va por BER
     @Override public VoxelShape getShape(BlockState s, BlockGetter l, BlockPos p, CollisionContext c) { return SHAPE; }
 
@@ -53,7 +57,7 @@ public final class StegosaurusNestBlock extends BaseEntityBlock {
         List<ItemStack> out = new ArrayList<>();
         out.add(new ItemStack(ProdigyCreatures.NEST_ITEM.get()));
         int e = state.getValue(EGG);
-        if (e > 0) out.add(new ItemStack(ProdigyCreatures.EGG_ITEMS.get(e - 1).get()));
+        if (e > 0 && !state.getValue(WILD)) out.add(new ItemStack(ProdigyCreatures.EGG_ITEMS.get(e - 1).get()));
         return out;
     }
 
@@ -66,6 +70,23 @@ public final class StegosaurusNestBlock extends BaseEntityBlock {
         ItemStack held = player.getItemInHand(hand);
         int egg = state.getValue(EGG);
         if (!(level.getBlockEntity(pos) instanceof StegosaurusNestBlockEntity be)) return InteractionResult.PASS;
+        if (state.getValue(WILD)) { // huevo silvestre: solo se reclama si ningun adulto lo protege
+            if (!level.isClientSide) {
+                boolean guarded = !level.getEntitiesOfClass(StegosaurusEntity.class, new net.minecraft.world.phys.AABB(pos).inflate(24.0),
+                    o -> o.isAlive() && !o.isTame()).isEmpty();
+                if (guarded && !player.getAbilities().instabuild) {
+                    player.displayClientMessage(Component.literal("Los padres protegen este huevo..."), true);
+                    return InteractionResult.sidedSuccess(false);
+                }
+                level.setBlock(pos, state.setValue(EGG, 0).setValue(WILD, false), 3);
+                be.clearIncubation();
+                ItemStack got = new ItemStack(ProdigyCreatures.EGG_ITEMS.get(egg - 1).get());
+                if (!player.getInventory().add(got)) level.addFreshEntity(new ItemEntity(level, pos.getX() + 0.5, pos.getY() + 0.8, pos.getZ() + 0.5, got));
+                level.playSound(null, pos, SoundEvents.TURTLE_EGG_CRACK, SoundSource.BLOCKS, 1.0F, 0.7F);
+                player.displayClientMessage(Component.literal("Has reclamado el huevo. Ponlo en tu propio nido para que eclosione."), true);
+            }
+            return InteractionResult.sidedSuccess(level.isClientSide);
+        }
         if (egg == 0 && held.getItem() instanceof StegosaurusEggItem ei) { // meter el huevo en el nido
             if (!level.isClientSide) {
                 level.setBlock(pos, state.setValue(EGG, ei.variant() + 1), 3);

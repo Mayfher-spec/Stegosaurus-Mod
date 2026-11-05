@@ -1,0 +1,6 @@
+{
+  "type": "forge:add_features",
+  "biomes": "#minecraft:is_overworld",
+  "features": "prodigycreatures:emerald_nest",
+  "step": "underground_decoration"
+}

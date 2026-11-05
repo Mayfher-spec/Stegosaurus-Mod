@@ -1,0 +1,8 @@
+{
+  "type": "forge:add_features",
+  "biomes": [
+    "minecraft:desert"
+  ],
+  "features": "prodigycreatures:desert_nest",
+  "step": "surface_structures"
+}

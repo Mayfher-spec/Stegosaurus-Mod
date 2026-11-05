@@ -30,6 +30,10 @@ public class ProdigyCreatures {
     public static final DeferredRegister<net.minecraft.world.level.block.Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, MODID);
     public static final DeferredRegister<net.minecraft.world.level.block.entity.BlockEntityType<?>> BLOCK_ENTITIES = DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES, MODID);
 
+    public static final DeferredRegister<net.minecraft.world.level.levelgen.feature.Feature<?>> FEATURES = DeferredRegister.create(ForgeRegistries.FEATURES, MODID);
+    public static final RegistryObject<net.minecraft.world.level.levelgen.feature.Feature<net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration>> NEST_FEATURE =
+        FEATURES.register("stegosaurus_nest", () -> new com.prodigytown.creatures.worldgen.StegosaurusNestFeature(net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration.CODEC));
+
     public static final RegistryObject<net.minecraft.world.level.block.Block> NEST_BLOCK = BLOCKS.register("stegosaurus_nest", () ->
         new com.prodigytown.creatures.egg.StegosaurusNestBlock(net.minecraft.world.level.block.state.BlockBehaviour.Properties.of()
             .strength(0.6F).sound(net.minecraft.world.level.block.SoundType.GRASS).noOcclusion()));
@@ -76,6 +80,7 @@ public class ProdigyCreatures {
         BLOCKS.register(bus);
         BLOCK_ENTITIES.register(bus);
         ITEMS.register(bus);
+        FEATURES.register(bus);
         ModSounds.SOUNDS.register(bus);
     }
 

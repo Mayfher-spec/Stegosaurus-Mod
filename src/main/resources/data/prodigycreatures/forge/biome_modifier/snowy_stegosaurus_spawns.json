@@ -1,0 +1,16 @@
+{
+  "type": "forge:add_spawns",
+  "biomes": [
+    "minecraft:snowy_plains",
+    "minecraft:snowy_taiga",
+    "minecraft:ice_spikes",
+    "minecraft:grove",
+    "minecraft:snowy_slopes"
+  ],
+  "spawners": {
+    "type": "prodigycreatures:stegosaurus",
+    "weight": 1,
+    "minCount": 1,
+    "maxCount": 2
+  }
+}

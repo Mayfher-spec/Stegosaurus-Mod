@@ -1,21 +1,39 @@
 {
   "variants": {
-    "egg=0": {
+    "egg=0,wild=false": {
       "model": "prodigycreatures:block/stegosaurus_nest"
     },
-    "egg=1": {
+    "egg=0,wild=true": {
       "model": "prodigycreatures:block/stegosaurus_nest"
     },
-    "egg=2": {
+    "egg=1,wild=false": {
       "model": "prodigycreatures:block/stegosaurus_nest"
     },
-    "egg=3": {
+    "egg=1,wild=true": {
       "model": "prodigycreatures:block/stegosaurus_nest"
     },
-    "egg=4": {
+    "egg=2,wild=false": {
       "model": "prodigycreatures:block/stegosaurus_nest"
     },
-    "egg=5": {
+    "egg=2,wild=true": {
+      "model": "prodigycreatures:block/stegosaurus_nest"
+    },
+    "egg=3,wild=false": {
+      "model": "prodigycreatures:block/stegosaurus_nest"
+    },
+    "egg=3,wild=true": {
+      "model": "prodigycreatures:block/stegosaurus_nest"
+    },
+    "egg=4,wild=false": {
+      "model": "prodigycreatures:block/stegosaurus_nest"
+    },
+    "egg=4,wild=true": {
+      "model": "prodigycreatures:block/stegosaurus_nest"
+    },
+    "egg=5,wild=false": {
+      "model": "prodigycreatures:block/stegosaurus_nest"
+    },
+    "egg=5,wild=true": {
       "model": "prodigycreatures:block/stegosaurus_nest"
     }
   }

@@ -53,7 +53,7 @@ public class StegosaurusNestBlockEntity extends BlockEntity {
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, StegosaurusNestBlockEntity be) {
-        if (state.getValue(StegosaurusNestBlock.EGG) <= 0) return;
+        if (state.getValue(StegosaurusNestBlock.EGG) <= 0 || state.getValue(StegosaurusNestBlock.WILD)) return;
         if (level.isClientSide) {
             be.shown = Math.min(be.total, be.shown + 1.0F);
             return;

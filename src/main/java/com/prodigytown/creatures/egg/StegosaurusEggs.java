@@ -10,21 +10,34 @@ public final class StegosaurusEggs {
 
     /** Indice = variante adulta (0 cibernetico, 1 dorado, 2 magma, 3 glacial, 4 natural). */
     public static final String[] NAMES = {"cybernetic", "golden", "magma", "glacial", "natural"};
-    /** Probabilidad base (%) de cada raza en un huevo sin madre conocida: natural 50, cibernetico 20, magma 20, albino dorado 10. */
-    private static final int[] BASE = {20, 10, 20, 0, 50};
-    /** Parte de la probabilidad que se reserva a la raza de la madre; el resto se reparte segun BASE. */
-    private static final double MOTHER_SHARE = 0.5;
+    /** Mezcla base (%) por variante adulta: cibernetico 18, dorado 15, magma 12, esmeralda 5, natural 50. */
+    private static final int[] BASE = {18, 15, 12, 5, 50};
+    /** Puntos de herencia que suma cada progenitor a su propia raza. */
+    private static final int HERITAGE = 20;
 
-    /** Raza del huevo que suelta una hembra de la raza dada. */
-    public static int rollVariant(RandomSource rnd, int motherVariant) {
-        int m = Math.max(0, Math.min(4, motherVariant));
+    /** Raza del huevo: mezcla base + 20 puntos por cada progenitor conocido (-1 = desconocido), normalizado. */
+    public static int rollVariant(RandomSource rnd, int mother, int father) {
         double[] w = new double[5];
-        for (int i = 0; i < 5; i++) w[i] = BASE[i] / 100.0;
-        // la madre se queda con MOTHER_SHARE y el resto se reparte entre todas segun BASE (la madre tambien participa)
-        for (int i = 0; i < 5; i++) w[i] *= (1.0 - MOTHER_SHARE);
-        w[m] += MOTHER_SHARE;
-        double r = rnd.nextDouble(), acc = 0.0;
+        double total = 0.0;
+        for (int i = 0; i < 5; i++) w[i] = BASE[i];
+        if (mother >= 0 && mother < 5) w[mother] += HERITAGE;
+        if (father >= 0 && father < 5) w[father] += HERITAGE;
+        for (double d : w) total += d;
+        double r = rnd.nextDouble() * total, acc = 0.0;
         for (int i = 0; i < 5; i++) { acc += w[i]; if (r < acc) return i; }
+        return 4;
+    }
+
+    public static int rollVariant(RandomSource rnd, int motherVariant) { return rollVariant(rnd, motherVariant, -1); }
+
+    /** Raza de un adulto silvestre: bonus = raza propia del bioma (20 %), -1 si el bioma solo da natural; sin esmeralda salvo bioma esmeralda. */
+    public static int rollWild(RandomSource rnd, int biomeVariant, boolean naturalOnly) {
+        if (naturalOnly) return 4;
+        if (biomeVariant >= 0 && rnd.nextInt(100) < 20) return biomeVariant;
+        int r = rnd.nextInt(95); // 18+15+12+50, sin esmeralda
+        if (r < 18) return 0;
+        if (r < 33) return 1;
+        if (r < 45) return 2;
         return 4;
     }
 
