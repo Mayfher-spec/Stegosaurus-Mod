@@ -54,6 +54,7 @@ import net.minecraft.world.entity.ai.goal.target.OwnerHurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.OwnerHurtTargetGoal;
 import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
@@ -61,7 +62,7 @@ import net.minecraft.world.entity.AnimationState;
 import org.jetbrains.annotations.Nullable;
 
 /** Original Stegosaurus; does not import, modify or redistribute ROR code or artwork. */
-public class StegosaurusEntity extends TamableAnimal {
+public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.creatures.progress.ProdigyPet {
     public final AnimationState idleAnimationState = new AnimationState();
     public final AnimationState tailWhipAnimationState = new AnimationState();
     public final AnimationState biteAnimationState = new AnimationState();
@@ -90,6 +91,7 @@ public class StegosaurusEntity extends TamableAnimal {
     }
 
     private static final EntityDataAccessor<Integer> VARIANT = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Boolean> SADDLED = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<CompoundTag> PROGRESS = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.COMPOUND_TAG);
 
     // ---- Progresion y talentos (ver progress/*) ----
@@ -148,6 +150,7 @@ public class StegosaurusEntity extends TamableAnimal {
         super.defineSynchedData();
         this.entityData.define(VARIANT, CYBERNETIC);
         this.entityData.define(PROGRESS, new ProdigyProgress().save());
+        this.entityData.define(SADDLED, Boolean.FALSE);
     }
 
     public int getVariant() { return this.entityData.get(VARIANT); }
@@ -157,6 +160,7 @@ public class StegosaurusEntity extends TamableAnimal {
         super.addAdditionalSaveData(tag);
         tag.putInt("SkinVariant", getVariant());
         tag.put("ProdigyProgress", progress.save());
+        tag.putBoolean("Saddled", isSaddled());
     }
     @Override public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
@@ -164,6 +168,7 @@ public class StegosaurusEntity extends TamableAnimal {
         // Mundos antiguos no tienen este tag: se carga con nivel 30 y sin talentos.
         progress = ProdigyProgress.load(tag.contains("ProdigyProgress") ? tag.getCompound("ProdigyProgress") : null);
         this.entityData.set(PROGRESS, progress.save());
+        this.entityData.set(SADDLED, tag.getBoolean("Saddled"));
         applyStats();
     }
 
@@ -218,9 +223,25 @@ public class StegosaurusEntity extends TamableAnimal {
             }
             return InteractionResult.sidedSuccess(this.level().isClientSide);
         }
+        if (this.isTame() && this.isOwnedBy(player) && held.is(Items.SADDLE) && !isSaddled()) {
+            if (!this.level().isClientSide) {
+                setSaddled(true);
+                if (!player.getAbilities().instabuild) held.shrink(1);
+                this.playSound(SoundEvents.HORSE_SADDLE, 1.0F, 1.0F);
+            }
+            return InteractionResult.sidedSuccess(this.level().isClientSide);
+        }
         if (this.isTame() && this.isOwnedBy(player) && player.isShiftKeyDown() && held.isEmpty()) {
             if (this.level().isClientSide) {
                 DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> com.prodigytown.creatures.client.ClientHooks.openTalents(this));
+            }
+            return InteractionResult.sidedSuccess(this.level().isClientSide);
+        }
+        if (this.isTame() && this.isOwnedBy(player) && !player.isShiftKeyDown() && isSaddled()) {
+            // Con silla: clic = montar. Sentar/levantar se hace desde la pantalla de habilidades.
+            if (!this.level().isClientSide && !this.isVehicle()) {
+                this.setOrderedToSit(false);
+                player.startRiding(this);
             }
             return InteractionResult.sidedSuccess(this.level().isClientSide);
         }
@@ -256,6 +277,77 @@ public class StegosaurusEntity extends TamableAnimal {
             }
         }
         return hit;
+    }
+
+    // ------------------------------------------------------------------ montura (silla)
+
+    public boolean isSaddled() { return this.entityData.get(SADDLED); }
+    public void setSaddled(boolean v) { this.entityData.set(SADDLED, v); }
+
+    @Override protected boolean canAddPassenger(net.minecraft.world.entity.Entity passenger) {
+        return isSaddled() && this.getPassengers().isEmpty() && passenger instanceof Player p && this.isOwnedBy(p);
+    }
+
+    @Nullable @Override public LivingEntity getControllingPassenger() {
+        net.minecraft.world.entity.Entity first = this.getFirstPassenger();
+        return first instanceof Player p && this.isOwnedBy(p) ? p : null;
+    }
+
+    @Override public double getPassengersRidingOffset() { return this.getBbHeight() * 0.98; }
+
+    @Override public void travel(Vec3 travelVector) {
+        if (this.isAlive() && this.isVehicle() && this.getControllingPassenger() instanceof Player rider) {
+            this.setYRot(rider.getYRot());
+            this.yRotO = this.getYRot();
+            this.setXRot(rider.getXRot() * 0.5F);
+            this.setRot(this.getYRot(), this.getXRot());
+            this.yBodyRot = this.getYRot();
+            this.yHeadRot = this.yBodyRot;
+            float strafe = rider.xxa * 0.4F;
+            float forward = rider.zza;
+            if (forward <= 0.0F) forward *= 0.3F;
+            if (this.isControlledByLocalInstance()) {
+                this.setSpeed((float) this.getAttributeValue(Attributes.MOVEMENT_SPEED) * 0.9F);
+                super.travel(new Vec3(strafe, travelVector.y, forward));
+            } else {
+                this.setDeltaMovement(Vec3.ZERO);
+            }
+            this.calculateEntityAnimation(false);
+        } else {
+            super.travel(travelVector);
+        }
+    }
+
+    @Override protected void dropCustomDeathLoot(DamageSource source, int looting, boolean recentlyHit) {
+        super.dropCustomDeathLoot(source, looting, recentlyHit);
+        if (isSaddled()) this.spawnAtLocation(Items.SADDLE);
+    }
+
+    public void toggleSit() {
+        if (this.level().isClientSide) return;
+        this.ejectPassengers();
+        this.setOrderedToSit(!this.isOrderedToSit());
+        this.getNavigation().stop();
+        this.setTarget(null);
+    }
+
+    /** D5 Guardia del Estegosaurio: porcentaje del dano al jinete que absorbe el estegosaurio (0 si no aplica). */
+    public int guardPercent() {
+        if (this.getControllingPassenger() == null) return 0;
+        return new int[]{0, 50, 75, 100}[progress.rank("D5")];
+    }
+
+    /** Dano redirigido desde el jinete: pasa por la armadura y vida del estegosaurio, una sola vez. */
+    public void takeRedirected(DamageSource source, float amount) {
+        if (!this.level().isClientSide && amount > 0.0F) this.hurt(source, amount);
+    }
+
+    /** La evolucion chibi -> adulto entrega aqui nivel, XP y puntos. */
+    public void adoptProgress(ProdigyProgress incoming) {
+        if (this.level().isClientSide) return;
+        this.progress = incoming.copy();
+        applyStats();
+        pushProgress();
     }
 
     // ------------------------------------------------------------------ progresion
@@ -306,7 +398,7 @@ public class StegosaurusEntity extends TamableAnimal {
         this.entityData.set(PROGRESS, progress.save());
     }
 
-    public void gainXp(int amount) {
+    @Override public void gainXp(int amount) {
         if (this.level().isClientSide || amount <= 0) return;
         float oldMax = this.getMaxHealth();
         boolean leveled = progress.addXp(amount);

@@ -28,7 +28,7 @@ public final class ModNetwork {
         CHANNEL.registerMessage(1, UseAbility.class, UseAbility::encode, UseAbility::decode, UseAbility::handle);
     }
 
-    /** action 0 = subir rango de un talento (index), 1 = restablecer. */
+    /** action 0 = subir rango de un talento (index), 1 = restablecer, 2 = sentar/levantar. */
     public record TalentAction(int entityId, int action, int index) {
         public static void encode(TalentAction m, FriendlyByteBuf buf) { buf.writeInt(m.entityId); buf.writeByte(m.action); buf.writeByte(m.index); }
         public static TalentAction decode(FriendlyByteBuf buf) { return new TalentAction(buf.readInt(), buf.readByte(), buf.readByte()); }
@@ -40,6 +40,7 @@ public final class ModNetwork {
                 if (!(e instanceof StegosaurusEntity stego) || !stego.isOwnedBy(sp) || stego.distanceTo(sp) > 40.0F) return;
                 if (m.action == 0) stego.unlockTalent(m.index);
                 else if (m.action == 1) stego.resetTalents();
+                else if (m.action == 2) stego.toggleSit();
             });
             ctx.get().setPacketHandled(true);
         }

@@ -14,6 +14,18 @@ public final class ProdigyProgress {
     private int xp = 0;
     private final int[] ranks = new int[Talents.ALL.length];
 
+    /** Progreso nuevo empezando en el nivel dado (el bebe empieza en 1; el adulto en 30). */
+    public static ProdigyProgress atLevel(int lv) {
+        ProdigyProgress p = new ProdigyProgress();
+        p.level = Math.max(1, Math.min(GrowthTable.MAX_LEVEL, lv));
+        return p;
+    }
+    public ProdigyProgress copy() {
+        ProdigyProgress c = new ProdigyProgress();
+        c.level = level; c.xp = xp;
+        System.arraycopy(ranks, 0, c.ranks, 0, ranks.length);
+        return c;
+    }
     public int level() { return level; }
     public int xp() { return xp; }
     public int xpToNext() { return level >= GrowthTable.MAX_LEVEL ? 0 : GrowthTable.XP_TO_NEXT[level]; }
@@ -78,8 +90,10 @@ public final class ProdigyProgress {
         return tag;
     }
 
-    public static ProdigyProgress load(CompoundTag tag) {
-        ProdigyProgress p = new ProdigyProgress();
+    public static ProdigyProgress load(CompoundTag tag) { return load(tag, ADULT_START_LEVEL); }
+
+    public static ProdigyProgress load(CompoundTag tag, int defaultLevel) {
+        ProdigyProgress p = atLevel(defaultLevel);
         if (tag == null) return p;
         if (tag.contains("Level")) p.level = Math.max(1, Math.min(GrowthTable.MAX_LEVEL, tag.getInt("Level")));
         p.xp = Math.max(0, tag.getInt("Xp"));
