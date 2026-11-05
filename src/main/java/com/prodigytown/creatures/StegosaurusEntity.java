@@ -865,7 +865,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
             if (player.getVehicle() != this) { player.displayClientMessage(Component.literal("La definitiva solo se usa montado"), true); return false; }
             if (ultimateLevel() <= 0) { player.displayClientMessage(Component.literal("La definitiva se obtiene al nivel 50"), true); return false; }
             if (this.tickCount < ultReadyAt) { cooldownMsg(player, ultReadyAt); return false; }
-            int ucd = Math.round(1200 * cooldownFactor()); // 1 minuto (solo se reduce con Dominio de combate)
+            int ucd = Math.round((1200 - 20 * new int[]{0, 8, 14, 20}[progress.rank("U3")]) * cooldownFactor()); // 60 s, menos con la mejora de recarga y Dominio de combate
             this.ultReadyAt = this.tickCount + ucd;
             markCooldown(CD_ULT, ucd);
             this.lastCombatTick = this.tickCount;
@@ -984,8 +984,9 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
     /** Habilidad definitiva de cada raza (solo montado). */
     private void castUltimate(Player player) {
         int ul = Math.max(1, ultimateLevel());
-        float atk = (float) this.getAttributeValue(Attributes.ATTACK_DAMAGE) * new float[]{1.0F, 1.0F, 1.5F, 2.0F}[ul]; // nivel 1/2/3: x1 / x1,5 / x2
-        double reach = 8.0 + 2.0 * ul; // alcance 10 / 12 / 14
+        float atk = (float) this.getAttributeValue(Attributes.ATTACK_DAMAGE) * new float[]{1.0F, 1.0F, 1.5F, 2.0F}[ul] // nivel 1/2/3: x1 / x1,5 / x2
+            * (1.0F + new float[]{0F, 0.15F, 0.30F, 0.50F}[progress.rank("U1")]); // mejora de potencia
+        double reach = 8.0 + 2.0 * ul + 1.5 * progress.rank("U2"); // alcance 10 / 12 / 14, mas la mejora
         java.util.List<LivingEntity> foes = this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(reach), this::isFoe);
         this.playSound(ModSounds.STEGO_ROAR.get(), 2.5F, 0.7F);
         switch (this.getVariant()) {
@@ -993,7 +994,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
                 this.playSound(net.minecraft.sounds.SoundEvents.LIGHTNING_BOLT_THUNDER, 2.5F, 1.0F);
                 int n = 0;
                 for (LivingEntity e : foes) {
-                    if (n++ >= 4 + 2 * ul) break;
+                    if (n++ >= 4 + 2 * ul + progress.rank("U2")) break;
                     zap(this.position().add(0.0, 4.0, 0.0), e.position().add(0.0, e.getBbHeight() * 0.5, 0.0));
                     e.hurt(this.damageSources().mobAttack(this), atk * 3.0F);
                 }

@@ -144,6 +144,7 @@ public final class TalentScreen extends Screen {
             case "D4" -> new int[]{1, 1}; case "D5" -> new int[]{0, 2};
             case "S1" -> new int[]{-1, 0}; case "S3" -> new int[]{1, 0}; case "S2" -> new int[]{-1, 1};
             case "S4" -> new int[]{1, 1}; case "S5" -> new int[]{-1, 2}; case "S6" -> new int[]{0, 3}; case "S7" -> new int[]{0, 4};
+            case "U1" -> new int[]{-1, 5}; case "U2" -> new int[]{1, 5}; case "U3" -> new int[]{0, 5};
             default -> new int[]{0, 0};
         };
     }
@@ -166,6 +167,7 @@ public final class TalentScreen extends Screen {
             case "C4" -> Items.CACTUS; case "C5" -> Items.TNT; case "C6" -> Items.BLAZE_POWDER; case "C7" -> Items.NETHER_STAR;
             case "S1" -> Items.SUGAR; case "S2" -> Items.GLISTERING_MELON_SLICE; case "S3" -> Items.LEAD;
             case "S4" -> Items.SLIME_BALL; case "S5" -> Items.RED_BED; case "S6" -> Items.ENDER_PEARL; case "S7" -> Items.BEACON;
+            case "U1" -> Items.NETHER_STAR; case "U2" -> Items.ENDER_EYE; case "U3" -> Items.CLOCK;
             default -> Items.PAPER;
         };
     }

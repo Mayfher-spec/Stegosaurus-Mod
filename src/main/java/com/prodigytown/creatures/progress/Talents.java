@@ -21,7 +21,10 @@ public final class Talents {
         new Talent("S4", 2, "Vínculo reforzado", 3, new int[]{2,2,3}, new int[]{55,55,55}, new String[][]{{"S3","1"}}, "Amortigua las caídas del dueño: −30 / −60 / −90 % de daño por caída si el compañero está a 8 bloques o menos", new String[]{}),
         new Talent("S5", 2, "Descanso reparador", 3, new int[]{2,2,3}, new int[]{35,35,35}, new String[][]{{"S2","1"}}, "Tras 10 s sin combate regenera 0,3 / 0,5 / 0,7 % de la vida máxima por segundo", new String[]{}),
         new Talent("S6", 2, "Protección de emergencia", 1, new int[]{4}, new int[]{75}, new String[][]{{"S4","1"},{"S5","1"}}, "Si el dueño baja del 30 % de vida y el compañero está en forma chibi, se transforma solo y combate; recarga 5 min", new String[]{}),
-        new Talent("S7", 2, "Maestría de soporte", 2, new int[]{5,5}, new int[]{90,90}, new String[][]{{"S6","1"}}, "+20 / +40 % a toda la regeneración y a los efectos de protección del dueño; −10 / −20 % de recarga de las habilidades de soporte", new String[]{})
+        new Talent("S7", 2, "Maestría de soporte", 2, new int[]{5,5}, new int[]{90,90}, new String[][]{{"S6","1"}}, "+20 / +40 % a toda la regeneración y a los efectos de protección del dueño; −10 / −20 % de recarga de las habilidades de soporte", new String[]{}),
+        new Talent("U1", 0, "Definitiva: potencia", 3, new int[]{4,5,6}, new int[]{50,75,100}, new String[][]{}, "Mejora de la definitiva: +15 / +30 / +50 % de daño (el rango pide nivel 50 / 75 / 100)", new String[]{}),
+        new Talent("U2", 0, "Definitiva: alcance", 3, new int[]{3,4,5}, new int[]{50,75,100}, new String[][]{}, "Mejora de la definitiva: +1,5 / +3 / +4,5 bloques de alcance (el rango pide nivel 50 / 75 / 100)", new String[]{}),
+        new Talent("U3", 2, "Definitiva: recarga", 3, new int[]{4,5,6}, new int[]{50,75,100}, new String[][]{}, "Mejora de la definitiva: recarga de 52 / 46 / 40 s en vez de 60 s (el rango pide nivel 50 / 75 / 100)", new String[]{})
     };
     private Talents() {}
     public static int index(String id) {
