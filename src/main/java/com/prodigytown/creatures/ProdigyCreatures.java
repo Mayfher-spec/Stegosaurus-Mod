@@ -82,6 +82,7 @@ public class ProdigyCreatures {
         ITEMS.register(bus);
         FEATURES.register(bus);
         ModEffects.EFFECTS.register(bus);
+        ModParticles.PARTICLES.register(bus);
         ModSounds.SOUNDS.register(bus);
     }
 

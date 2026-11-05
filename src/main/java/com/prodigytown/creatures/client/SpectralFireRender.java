@@ -29,6 +29,27 @@ public final class SpectralFireRender {
     private static final Material FIRE_0 = new Material(TextureAtlas.LOCATION_BLOCKS, new ResourceLocation(ProdigyCreatures.MODID, "block/spectral_fire_0"));
     private static final Material FIRE_1 = new Material(TextureAtlas.LOCATION_BLOCKS, new ResourceLocation(ProdigyCreatures.MODID, "block/spectral_fire_1"));
 
+    /** Llamas verdes que suben del cuerpo, como el fuego de un mob quemandose (aparecen aunque el dibujo plano no se vea desde arriba). */
+    @SubscribeEvent public static void onClientTick(net.minecraftforge.event.TickEvent.ClientTickEvent event) {
+        if (event.phase != net.minecraftforge.event.TickEvent.Phase.END) return;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null || mc.isPaused()) return;
+        try {
+            for (net.minecraft.world.entity.Entity ent : mc.level.entitiesForRendering()) {
+                if (!(ent instanceof net.minecraft.world.entity.LivingEntity le) || !le.hasEffect(ModEffects.SPECTRAL_BURN.get())) continue;
+                if (le.distanceToSqr(mc.player) > 64.0 * 64.0) continue;
+                int n = 2 + (int) (le.getBbWidth() * le.getBbHeight() * 0.35F);
+                n = Math.min(n, 14);
+                for (int i = 0; i < n; i++) {
+                    double x = le.getX() + (mc.level.random.nextDouble() - 0.5) * le.getBbWidth() * 0.9;
+                    double y = le.getY() + mc.level.random.nextDouble() * le.getBbHeight();
+                    double z = le.getZ() + (mc.level.random.nextDouble() - 0.5) * le.getBbWidth() * 0.9;
+                    mc.level.addParticle(com.prodigytown.creatures.ModParticles.SPECTRAL_FLAME.get(), x, y, z, 0.0, 0.03 + mc.level.random.nextDouble() * 0.03, 0.0);
+                }
+            }
+        } catch (RuntimeException ex) { /* decorativo */ }
+    }
+
     /** Se dibuja tras las entidades (y no en RenderLivingEvent) para que tambien funcione con mobs de otros mods, p. ej. los de GeckoLib. */
     @SubscribeEvent public static void onRender(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_ENTITIES) return;

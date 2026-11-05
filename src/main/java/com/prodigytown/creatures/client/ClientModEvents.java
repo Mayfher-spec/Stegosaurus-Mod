@@ -12,6 +12,9 @@ public final class ClientModEvents {
         event.registerEntityRenderer(ProdigyCreatures.STEGOSAURUS.get(), StegosaurusRenderer::new);
         event.registerBlockEntityRenderer(ProdigyCreatures.NEST_BE.get(), StegosaurusNestRenderer::new);
     }
+    @SubscribeEvent public static void registerParticles(net.minecraftforge.client.event.RegisterParticleProvidersEvent event) {
+        event.registerSpriteSet(com.prodigytown.creatures.ModParticles.SPECTRAL_FLAME.get(), net.minecraft.client.particle.FlameParticle.Provider::new);
+    }
     @SubscribeEvent public static void registerLayers(EntityRenderersEvent.RegisterLayerDefinitions event) {
         event.registerLayerDefinition(StegosaurusModel.LAYER_LOCATION, StegosaurusModel::createBodyLayer);
         event.registerLayerDefinition(StegosaurusSaddleModel.LAYER_LOCATION, StegosaurusSaddleModel::createBodyLayer);
