@@ -11,4 +11,7 @@ public final class ModParticles {
     public static final DeferredRegister<ParticleType<?>> PARTICLES = DeferredRegister.create(ForgeRegistries.PARTICLE_TYPES, ProdigyCreatures.MODID);
     /** Llama verde como la del fuego de un bloc de magma o una antorcha, usada por el fuego espectral. */
     public static final RegistryObject<SimpleParticleType> SPECTRAL_FLAME = PARTICLES.register("spectral_flame", () -> new SimpleParticleType(false));
+    /** Versiones grandes (x3,5) para la definitiva: misma textura, mismo aspecto. */
+    public static final RegistryObject<SimpleParticleType> SPECTRAL_FLAME_BIG = PARTICLES.register("spectral_flame_big", () -> new SimpleParticleType(false));
+    public static final RegistryObject<SimpleParticleType> BIG_FLAME = PARTICLES.register("big_flame", () -> new SimpleParticleType(false));
 }

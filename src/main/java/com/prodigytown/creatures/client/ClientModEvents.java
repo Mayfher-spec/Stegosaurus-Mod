@@ -14,6 +14,15 @@ public final class ClientModEvents {
     }
     @SubscribeEvent public static void registerParticles(net.minecraftforge.client.event.RegisterParticleProvidersEvent event) {
         event.registerSpriteSet(com.prodigytown.creatures.ModParticles.SPECTRAL_FLAME.get(), net.minecraft.client.particle.FlameParticle.Provider::new);
+        event.registerSpriteSet(com.prodigytown.creatures.ModParticles.SPECTRAL_FLAME_BIG.get(), sprites -> big(sprites, 3.5F));
+        event.registerSpriteSet(com.prodigytown.creatures.ModParticles.BIG_FLAME.get(), sprites -> big(sprites, 3.5F));
+    }
+    private static net.minecraft.client.particle.ParticleProvider<net.minecraft.core.particles.SimpleParticleType> big(net.minecraft.client.particle.SpriteSet sprites, float scale) {
+        net.minecraft.client.particle.FlameParticle.Provider base = new net.minecraft.client.particle.FlameParticle.Provider(sprites);
+        return (type, level, x, y, z, dx, dy, dz) -> {
+            net.minecraft.client.particle.Particle p = base.createParticle(type, level, x, y, z, dx, dy, dz);
+            return p == null ? null : p.scale(scale);
+        };
     }
     @SubscribeEvent public static void registerLayers(EntityRenderersEvent.RegisterLayerDefinitions event) {
         event.registerLayerDefinition(StegosaurusModel.LAYER_LOCATION, StegosaurusModel::createBodyLayer);

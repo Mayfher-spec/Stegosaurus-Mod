@@ -633,6 +633,18 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
             this.setRot(this.getYRot(), this.getXRot());
             this.yBodyRot = this.getYRot();
             this.yHeadRot = this.yBodyRot;
+            if (isCharging()) { // carrera: avanza recto con ligero giro hacia donde mira el jinete
+                this.setYRot(this.getYRot() + Mth.clamp(Mth.wrapDegrees(rider.getYRot() - this.getYRot()), -2.5F, 2.5F));
+                this.yRotO = this.getYRot(); this.yBodyRot = this.getYRot(); this.yHeadRot = this.getYRot();
+                if (this.isControlledByLocalInstance()) {
+                    Vec3 d = Vec3.directionFromRotation(0.0F, this.getYRot()), mv = this.getDeltaMovement();
+                    this.setDeltaMovement(d.x * 0.55, mv.y, d.z * 0.55);
+                    this.move(net.minecraft.world.entity.MoverType.SELF, this.getDeltaMovement());
+                    this.setDeltaMovement(d.x * 0.55, (mv.y - 0.08) * 0.98, d.z * 0.55);
+                }
+                this.calculateEntityAnimation(false);
+                return;
+            }
             float strafe = rider.xxa * 0.4F;
             float forward = rider.zza;
             if (forward <= 0.0F) forward *= 0.3F;
@@ -792,13 +804,18 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
             chargeTicks--;
             this.entityData.set(CHARGE_LEFT, chargeTicks);
             Vec3 mv = this.getDeltaMovement();
-            this.setDeltaMovement(chargeDir.x * 0.5, mv.y, chargeDir.z * 0.5);
-            if (chargeTicks % 2 == 0) powerFx(this.getX() - chargeDir.x * 1.5, this.getY() + 0.3, this.getZ() - chargeDir.z * 1.5, 6, 0.6);
+            Vec3 cdir = this.getControllingPassenger() instanceof Player ? Vec3.directionFromRotation(0.0F, this.getYRot()) : chargeDir;
+            this.setDeltaMovement(cdir.x * 0.55, mv.y, cdir.z * 0.55);
+            if (chargeTicks % 2 == 0) powerFx(this.getX() - cdir.x * 1.5, this.getY() + 0.3, this.getZ() - cdir.z * 1.5, 8, 0.8);
+            if (this.horizontalCollision && this.tickCount % 2 == 0 && chargeTicks > 4) { // choca con un muro: termina la carrera
+                chargeTicks = 3;
+            }
             float dmg = (float)this.getAttributeValue(Attributes.ATTACK_DAMAGE) * new float[]{0F, 0.5F, 0.75F, 1.0F}[Math.max(1, progress.rank("C3"))];
-            for (LivingEntity e : this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(0.6), this::isFoe)) {
+            for (LivingEntity e : this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(1.0), this::isFoe)) {
                 if (chargeHit.add(e.getId())) {
                     e.hurt(this.damageSources().mobAttack(this), dmg);
-                    e.knockback(1.2, -chargeDir.x, -chargeDir.z);
+                    e.knockback(0.6, -cdir.x, -cdir.z);
+                    stun(e, 40); // aturdido 2 s
                 }
             }
             if (chargeTicks == 0) chargeHit.clear();
@@ -835,16 +852,15 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
             int r = progress.rank("C3");
             if (r <= 0) { player.displayClientMessage(Component.literal("Embestida no desbloqueada"), true); return false; }
             if (this.tickCount < chargeReadyAt) { cooldownMsg(player, chargeReadyAt); return false; }
-            int blocks = new int[]{0, 4, 6, 8}[r];
             this.chargeDir = Vec3.directionFromRotation(0.0F, player.getYRot());
             this.setYRot(player.getYRot()); this.yBodyRot = player.getYRot(); this.setYHeadRot(player.getYRot());
             this.chargeHit.clear();
-            this.chargeTicks = blocks * 2;
+            this.chargeTicks = new int[]{0, 40, 50, 60}[r]; // carrera de 2 / 2,5 / 3 s
             this.entityData.set(CHARGE_LEFT, chargeTicks);
             this.playSound(ModSounds.STEGO_ROAR.get(), 2.0F, 1.0F);
             this.playSound(ModSounds.STEGO_CHARGE_POWER.get(), 2.4F, 1.0F);
-            this.chargeReadyAt = this.tickCount + Math.round(240 * cooldownFactor());
-            markCooldown(CD_CHARGE, Math.round(240 * cooldownFactor()));
+            this.chargeReadyAt = this.tickCount + Math.round(300 * cooldownFactor());
+            markCooldown(CD_CHARGE, Math.round(300 * cooldownFactor()));
             this.lastCombatTick = this.tickCount;
             return true;
         }
@@ -1003,6 +1019,27 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         };
     }
 
+    /** Llama grande para anillos e impacto de la definitiva (magma y esmeralda). */
+    private net.minecraft.core.particles.ParticleOptions ultBig() {
+        return switch (this.getVariant()) {
+            case MAGMA -> ModParticles.BIG_FLAME.get();
+            case GLACIAL -> ModParticles.SPECTRAL_FLAME_BIG.get();
+            default -> ultMain();
+        };
+    }
+
+    /** Aturdimiento: no se mueve, no pega y pierde su objetivo durante el tiempo indicado. */
+    private void stun(LivingEntity e, int ticks) {
+        e.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.MOVEMENT_SLOWDOWN, ticks, 9, false, false, true), this);
+        e.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.WEAKNESS, ticks, 9, false, false, false), this);
+        if (e instanceof net.minecraft.world.entity.Mob m) m.setTarget(null);
+        if (this.level() instanceof net.minecraft.server.level.ServerLevel server) {
+            server.sendParticles(net.minecraft.core.particles.ParticleTypes.CRIT, e.getX(), e.getY() + e.getBbHeight() + 0.3, e.getZ(), 16, 0.4, 0.2, 0.4, 0.2);
+            server.sendParticles(net.minecraft.core.particles.ParticleTypes.ENCHANT, e.getX(), e.getY() + e.getBbHeight() + 0.5, e.getZ(), 12, 0.4, 0.3, 0.4, 0.5);
+        }
+        e.playSound(net.minecraft.sounds.SoundEvents.ANVIL_LAND, 0.8F, 1.4F);
+    }
+
     private void startUltimate(Player player) {
         this.ultCaster = player;
         this.ultWindup = ULT_WINDUP;
@@ -1016,7 +1053,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         if (ultWave > 0) { // onda expansiva: un anillo que crece durante 12 ticks
             double r = (13 - ultWave) * 0.9;
             int n = (int) (14 + r * 7);
-            var type = this.getVariant() == GLACIAL ? emeraldDust() : ultMain();
+            var type = ultBig();
             for (int k = 0; k < n; k++) {
                 double a = k * Math.PI * 2.0 / n;
                 server.sendParticles(type, this.getX() + Math.cos(a) * r, this.getY() + 0.25, this.getZ() + Math.sin(a) * r, 1, 0.05, 0.12, 0.05, 0.01);
@@ -1067,7 +1104,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
                 for (int i = 0; i < 14; i++) {
                     double a = this.random.nextDouble() * Math.PI * 2.0, r = 1.5 + this.random.nextDouble() * 6.0;
                     double px = x + Math.cos(a) * r, pz = z + Math.sin(a) * r;
-                    server.sendParticles(net.minecraft.core.particles.ParticleTypes.FLAME, px, y + 0.3, pz, 14, 0.15, 0.9, 0.15, 0.12);
+                    server.sendParticles(ModParticles.BIG_FLAME.get(), px, y + 0.3, pz, 8, 0.2, 1.2, 0.2, 0.12);
                     server.sendParticles(net.minecraft.core.particles.ParticleTypes.LAVA, px, y + 0.5, pz, 4, 0.2, 0.3, 0.2, 0.0);
                     server.sendParticles(net.minecraft.core.particles.ParticleTypes.LARGE_SMOKE, px, y + 1.0, pz, 3, 0.2, 0.6, 0.2, 0.03);
                 }
@@ -1076,7 +1113,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
                 for (int arm = 0; arm < 3; arm++) { // tres espirales de llama espectral que se abren
                     for (int k = 0; k < 28; k++) {
                         double a = arm * 2.094 + k * 0.28, r = 0.6 + k * 0.28;
-                        server.sendParticles(ModParticles.SPECTRAL_FLAME.get(), x + Math.cos(a) * r, y + 0.3 + k * 0.05, z + Math.sin(a) * r, 2, 0.1, 0.2, 0.1, 0.01);
+                        server.sendParticles(ModParticles.SPECTRAL_FLAME_BIG.get(), x + Math.cos(a) * r, y + 0.3 + k * 0.05, z + Math.sin(a) * r, 1, 0.2, 0.3, 0.2, 0.01);
                     }
                 }
                 for (double h = 0; h <= 8; h += 0.5) server.sendParticles(emeraldDust(), x, y + h, z, 4, 0.5, 0.0, 0.5, 0.0);
