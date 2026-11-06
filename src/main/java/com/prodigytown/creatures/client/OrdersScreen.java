@@ -43,27 +43,27 @@ public final class OrdersScreen extends Screen {
 
     private PetOrders.Holder holder() { return (PetOrders.Holder) pet; }
 
-    /** Casilla con la imagen de la orden. */
+    /** Casilla con la imagen de la orden (el marco viene del fondo). */
     private static final class OrderTile extends Button {
         final int order; boolean selected; final ResourceLocation icon;
         OrderTile(int x, int y, int order, ResourceLocation icon, OnPress press) {
-            this.icon = icon;
             super(x, y, 72, 64, Component.literal(PetOrders.NAMES[order]), press, DEFAULT_NARRATION);
-            this.order = order;
+            this.order = order; this.icon = icon;
         }
         @Override public void renderWidget(GuiGraphics g, int mx, int my, float pt) {
             int x = getX(), y = getY();
             boolean hot = isHoveredOrFocused() && active;
-            g.fill(x, y, x + width, y + height, 0xFF101216);
-            g.fillGradient(x + 1, y + 1, x + width - 1, y + height - 1, hot ? 0xFF2A2E38 : 0xFF1C1F26, 0xFF14161B);
-            int edge = selected ? GOLD : hot ? 0xFFE8C46A : 0xFF5A4A24;
-            g.renderOutline(x, y, width, height, edge);
-            if (selected) g.renderOutline(x + 1, y + 1, width - 2, height - 2, 0x66FFD35A);
+            if (hot) g.fill(x + 2, y + 2, x + width - 2, y + 48, 0x22FFFFFF);
+            if (selected) {
+                g.fillGradient(x + 2, y + 2, x + width - 2, y + height - 2, 0x30FFD35A, 0x10FFD35A);
+                g.renderOutline(x, y, width, height, GOLD);
+                g.renderOutline(x + 1, y + 1, width - 2, height - 2, 0x99FFD35A);
+            } else if (hot) g.renderOutline(x, y, width, height, 0xFFE8C46A);
             g.setColor(1.0F, 1.0F, 1.0F, active ? 1.0F : 0.4F);
-            g.blit(icon, x + 2, y + 3, 68, 45, 0.0F, 0.0F, 96, 64, 96, 64);
+            g.blit(icon, x + 3, y + 3, 66, 44, 0.0F, 0.0F, 96, 64, 96, 64);
             g.setColor(1.0F, 1.0F, 1.0F, 1.0F);
             net.minecraft.client.gui.Font font = Minecraft.getInstance().font;
-            g.drawCenteredString(font, getMessage(), x + width / 2, y + height - 12, selected ? GOLD : active ? 0xFFFFFFFF : 0xFF7A7F85);
+            g.drawCenteredString(font, getMessage(), x + width / 2, y + 52, selected ? GOLD : active ? 0xFFFFFFFF : 0xFF7A7F85);
         }
     }
 
@@ -86,50 +86,50 @@ public final class OrdersScreen extends Screen {
 
     @Override public boolean isPauseScreen() { return false; }
 
+    /** Color del adorno segun la raza (0 cibernetico, 1 dorado, 2 magma, 3 esmeralda, 4 natural). */
+    private int bgIndex() {
+        if (pet instanceof StegosaurusEntity s) return Math.max(0, Math.min(4, s.getVariant()));
+        if (pet instanceof ChibiStego c) return c.isGlacial() ? 3 : new int[]{4, 0, 2, 1}[Math.max(0, Math.min(3, c.variant()))];
+        return 4;
+    }
+
     @Override public void render(GuiGraphics g, int mx, int my, float pt) {
         this.renderBackground(g);
-        g.fill(left - 2, top - 2, left + W + 2, top + H + 2, EDGE);
-        g.fill(left, top, left + W, top + H, 0xFF14161A);
-        g.fill(left + 3, top + 3, left + W - 3, top + H - 3, 0xFF1A1D23);
+        g.blit(new ResourceLocation(ProdigyCreatures.MODID, "textures/gui/orders_bg_" + bgIndex() + ".png"), left, top, W, H, 0.0F, 0.0F, 800, 464, 800, 464);
         boolean fallen = holder().isFallen();
         int cur = holder().getOrder();
         for (OrderTile t : tiles) { t.selected = !fallen && t.order == cur; t.active = !fallen; }
-        // cabecera
-        g.drawString(this.font, "Ordenes", left + 166, top + 14, GOLD, true);
+        String name = pet.hasCustomName() ? pet.getCustomName().getString() : (adult != null ? "Estegosaurio" : "Chibi estegosaurio");
+        g.drawCenteredString(this.font, name, left + 82, top + 14, GOLD);
+        g.drawCenteredString(this.font, "Ordenes", left + 212, top + 13, GOLD);
         // retrato
-        int px0 = left + 12, py0 = top + 34, pw = 142, ph = 104;
-        g.fill(px0, py0, px0 + pw, py0 + ph, 0xFF0E1014);
-        g.renderOutline(px0, py0, pw, ph, 0xFF5A4A24);
+        int px0 = left + 15, py0 = top + 37, pw = 136, ph = 98;
         g.enableScissor(px0, py0, px0 + pw, py0 + ph);
-        InventoryScreen.renderEntityInInventoryFollowsMouse(g, px0 + pw / 2, py0 + ph - 10, adult != null ? 9 : 38,
+        InventoryScreen.renderEntityInInventoryFollowsMouse(g, px0 + pw / 2, py0 + ph - 8, adult != null ? 9 : 38,
             (float) (px0 + pw / 2 - mx), (float) (py0 + 30 - my), pet);
         g.disableScissor();
-        // nombre, nivel, vida y datos
-        String name = pet.hasCustomName() ? pet.getCustomName().getString() : (adult != null ? "Estegosaurio" : "Chibi estegosaurio");
-        g.drawString(this.font, name, left + 12, top + 14, GOLD, true);
         int level = adult != null ? adult.getProgress().level() : pet instanceof ChibiStego c ? c.syncedLevel() : 0;
-        g.drawString(this.font, "Nv. " + level, px0, py0 + ph + 6, 0xFFEDEDED, false);
+        g.drawCenteredString(this.font, "Nv. " + level, left + 83, top + 146, 0xFFEDEDED);
         float hp = Math.max(0.0F, pet.getHealth()), max = Math.max(1.0F, pet.getMaxHealth());
-        int by = py0 + ph + 18;
-        g.fill(px0 - 1, by - 1, px0 + pw + 1, by + 10, 0xFF000000);
-        g.fill(px0, by, px0 + pw, by + 9, 0xFF3A2020);
-        g.fill(px0, by, px0 + (int) (pw * Math.min(1.0F, hp / max)), by + 9, hp / max < PetOrders.WEAK_FRACTION ? 0xFFE0453A : 0xFF58C84A);
+        int bx = left + 28, by = top + 165, bw = 124;
+        g.fill(bx, by, bx + bw, by + 12, 0xFF3A2020);
+        g.fill(bx, by, bx + (int) (bw * Math.min(1.0F, hp / max)), by + 12, hp / max < PetOrders.WEAK_FRACTION ? 0xFFE0453A : 0xFF58C84A);
+        g.fill(bx, by, bx + (int) (bw * Math.min(1.0F, hp / max)), by + 4, 0x30FFFFFF);
         String hpText = (int) Math.ceil(hp) + " / " + (int) Math.ceil(max);
-        g.drawString(this.font, hpText, px0 + pw / 2 - this.font.width(hpText) / 2, by + 1, 0xFFFFFFFF, true);
+        g.drawCenteredString(this.font, hpText, bx + bw / 2, by + 2, 0xFFFFFFFF);
         double atk = pet.getAttributeValue(Attributes.ATTACK_DAMAGE), arm = pet.getAttributeValue(Attributes.ARMOR);
-        g.drawString(this.font, "Ataque " + (int) atk + "   Armadura " + (int) arm, px0, by + 15, DIM, false);
+        g.drawString(this.font, "Ataque " + (int) atk, left + 27, top + 188, 0xFFD8D8D8, false);
+        g.drawString(this.font, "Armadura " + (int) arm, left + 100, top + 188, 0xFFD8D8D8, false);
         // descripcion
-        int dx = left + 166, dy = top + 176, dw = W - 166 - 12, dh = 44;
-        g.fill(dx, dy, dx + dw, dy + dh, 0xFF101216);
-        g.renderOutline(dx, dy, dw, dh, 0xFF5A4A24);
+        int dx = left + 166, dy = top + 176, dw = W - 166 - 12;
         if (fallen) {
-            g.drawString(this.font, "Fuera de combate", dx + 8, dy + 5, 0xFFE0453A, true);
-            List<FormattedCharSequence> lines = this.font.split(Component.literal("Dormido: no recibe ordenes. Reanimalo con la ensalada de domesticacion (clic derecho): se recupera con 20 de vida."), dw - 16);
-            for (int i = 0; i < Math.min(3, lines.size()); i++) g.drawString(this.font, lines.get(i), dx + 8, dy + 16 + i * 9, 0xFFCFCFCF, false);
+            g.drawString(this.font, "Fuera de combate", dx + 20, dy + 6, 0xFFE0453A, true);
+            List<FormattedCharSequence> lines = this.font.split(Component.literal("Dormido: no recibe ordenes. Reanimalo con la ensalada de domesticacion (clic derecho): se recupera con 20 de vida."), dw - 24);
+            for (int i = 0; i < Math.min(3, lines.size()); i++) g.drawString(this.font, lines.get(i), dx + 8, dy + 18 + i * 9, 0xFFCFCFCF, false);
         } else {
-            g.drawString(this.font, PetOrders.NAMES[cur], dx + 8, dy + 5, GOLD, true);
-            List<FormattedCharSequence> lines = this.font.split(Component.literal(PetOrders.HELP[cur]), dw - 16);
-            for (int i = 0; i < Math.min(3, lines.size()); i++) g.drawString(this.font, lines.get(i), dx + 8, dy + 16 + i * 9, 0xFFCFCFCF, false);
+            g.drawString(this.font, PetOrders.NAMES[cur], dx + 20, dy + 6, GOLD, true);
+            List<FormattedCharSequence> lines = this.font.split(Component.literal(PetOrders.HELP[cur]), dw - 24);
+            for (int i = 0; i < Math.min(3, lines.size()); i++) g.drawString(this.font, lines.get(i), dx + 8, dy + 18 + i * 9, 0xFFCFCFCF, false);
         }
         super.render(g, mx, my, pt);
     }
