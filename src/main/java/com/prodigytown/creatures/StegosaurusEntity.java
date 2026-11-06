@@ -627,7 +627,6 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         this.setDeltaMovement(0.0, Math.min(0.0, mv.y), 0.0);
         double cx = this.getX(), cz = this.getZ(), cy = this.getY();
         if (e == 0) {
-            server.sendParticles(net.minecraft.core.particles.ParticleTypes.FLASH, cx, cy + 1.2, cz, 1, 0, 0, 0, 0);
             server.sendParticles(net.minecraft.core.particles.ParticleTypes.END_ROD, cx, cy + 1.2, cz, 30, 0.5, 0.5, 0.5, 0.15);
         }
         if (e % 2 == 0) { // remolino de luz que se cierra sobre el estegosaurio y sube
@@ -643,7 +642,6 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
                 cx + (this.random.nextDouble() - 0.5) * 3.0, cy + this.random.nextDouble() * 4.0, cz + (this.random.nextDouble() - 0.5) * 3.0, 3, 0.1, 0.1, 0.1, 0.05);
         }
         if (left == 5) { // estallido final
-            server.sendParticles(net.minecraft.core.particles.ParticleTypes.FLASH, cx, cy + 2.0, cz, 1, 0, 0, 0, 0);
             server.sendParticles(net.minecraft.core.particles.ParticleTypes.FIREWORK, cx, cy + 2.0, cz, 70, 1.6, 1.6, 1.6, 0.12);
         }
         this.entityData.set(EVOLVE, left - 1);
@@ -1062,13 +1060,23 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
     private Player ultCaster;
     private static final int ULT_WINDUP = 28; // 1,4 s: el golpe cae en el cuadro del pisoton de la animacion
 
+    /** Polvo de color vivo de la raza (nada de blanco): cian, oro, naranja, esmeralda o verde hoja. */
+    private net.minecraft.core.particles.ParticleOptions ultDust(float size) {
+        org.joml.Vector3f c = switch (this.getVariant()) {
+            case CYBERNETIC -> new org.joml.Vector3f(0.10F, 0.80F, 1.00F);
+            case GOLDEN -> new org.joml.Vector3f(1.00F, 0.72F, 0.05F);
+            case MAGMA -> new org.joml.Vector3f(1.00F, 0.30F, 0.02F);
+            case GLACIAL -> new org.joml.Vector3f(0.20F, 1.00F, 0.45F);
+            default -> new org.joml.Vector3f(0.45F, 0.90F, 0.15F);
+        };
+        return new net.minecraft.core.particles.DustParticleOptions(c, size);
+    }
+
     private net.minecraft.core.particles.ParticleOptions ultMain() {
         return switch (this.getVariant()) {
-            case CYBERNETIC -> net.minecraft.core.particles.ParticleTypes.ELECTRIC_SPARK;
-            case GOLDEN -> net.minecraft.core.particles.ParticleTypes.END_ROD;
             case MAGMA -> net.minecraft.core.particles.ParticleTypes.FLAME;
             case GLACIAL -> ModParticles.SPECTRAL_FLAME.get();
-            default -> net.minecraft.core.particles.ParticleTypes.COMPOSTER;
+            default -> ultDust(1.8F);
         };
     }
 
@@ -1077,7 +1085,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         return switch (this.getVariant()) {
             case MAGMA -> ModParticles.BIG_FLAME.get();
             case GLACIAL -> ModParticles.SPECTRAL_FLAME_BIG.get();
-            default -> ultMain();
+            default -> ultDust(3.2F);
         };
     }
 
@@ -1104,18 +1112,23 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
     private void ultTick() {
         if (!(this.level() instanceof net.minecraft.server.level.ServerLevel server)) return;
         double x = this.getX(), y = this.getY(), z = this.getZ();
-        if (ultWave > 0) { // ondas expansivas: tres anillos (suelo, medio y alto) que crecen durante 22 ticks
+        if (ultWave > 0) { // onda expansiva en forma de estrella de puntas (como las placas dorsales), tres capas que giran
             int step = 23 - ultWave;
-            double r = step * 0.85;
-            int n = (int) (20 + r * 9);
+            double R = step * 0.85;
             var type = ultBig();
-            for (int k = 0; k < n; k++) {
-                double a = k * Math.PI * 2.0 / n, c = Math.cos(a), sn = Math.sin(a);
-                server.sendParticles(type, x + c * r, y + 0.25, z + sn * r, 1, 0.05, 0.15, 0.05, 0.02);
-                if (k % 2 == 0) server.sendParticles(ultMain(), x + c * r * 0.8, y + 1.4 + step * 0.05, z + sn * r * 0.8, 1, 0.1, 0.25, 0.1, 0.03);
-                if (k % 3 == 0) server.sendParticles(ultMain(), x + c * r * 0.6, y + 3.0 + step * 0.12, z + sn * r * 0.6, 1, 0.1, 0.3, 0.1, 0.03);
+            int per = 3 + step / 2; // puntos por arista
+            for (int layer = 0; layer < 3; layer++) {
+                double rot = step * 0.12 * (layer % 2 == 0 ? 1 : -1) + layer * 0.314, sc = 1.0 - layer * 0.2, yy = layer == 0 ? 0.25 : layer == 1 ? 1.4 + step * 0.05 : 3.0 + step * 0.12;
+                for (int v = 0; v < 10; v++) { // 5 puntas largas y 5 hendiduras
+                    double a0 = rot + v * Math.PI / 5.0, a1 = rot + (v + 1) * Math.PI / 5.0;
+                    double r0 = (v % 2 == 0 ? 1.0 : 0.42) * R * sc, r1 = (v % 2 == 0 ? 0.42 : 1.0) * R * sc;
+                    double x0 = Math.cos(a0) * r0, z0 = Math.sin(a0) * r0, x1 = Math.cos(a1) * r1, z1 = Math.sin(a1) * r1;
+                    for (int k = 0; k < per; k++) {
+                        double t = k / (double) per;
+                        server.sendParticles(layer == 0 ? type : ultMain(), x + x0 + (x1 - x0) * t, y + yy, z + z0 + (z1 - z0) * t, 1, 0.04, 0.12, 0.04, 0.01);
+                    }
+                }
             }
-            if (step % 4 == 1) server.sendParticles(net.minecraft.core.particles.ParticleTypes.EXPLOSION, x + this.random.nextGaussian() * r * 0.5, y + 0.4, z + this.random.nextGaussian() * r * 0.5, 1, 0, 0, 0, 0);
             ultWave--;
         }
         if (ultWindup <= 0) return;
@@ -1137,19 +1150,14 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
             }
         }
         if (left == 24) this.playSound(net.minecraft.sounds.SoundEvents.BEACON_AMBIENT, 3.0F, 1.5F);
-        if (left == 18) {
-            this.playSound(net.minecraft.sounds.SoundEvents.WARDEN_SONIC_CHARGE, 3.0F, 1.0F);
-            server.sendParticles(net.minecraft.core.particles.ParticleTypes.FLASH, x, y + 3.0, z, 2, 0.5, 0.5, 0.5, 0);
-        }
-        if (left == 8) server.sendParticles(net.minecraft.core.particles.ParticleTypes.FLASH, x, y + 4.0, z, 2, 0.5, 0.5, 0.5, 0);
+        if (left == 18) this.playSound(net.minecraft.sounds.SoundEvents.WARDEN_SONIC_CHARGE, 3.0F, 1.0F);
         if (left == 1) {
             Player who = this.getControllingPassenger() instanceof Player p ? p : ultCaster;
             if (who != null) { castUltimate(who); ultImpactFx(server); }
             ultWave = 22;
             this.playSound(net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE, 3.0F, 0.5F);
             this.playSound(net.minecraft.sounds.SoundEvents.DRAGON_FIREBALL_EXPLODE, 3.0F, 0.6F);
-            server.sendParticles(net.minecraft.core.particles.ParticleTypes.FLASH, x, y + 2.0, z, 3, 0.5, 0.5, 0.5, 0);
-            server.sendParticles(net.minecraft.core.particles.ParticleTypes.EXPLOSION_EMITTER, x, y + 1.0, z, 3, 2.0, 0.3, 2.0, 0);
+            server.sendParticles(ultBig(), x, y + 1.0, z, 120, 3.0, 0.8, 3.0, 0.3);
             for (double h = 0; h <= 18; h += 0.5) // pilar gigante hacia el cielo
                 server.sendParticles(ultBig(), x, y + h, z, 3, 0.6 + h * 0.03, 0.0, 0.6 + h * 0.03, 0.01);
         }
@@ -1169,17 +1177,18 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
                     bolt.setVisualOnly(true);
                     server.addFreshEntity(bolt);
                 }
-                server.sendParticles(net.minecraft.core.particles.ParticleTypes.ELECTRIC_SPARK, x, y + 1.5, z, 400, 5.0, 3.0, 5.0, 0.5);
+                server.sendParticles(ultDust(2.4F), x, y + 1.5, z, 400, 5.0, 3.0, 5.0, 0.0);
+                server.sendParticles(net.minecraft.core.particles.ParticleTypes.ELECTRIC_SPARK, x, y + 1.5, z, 60, 4.0, 2.0, 4.0, 0.5);
             }
             case GOLDEN -> {
                 for (double h = 0; h <= 22; h += 0.5) {
-                    server.sendParticles(net.minecraft.core.particles.ParticleTypes.END_ROD, x, y + h, z, 8, 0.5, 0.0, 0.5, 0.05);
+                    server.sendParticles(ultDust(2.6F), x, y + h, z, 8, 0.5, 0.0, 0.5, 0.0);
                     server.sendParticles(net.minecraft.core.particles.ParticleTypes.WAX_ON, x, y + h, z, 2, 0.4, 0.0, 0.4, 0.0);
                 }
-                server.sendParticles(net.minecraft.core.particles.ParticleTypes.GLOW, x, y + 1.5, z, 300, 7.0, 2.5, 7.0, 0.08);
+                server.sendParticles(ultDust(2.2F), x, y + 1.5, z, 300, 7.0, 2.5, 7.0, 0.0);
             }
             case MAGMA -> {
-                server.sendParticles(net.minecraft.core.particles.ParticleTypes.EXPLOSION_EMITTER, x, y + 0.5, z, 1, 0, 0, 0, 0);
+                server.sendParticles(ModParticles.BIG_FLAME.get(), x, y + 0.5, z, 60, 2.5, 0.6, 2.5, 0.3);
                 for (int i = 0; i < 40; i++) {
                     double a = this.random.nextDouble() * Math.PI * 2.0, r = 1.5 + this.random.nextDouble() * 12.0;
                     double px = x + Math.cos(a) * r, pz = z + Math.sin(a) * r;
@@ -1206,7 +1215,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
                         server.sendParticles(block, x + Math.cos(a) * r, y + 0.2, z + Math.sin(a) * r, 10, 0.3, 0.8, 0.3, 0.45);
                     }
                 }
-                server.sendParticles(net.minecraft.core.particles.ParticleTypes.CLOUD, x, y + 0.3, z, 200, 7.0, 0.5, 7.0, 0.2);
+                server.sendParticles(ultDust(2.4F), x, y + 0.3, z, 200, 7.0, 0.5, 7.0, 0.0);
             }
         }
     }
@@ -1227,7 +1236,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
                     zap(this.position().add(0.0, 4.0, 0.0), e.position().add(0.0, e.getBbHeight() * 0.5, 0.0));
                     e.hurt(this.damageSources().mobAttack(this), atk * 3.0F);
                 }
-                ring(net.minecraft.core.particles.ParticleTypes.ELECTRIC_SPARK, 6.0, 48);
+                ring(ultDust(2.4F), 6.0, 48);
             }
             case GOLDEN -> { // Resplandor dorado: cura a los aliados y ciega a los enemigos
                 this.playSound(net.minecraft.sounds.SoundEvents.BEACON_ACTIVATE, 2.5F, 1.2F);
@@ -1242,7 +1251,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
                     e.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.BLINDNESS, 80, 0));
                 }
                 ring(net.minecraft.core.particles.ParticleTypes.WAX_ON, 5.0, 40);
-                ring(net.minecraft.core.particles.ParticleTypes.END_ROD, 8.0, 40);
+                ring(ultDust(2.4F), 8.0, 40);
             }
             case MAGMA -> { // Erupcion: onda de fuego
                 this.playSound(net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE, 2.0F, 0.6F);
@@ -1273,7 +1282,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
                     e.knockback(2.0, this.getX() - e.getX(), this.getZ() - e.getZ());
                 }
                 this.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.REGENERATION, 100, 1));
-                ring(net.minecraft.core.particles.ParticleTypes.COMPOSTER, 4.0, 40);
+                ring(ultDust(2.4F), 4.0, 40);
                 ring(net.minecraft.core.particles.ParticleTypes.SPORE_BLOSSOM_AIR, 7.0, 40);
             }
         }
