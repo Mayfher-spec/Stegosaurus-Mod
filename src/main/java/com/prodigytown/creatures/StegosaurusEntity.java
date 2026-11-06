@@ -880,7 +880,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
                 float bonus = r > 0 ? new float[]{0F, 1.0F, 1.5F, 2.0F}[r] : 0.5F;
                 float dmg = (float)this.getAttributeValue(Attributes.ATTACK_DAMAGE) * (1.0F + bonus);
                 this.playSound(ModSounds.STEGO_TAIL.get(), 2.0F, 0.9F + this.random.nextFloat() * 0.2F);
-                this.playSound(ModSounds.STEGO_TAIL_POWER.get(), 2.6F, 0.95F + this.random.nextFloat() * 0.1F);
+                this.playSound(ModSounds.STEGO_TAIL_TREE.get(), 3.0F, 0.95F + this.random.nextFloat() * 0.1F);
                 powerFx(this.getX(), this.getY() + 0.9, this.getZ(), 40, 2.4);
                 LivingEntity firstFoe = null;
                 for (LivingEntity e : this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(3.5), this::isFoe)) {
@@ -1078,7 +1078,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
             case MAGMA -> net.minecraft.core.particles.ParticleTypes.FLAME;
             case GLACIAL -> ModParticles.SPECTRAL_FLAME.get();
             case GOLDEN -> net.minecraft.core.particles.ParticleTypes.LARGE_SMOKE;
-            default -> ultDust(1.8F);
+            default -> ultDust(1.4F);
         };
     }
 
@@ -1088,7 +1088,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
             case MAGMA -> ModParticles.BIG_FLAME.get();
             case GLACIAL -> ModParticles.SPECTRAL_FLAME_BIG.get();
             case GOLDEN -> net.minecraft.core.particles.ParticleTypes.CAMPFIRE_COSY_SMOKE;
-            default -> ultDust(3.2F);
+            default -> ultDust(2.4F);
         };
     }
 
@@ -1114,7 +1114,18 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
 
     private void ultTick() {
         if (!(this.level() instanceof net.minecraft.server.level.ServerLevel server)) return;
+        nightStep(server);
         double x = this.getX(), y = this.getY(), z = this.getZ();
+        if (ultWave > 0 && (this.getVariant() == MAGMA || this.getVariant() == GLACIAL)) { // llamas crecientes que avanzan en pared, sin estrella
+            int step = 23 - ultWave;
+            double R = step * 0.85;
+            int n = (int) (16 + R * 4);
+            for (int k = 0; k < n; k++) {
+                double a = k * Math.PI * 2.0 / n;
+                server.sendParticles(ultBig(), x + Math.cos(a) * R, y + 0.2, z + Math.sin(a) * R, 2, 0.1, 0.4 + step * 0.06, 0.1, 0.04);
+            }
+            ultWave--;
+        }
         if (ultWave > 0) { // onda expansiva en forma de estrella de puntas (como las placas dorsales), tres capas que giran
             int step = 23 - ultWave;
             double R = step * 0.85;
@@ -1167,9 +1178,11 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         }
         if (left == 24) this.playSound(net.minecraft.sounds.SoundEvents.BEACON_AMBIENT, 3.0F, 1.5F);
         if (left == 18) this.playSound(net.minecraft.sounds.SoundEvents.WARDEN_SONIC_CHARGE, 3.0F, 1.0F);
+        if (left == 10) this.playSound(ModSounds.STEGO_ULT_ROAR.get(), 4.0F, 1.0F); // el rugido coincide con la boca abierta
+        if (left == 6 && isNaturalUlt()) ultImpactFx(server); // la tierra salta antes del pisoton
         if (left == 1) {
             Player who = this.getControllingPassenger() instanceof Player p ? p : ultCaster;
-            if (who != null) { castUltimate(who); ultImpactFx(server); }
+            if (who != null) { castUltimate(who); if (!isNaturalUlt()) ultImpactFx(server); }
             ultWave = 22;
             this.playSound(net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE, 3.0F, 0.5F);
             this.playSound(net.minecraft.sounds.SoundEvents.DRAGON_FIREBALL_EXPLODE, 3.0F, 0.6F);
@@ -1177,6 +1190,36 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
             for (double h = 0; h <= 18; h += 0.5) // pilar gigante hacia el cielo
                 server.sendParticles(ultBig(), x, y + h, z, 3, 0.6 + h * 0.03, 0.0, 0.6 + h * 0.03, 0.01);
         }
+    }
+
+    // --- cielo nocturno temporal (cibernetico): el reloj del mundo se desliza hacia la noche y vuelve
+    private int nightTick = 0;
+    private long nightBase = 0L;
+    private static final int NIGHT_TICKS = 100;
+
+    private boolean isNaturalUlt() {
+        int v = this.getVariant();
+        return v != CYBERNETIC && v != GOLDEN && v != MAGMA && v != GLACIAL;
+    }
+
+    private void startNight(net.minecraft.server.level.ServerLevel server) {
+        if (server.dimension() != net.minecraft.world.level.Level.OVERWORLD || nightTick > 0) return;
+        nightBase = server.getDayTime();
+        nightTick = NIGHT_TICKS;
+    }
+
+    private void nightStep(net.minecraft.server.level.ServerLevel server) {
+        if (nightTick <= 0) return;
+        int t = NIGHT_TICKS - nightTick;
+        boolean cycle = server.getGameRules().getBoolean(net.minecraft.world.level.GameRules.RULE_DAYLIGHT);
+        long natural = nightBase + (cycle ? t + 1 : 0);
+        nightTick--;
+        long tod = natural % 24000L;
+        double f = Math.sin(Math.PI * (t + 1) / (double) NIGHT_TICKS); // 0 -> 1 -> 0
+        long goal = 15000L; // anochecer oscuro, no negro total
+        long target = tod >= goal && tod < 23000L ? tod : (long) (tod + ((tod < goal ? goal : goal + 24000L) - tod) * f);
+        server.setDayTime(natural - tod + target);
+        if (nightTick == 0) server.setDayTime(natural);
     }
 
     /** Esfera de humo oscuro: simula nubes que ciegan. */
@@ -1202,8 +1245,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
                     b2.setVisualOnly(true);
                     server.addFreshEntity(b2);
                 }
-                for (net.minecraft.server.level.ServerPlayer sp : server.getEntitiesOfClass(net.minecraft.server.level.ServerPlayer.class, this.getBoundingBox().inflate(40.0))) // el dia se oscurece un poco
-                    sp.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.DARKNESS, 90, 0, false, false, false));
+                startNight(server);
                 for (LivingEntity e : this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(8.0 + 2.0 * ul), this::isFoe)) {
                     if (n++ >= 3) break;
                     net.minecraft.world.entity.LightningBolt bolt = net.minecraft.world.entity.EntityType.LIGHTNING_BOLT.create(server);
@@ -1212,7 +1254,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
                     bolt.setVisualOnly(true);
                     server.addFreshEntity(bolt);
                 }
-                server.sendParticles(ultDust(2.4F), x, y + 1.5, z, 400, 5.0, 3.0, 5.0, 0.0);
+                server.sendParticles(ultDust(1.9F), x, y + 1.5, z, 240, 5.0, 3.0, 5.0, 0.0);
                 server.sendParticles(net.minecraft.core.particles.ParticleTypes.ELECTRIC_SPARK, x, y + 1.5, z, 60, 4.0, 2.0, 4.0, 0.5);
             }
             case GOLDEN -> { // bolas de humo alrededor (la ceguera): una esfera sobre cada enemigo y varias en torno al dino
@@ -1237,8 +1279,8 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
                         server.sendParticles(ModParticles.SPECTRAL_FLAME_BIG.get(), x + Math.cos(a) * r, y + 0.3 + k * 0.05, z + Math.sin(a) * r, 1, 0.2, 0.3, 0.2, 0.01);
                     }
                 }
-                for (double h = 0; h <= 20; h += 0.5) server.sendParticles(emeraldDust(), x, y + h, z, 8, 0.8, 0.0, 0.8, 0.0);
-                server.sendParticles(net.minecraft.core.particles.ParticleTypes.SOUL_FIRE_FLAME, x, y + 0.5, z, 200, 7.0, 1.0, 7.0, 0.15);
+                for (double h = 0; h <= 20; h += 0.5) server.sendParticles(emeraldDust(), x, y + h, z, 5, 0.8, 0.0, 0.8, 0.0);
+                server.sendParticles(net.minecraft.core.particles.ParticleTypes.SOUL_FIRE_FLAME, x, y + 0.5, z, 140, 7.0, 1.0, 7.0, 0.15);
             }
             default -> { // golpe fisico: la tierra salta en trozos y brotan raices
                 var block = new net.minecraft.core.particles.BlockParticleOption(net.minecraft.core.particles.ParticleTypes.BLOCK, this.level().getBlockState(this.blockPosition().below()));
@@ -1275,7 +1317,6 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
             * (1.0F + new float[]{0F, 0.15F, 0.30F, 0.50F}[progress.rank("U1")]); // mejora de potencia
         double reach = 8.0 + 2.0 * ul + 1.5 * progress.rank("U2"); // alcance 10 / 12 / 14, mas la mejora
         java.util.List<LivingEntity> foes = this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(reach), this::isFoe);
-        this.playSound(ModSounds.STEGO_ROAR.get(), 2.5F, 0.7F);
         switch (this.getVariant()) {
             case CYBERNETIC -> { // Tormenta cibernetica: rayos sobre hasta 8 enemigos
                 this.playSound(net.minecraft.sounds.SoundEvents.LIGHTNING_BOLT_THUNDER, 2.5F, 1.0F);
@@ -1285,7 +1326,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
                     zap(this.position().add(0.0, 4.0, 0.0), e.position().add(0.0, e.getBbHeight() * 0.5, 0.0));
                     e.hurt(this.damageSources().mobAttack(this), atk * 3.0F);
                 }
-                ring(ultDust(2.4F), 6.0, 48);
+                ring(ultDust(1.9F), 6.0, 32);
             }
             case GOLDEN -> { // Resplandor dorado: cura a los aliados y ciega a los enemigos
                 this.playSound(net.minecraft.sounds.SoundEvents.BEACON_ACTIVATE, 2.5F, 1.2F);
@@ -1331,7 +1372,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
                     e.knockback(2.0, this.getX() - e.getX(), this.getZ() - e.getZ());
                 }
                 this.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.REGENERATION, 100, 1));
-                ring(ultDust(2.4F), 4.0, 40);
+                ring(ultDust(1.9F), 4.0, 28);
                 ring(net.minecraft.core.particles.ParticleTypes.SPORE_BLOSSOM_AIR, 7.0, 40);
             }
         }

@@ -164,5 +164,25 @@
         "volume": 1.0
       }
     ]
+  },
+  "stegosaurus.ult_roar": {
+    "subtitle": "subtitles.prodigycreatures.stegosaurus.ult_roar",
+    "sounds": [
+      {
+        "name": "prodigycreatures:stegosaurus/ult_roar",
+        "stream": false,
+        "volume": 1.0
+      }
+    ]
+  },
+  "stegosaurus.tail_tree": {
+    "subtitle": "subtitles.prodigycreatures.stegosaurus.tail_tree",
+    "sounds": [
+      {
+        "name": "prodigycreatures:stegosaurus/tail_tree",
+        "stream": false,
+        "volume": 1.0
+      }
+    ]
   }
 }
