@@ -184,5 +184,15 @@
         "volume": 1.0
       }
     ]
+  },
+  "stegosaurus.charge_hit": {
+    "subtitle": "subtitles.prodigycreatures.stegosaurus.charge_hit",
+    "sounds": [
+      {
+        "name": "prodigycreatures:stegosaurus/charge_hit",
+        "stream": false,
+        "volume": 1.0
+      }
+    ]
   }
 }

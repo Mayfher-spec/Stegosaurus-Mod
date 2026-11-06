@@ -860,11 +860,13 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
             if (chargeTicks % 2 == 0) powerFx(this.getX() - cdir.x * 1.5, this.getY() + 0.3, this.getZ() - cdir.z * 1.5, 8, 0.8);
             if (this.horizontalCollision && this.tickCount % 2 == 0 && chargeTicks > 4) { // choca con un muro: termina la carrera
                 chargeTicks = 3;
+                this.playSound(ModSounds.STEGO_CHARGE_HIT.get(), 2.8F, 0.75F); // choque contra el muro
             }
             float dmg = (float)this.getAttributeValue(Attributes.ATTACK_DAMAGE) * new float[]{0F, 0.5F, 0.75F, 1.0F}[Math.max(1, progress.rank("C3"))];
             for (LivingEntity e : this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(1.0), this::isFoe)) {
                 if (chargeHit.add(e.getId())) {
                     e.hurt(this.damageSources().mobAttack(this), dmg);
+                    this.playSound(ModSounds.STEGO_CHARGE_HIT.get(), 2.6F, 0.9F + this.random.nextFloat() * 0.2F);
                     e.knockback(0.6, -cdir.x, -cdir.z);
                     stun(e, 40); // aturdido 2 s
                 }
@@ -909,7 +911,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
             this.chargeTicks = 30; // carrera de 1,5 s
             this.entityData.set(CHARGE_LEFT, chargeTicks);
             this.playSound(ModSounds.STEGO_ROAR.get(), 2.0F, 1.0F);
-            this.playSound(ModSounds.STEGO_CHARGE_POWER.get(), 2.4F, 1.0F);
+            this.playSound(ModSounds.STEGO_CHARGE_HIT.get(), 2.0F, 0.6F); // pisoton pesado al arrancar
             this.chargeReadyAt = this.tickCount + Math.round(300 * cooldownFactor());
             markCooldown(CD_CHARGE, Math.round(300 * cooldownFactor()));
             this.lastCombatTick = this.tickCount;
@@ -1387,7 +1389,6 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
             if (best == null || e.distanceToSqr(mouth) < best.distanceToSqr(mouth)) best = e;
         }
         this.playSound(ModSounds.STEGO_BITE.get(), 1.8F, 0.9F + this.random.nextFloat() * 0.2F);
-        this.playSound(ModSounds.STEGO_BITE_POWER.get(), 2.2F, 0.92F + this.random.nextFloat() * 0.16F);
         powerFx(mouth.x, mouth.y, mouth.z, 10, 0.5);
         if (best == null) return;
         float dmg = (float) this.getAttributeValue(Attributes.ATTACK_DAMAGE) * 0.4F * furyMultiplier();
