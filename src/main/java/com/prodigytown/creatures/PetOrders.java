@@ -114,9 +114,10 @@ public final class PetOrders {
     /** Tres "Z" que suben desde la cara; mas grandes y mas lejos del centro en el adulto. El tamano viaja en dx (el cliente lo lee). */
     private static void zzz(ServerLevel level, TamableAnimal mob, double fx, double fz) {
         boolean big = mob instanceof com.prodigytown.creatures.StegosaurusEntity;
-        double fwd = big ? 2.9 : mob.getBbWidth() * 0.55;
-        double base = big ? 1.1 : mob.getBbHeight() * 0.7;
-        float size = big ? 3.2F : 1.0F;
+        // adulto echado: la cabeza queda ~4,8 bloques por delante del centro y a ~1 bloque del suelo
+        double fwd = big ? 4.8 : mob.getBbWidth() * 0.55;
+        double base = big ? 1.5 : mob.getBbHeight() * 0.7;
+        float size = big ? 3.0F : 1.0F;
         for (int k = 0; k < 3; k++) {
             double rise = k * (big ? 0.75 : 0.22);
             level.sendParticles(ModParticles.ZZZ.get(), mob.getX() + fx * fwd + fz * 0.15 * k, mob.getY() + base + rise,

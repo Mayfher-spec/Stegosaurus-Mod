@@ -22,8 +22,14 @@ import java.util.List;
 public final class OrdersScreen extends Screen {
     private static final int W = 400, H = 232;
     private static final int GOLD = 0xFFFFD35A, EDGE = 0xFFB8862A, DIM = 0xFF9AA0A6;
-    private static final ResourceLocation[] ICON = new ResourceLocation[PetOrders.COUNT];
-    static { for (int i = 0; i < ICON.length; i++) ICON[i] = new ResourceLocation(ProdigyCreatures.MODID, "textures/gui/orders/order_" + i + ".png"); }
+    /** Imagen de cada orden segun el dino: a<variante adulta>_<orden> (0 cibernetico, 1 dorado, 2 magma, 3 esmeralda, 4 natural) o c<raza chibi>_<orden> (0 natural, 1 cibernetico, 2 magma, 3 dorado, 4 glacial). */
+    private static ResourceLocation icon(TamableAnimal pet, int order) {
+        String key;
+        if (pet instanceof StegosaurusEntity s) key = "a" + Math.max(0, Math.min(4, s.getVariant()));
+        else if (pet instanceof ChibiStego c) key = "c" + (c.isGlacial() ? 4 : Math.max(0, Math.min(3, c.variant())));
+        else key = "a4";
+        return new ResourceLocation(ProdigyCreatures.MODID, "textures/gui/orders/" + key + "_" + order + ".png");
+    }
     private final TamableAnimal pet;
     private final StegosaurusEntity adult;
     private int left, top;
@@ -39,8 +45,9 @@ public final class OrdersScreen extends Screen {
 
     /** Casilla con la imagen de la orden. */
     private static final class OrderTile extends Button {
-        final int order; boolean selected;
-        OrderTile(int x, int y, int order, OnPress press) {
+        final int order; boolean selected; final ResourceLocation icon;
+        OrderTile(int x, int y, int order, ResourceLocation icon, OnPress press) {
+            this.icon = icon;
             super(x, y, 72, 64, Component.literal(PetOrders.NAMES[order]), press, DEFAULT_NARRATION);
             this.order = order;
         }
@@ -53,7 +60,7 @@ public final class OrdersScreen extends Screen {
             g.renderOutline(x, y, width, height, edge);
             if (selected) g.renderOutline(x + 1, y + 1, width - 2, height - 2, 0x66FFD35A);
             g.setColor(1.0F, 1.0F, 1.0F, active ? 1.0F : 0.4F);
-            g.blit(ICON[order], x + 2, y + 3, 68, 45, 0.0F, 0.0F, 96, 64, 96, 64);
+            g.blit(icon, x + 2, y + 3, 68, 45, 0.0F, 0.0F, 96, 64, 96, 64);
             g.setColor(1.0F, 1.0F, 1.0F, 1.0F);
             net.minecraft.client.gui.Font font = Minecraft.getInstance().font;
             g.drawCenteredString(font, getMessage(), x + width / 2, y + height - 12, selected ? GOLD : active ? 0xFFFFFFFF : 0xFF7A7F85);
@@ -65,7 +72,7 @@ public final class OrdersScreen extends Screen {
         top = (this.height - H) / 2;
         for (int i = 0; i < PetOrders.COUNT; i++) {
             final int order = i;
-            tiles[i] = this.addRenderableWidget(new OrderTile(left + 166 + (i % 3) * 78, top + 34 + (i / 3) * 70, i, b ->
+            tiles[i] = this.addRenderableWidget(new OrderTile(left + 166 + (i % 3) * 78, top + 34 + (i / 3) * 70, i, icon(pet, i), b ->
                 ModNetwork.CHANNEL.sendToServer(new ModNetwork.SetOrder(pet.getId(), order))));
         }
         if (adult != null) {
