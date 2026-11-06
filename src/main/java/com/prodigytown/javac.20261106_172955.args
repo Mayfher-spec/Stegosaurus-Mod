@@ -1,0 +1,6 @@
+-proc:none
+-d
+/tmp/x
+creatures/StegosaurusEntity.java
+chibi/ChibiStego.java
+creatures/ModSounds.java

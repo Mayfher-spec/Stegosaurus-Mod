@@ -451,7 +451,7 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet, 
         probe.discard();
         entityData.set(CHARGE, chargeTotal());
         getNavigation().stop();
-        playSound(ModSounds.CHIBI_EVOLVE.get(), 2.0F, 1.0F);
+        playSound(ModSounds.STEGO_EVOLUTION.get(), 3.0F, isQuickEvolve() ? 1.5F : 1.0F); // una sola pista cinematica para toda la evolucion
     }
 
     private void chargeTick(ServerLevel server) {

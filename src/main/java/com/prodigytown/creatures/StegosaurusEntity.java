@@ -346,7 +346,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
             @Override public boolean canUse() { return !isFallen() && stayOk() && super.canUse(); }
             @Override public boolean canContinueToUse() { return !isFallen() && stayOk() && super.canContinueToUse(); }
         });
-        this.goalSelector.addGoal(3, new RejoinFollowGoal(1.15, 16.0f, 9.0f));
+        this.goalSelector.addGoal(3, new RejoinFollowGoal(1.0, 14.0f, 10.0f));
         this.goalSelector.addGoal(4, new net.minecraft.world.entity.ai.goal.MoveTowardsRestrictionGoal(this, 0.8));
         this.goalSelector.addGoal(5, new PetOrders.PatrolGoal(this));
         this.goalSelector.addGoal(5, new RandomStrollGoal(this, 0.85) {
@@ -615,7 +615,6 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         if (this.level().isClientSide) return;
         this.entityData.set(EVOLVE_QUICK, quick);
         this.entityData.set(EVOLVE, quick ? EVOLVE_LEN_QUICK : EVOLVE_LEN);
-        this.playSound(ModSounds.STEGO_EVOLVE.get(), quick ? 1.5F : 3.0F, quick ? 1.5F : 1.0F);
     }
 
     private void evolveTick() {
@@ -1401,7 +1400,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
 
     /** Distancia a partir de la cual el compañero se teletransporta junto al dueño (talento S3). */
     public double rejoinDistance() {
-        return new double[]{64.0, 24.0, 18.0, 12.0}[progress.rank("S3")];
+        return new double[]{96.0, 88.0, 80.0, 64.0}[progress.rank("S3")]; // solo se teletransporta a 4-6 chunks
     }
 
     /** Reduccion de dano por caida del dueño (S4) que aporta este compañero, 0..1. */
@@ -1502,8 +1501,13 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
             if (--recalc > 0) return;
             recalc = 10;
             double d = rejoinDistance();
-            if (StegosaurusEntity.this.distanceToSqr(o) >= d * d) rejoinOwner(o);
-            else StegosaurusEntity.this.getNavigation().moveTo(o, speed);
+            double dist = Math.sqrt(StegosaurusEntity.this.distanceToSqr(o));
+            if (dist >= d) { rejoinOwner(o); return; }
+            double sp = dist > 28.0 ? speed * 1.6 : speed; // camina cerca, corre si esta lejos
+            if (dist > 56.0) { // fuera del alcance del pathfinding: avanza hacia un punto intermedio en su direccion
+                double k = 48.0 / dist;
+                StegosaurusEntity.this.getNavigation().moveTo(getX() + (o.getX() - getX()) * k, o.getY(), getZ() + (o.getZ() - getZ()) * k, sp);
+            } else StegosaurusEntity.this.getNavigation().moveTo(o, sp);
         }
     }
 

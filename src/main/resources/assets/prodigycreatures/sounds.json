@@ -264,5 +264,15 @@
         "volume": 1.0
       }
     ]
+  },
+  "stegosaurus.evolution": {
+    "subtitle": "subtitles.prodigycreatures.stegosaurus.evolution",
+    "sounds": [
+      {
+        "name": "prodigycreatures:stegosaurus/evolution",
+        "stream": false,
+        "volume": 1.0
+      }
+    ]
   }
 }

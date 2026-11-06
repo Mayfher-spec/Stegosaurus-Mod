@@ -33,6 +33,7 @@ public final class ModSounds {
     public static final RegistryObject<SoundEvent> STEGO_ULT_ROAR_GOLD = reg("stegosaurus.ult_roar_gold");
     public static final RegistryObject<SoundEvent> STEGO_ULT_ROAR_MAGMA = reg("stegosaurus.ult_roar_magma");
     public static final RegistryObject<SoundEvent> STEGO_ULT_ROAR_GLACIAL = reg("stegosaurus.ult_roar_glacial");
+    public static final RegistryObject<SoundEvent> STEGO_EVOLUTION = reg("stegosaurus.evolution");
     public static final RegistryObject<SoundEvent> STEGO_STEP = reg("stegosaurus.step");
     public static final RegistryObject<SoundEvent> STEGO_EVOLVE = reg("stegosaurus.evolve");
     public static final RegistryObject<SoundEvent> CHIBI_EVOLVE = reg("chibi.evolve");
