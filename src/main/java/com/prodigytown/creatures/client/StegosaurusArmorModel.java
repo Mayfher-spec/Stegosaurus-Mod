@@ -53,12 +53,18 @@ public final class StegosaurusArmorModel extends Model {
     };
     private final ModelPart root;
     private final ModelPart[] mine = new ModelPart[TRACK.length];
+    private final ModelPart[] bagParts;
 
     public StegosaurusArmorModel(ModelPart root) {
         super(RenderType::entityCutoutNoCull);
         this.root = root;
         for (int i = 0; i < TRACK.length; i++) mine[i] = walk(root, TRACK[i]);
+        this.bagParts = new ModelPart[] {};
+        setBags(false);
     }
+
+    /** Muestra u oculta las maletas de almacenamiento. */
+    public void setBags(boolean v) { for (ModelPart p : bagParts) p.visible = v; }
 
     public static ModelPart walk(ModelPart from, String[] path) {
         ModelPart p = from;

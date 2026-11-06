@@ -33,6 +33,7 @@ public final class StegosaurusSaddleLayer extends RenderLayer<StegosaurusEntity,
             for (int i = 0; i < theirs.length; i++) theirs[i] = StegosaurusSaddleModel.walk(this.getParentModel().root(), StegosaurusSaddleModel.TRACK[i]);
         }
         saddle.sync(theirs);
+        saddle.setBags(entity.hasBags());
         VertexConsumer vc = buffers.getBuffer(RenderType.entityCutoutNoCull(StegosaurusSaddleModel.TEXTURE));
         saddle.renderToBuffer(stack, vc, packedLight, LivingEntityRenderer.getOverlayCoords(entity, 0.0F), 1.0F, 1.0F, 1.0F, 1.0F);
         ResourceLocation base = StegosaurusSaddleModel.TEXTURE;

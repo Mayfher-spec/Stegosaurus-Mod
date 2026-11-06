@@ -45,6 +45,8 @@ public final class ModNetwork {
                 else if (m.action == 3) stego.removeSaddle();
                 else if (m.action == 4) stego.removeArmor();
                 else if (m.action == 5) stego.revertToChibi();
+                else if (m.action == 6) stego.openBags(sp);
+                else if (m.action == 7) stego.removeBags();
             });
             ctx.get().setPacketHandled(true);
         }
