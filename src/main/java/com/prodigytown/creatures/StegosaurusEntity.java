@@ -910,7 +910,6 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
             this.chargeHit.clear();
             this.chargeTicks = 30; // carrera de 1,5 s
             this.entityData.set(CHARGE_LEFT, chargeTicks);
-            this.playSound(ModSounds.STEGO_ROAR.get(), 2.0F, 1.0F);
             this.playSound(ModSounds.STEGO_CHARGE_HIT.get(), 2.0F, 0.6F); // pisoton pesado al arrancar
             this.chargeReadyAt = this.tickCount + Math.round(300 * cooldownFactor());
             markCooldown(CD_CHARGE, Math.round(300 * cooldownFactor()));
@@ -1169,8 +1168,6 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
             server.sendParticles(ultMain(), x + Math.cos(a) * r, y + 0.2 + prog * 3.5, z + Math.sin(a) * r, 1, 0.0, 0.0, 0.0, 0.0);
             server.sendParticles(ultBig(), x + Math.cos(a + 0.8) * r * 1.2, y + 0.3 + prog * 1.5, z + Math.sin(a + 0.8) * r * 1.2, 1, 0.0, 0.0, 0.0, 0.0);
         }
-        // columna de energia que crece sobre el dino
-        server.sendParticles(ultMain(), x, y + 1.0 + prog * 6.0, z, 3, 0.5, 0.4 + prog * 2.0, 0.5, 0.02);
         if (left % 4 == 0) { // anillo en el suelo que se contrae: se ve de lejos
             double rr = 7.0 * (1.0 - prog) + 1.5;
             for (int k = 0; k < 36; k++) {
@@ -1189,8 +1186,6 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
             this.playSound(net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE, 3.0F, 0.5F);
             this.playSound(net.minecraft.sounds.SoundEvents.DRAGON_FIREBALL_EXPLODE, 3.0F, 0.6F);
             server.sendParticles(ultBig(), x, y + 1.0, z, 120, 3.0, 0.8, 3.0, 0.3);
-            for (double h = 0; h <= 18; h += 0.5) // pilar gigante hacia el cielo
-                server.sendParticles(ultBig(), x, y + h, z, 3, 0.6 + h * 0.03, 0.0, 0.6 + h * 0.03, 0.01);
         }
     }
 
@@ -1281,7 +1276,6 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
                         server.sendParticles(ModParticles.SPECTRAL_FLAME_BIG.get(), x + Math.cos(a) * r, y + 0.3 + k * 0.05, z + Math.sin(a) * r, 1, 0.2, 0.3, 0.2, 0.01);
                     }
                 }
-                for (double h = 0; h <= 20; h += 0.5) server.sendParticles(emeraldDust(), x, y + h, z, 5, 0.8, 0.0, 0.8, 0.0);
                 server.sendParticles(net.minecraft.core.particles.ParticleTypes.SOUL_FIRE_FLAME, x, y + 0.5, z, 140, 7.0, 1.0, 7.0, 0.15);
             }
             default -> { // golpe fisico: la tierra salta en trozos y brotan raices
