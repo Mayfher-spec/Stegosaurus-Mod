@@ -5,6 +5,7 @@ import com.prodigytown.creatures.net.ModNetwork;
 import com.prodigytown.creatures.progress.ProdigyProgress;
 import com.prodigytown.creatures.progress.Talent;
 import com.prodigytown.creatures.progress.Talents;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
@@ -59,7 +60,7 @@ public final class TalentScreen extends Screen {
         "Esmeralda: la mas fuerte. El coletazo lanza fuego espectral verde (doble dano); inmune al fuego. Dorsal brilla.",
         "Natural: el coletazo ralentiza a los enemigos durante 2 s."};
     private static final String[] VARIANT_NAME = {"Cibernetico", "Dorado", "Magma", "Esmeralda", "Natural"};
-    private static final String[] TABS = {"Habilidades", "Resumen", "Equipamiento", "Variantes"};
+    private static final String[] TABS = {"Habilidades", "Resumen", "Equipamiento", "Variantes", "Ordenes"};
     private static final int TEXT = 0xFFEDEDED, DIM = 0xFF9AA0A6;
 
     private final StegosaurusEntity stego;
@@ -94,7 +95,9 @@ public final class TalentScreen extends Screen {
         top = (int) ((this.height / sc - H) / 2.0F);
         for (int i = 0; i < TABS.length; i++) {
             final int t = i;
-            tabButtons[i] = this.addRenderableWidget(new TexButton(left + 134 + i * 64, top + 6, 62, 15, Component.literal(TABS[i]), b -> tab = t));
+            tabButtons[i] = this.addRenderableWidget(new TexButton(left + 134 + i * 58, top + 6, 56, 15, Component.literal(TABS[i]), b -> {
+                if (t == 4) Minecraft.getInstance().setScreen(new OrdersScreen(stego)); else tab = t;
+            }));
         }
         this.addRenderableWidget(new HitButton(left + 426, top + 4, 18, 18, b -> this.onClose()));
         ult = this.addRenderableWidget(new HitButton(left + 196, top + 178, 43, 34, b -> ultSel = true));

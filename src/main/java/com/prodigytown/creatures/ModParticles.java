@@ -13,5 +13,7 @@ public final class ModParticles {
     public static final RegistryObject<SimpleParticleType> SPECTRAL_FLAME = PARTICLES.register("spectral_flame", () -> new SimpleParticleType(false));
     /** Versiones grandes (x3,5) para la definitiva: misma textura, mismo aspecto. */
     public static final RegistryObject<SimpleParticleType> SPECTRAL_FLAME_BIG = PARTICLES.register("spectral_flame_big", () -> new SimpleParticleType(false));
+    /** "Z" flotante del sueno. */
+    public static final RegistryObject<SimpleParticleType> ZZZ = PARTICLES.register("zzz", () -> new SimpleParticleType(false));
     public static final RegistryObject<SimpleParticleType> BIG_FLAME = PARTICLES.register("big_flame", () -> new SimpleParticleType(false));
 }

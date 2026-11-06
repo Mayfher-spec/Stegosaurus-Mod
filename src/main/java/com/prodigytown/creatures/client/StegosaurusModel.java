@@ -106,6 +106,30 @@ public final class StegosaurusModel<T extends StegosaurusEntity> extends Hierarc
       }
     }
 
+    // Ordenes: sentado (como un perro) y dormido/caido (echado). Cifras comprobadas con un visor propio; se mezclan suavemente.
+    float ft = net.minecraft.client.Minecraft.getInstance().getFrameTime();
+    float sw = net.minecraft.util.Mth.lerp(ft, entity.sitAnimO, entity.sitAnim);
+    float lw = net.minecraft.util.Mth.lerp(ft, entity.sleepAnimO, entity.sleepAnim);
+    fore.yScale = 1.0F;
+    if (sw > 0.01F) {
+      base.y += 9.0F * sw; base.xRot -= 0.18F * sw;
+      backL.xRot -= 1.0F * sw; backR.xRot -= 1.0F * sw;
+      backL.getChild("leg_l2").xRot += 0.8F * sw; backR.getChild("leg_r2").xRot += 0.8F * sw;
+      frontL.xRot += 0.18F * sw; frontR.xRot += 0.18F * sw;
+      neckBase.xRot += 0.12F * sw;
+      tail.xRot -= 0.55F * sw;
+    }
+    if (lw > 0.01F) {
+      base.y += 19.0F * lw;
+      backL.xRot -= 1.25F * lw; backR.xRot -= 1.25F * lw;
+      backL.getChild("leg_l2").xRot += 1.1F * lw; backR.getChild("leg_r2").xRot += 1.1F * lw;
+      frontL.xRot -= 1.1F * lw; frontR.xRot -= 1.1F * lw;
+      frontL.getChild("hand_l").xRot += 1.0F * lw; frontR.getChild("hand_r").xRot += 1.0F * lw;
+      neckBase.xRot += 0.22F * lw; neck.xRot += 0.12F * lw; head.xRot += 0.05F * lw;
+      tail.yRot += 0.45F * lw;
+      fore.yScale = 1.0F + 0.012F * lw * net.minecraft.util.Mth.sin(ageInTicks * 0.08F); // respiracion lenta
+    }
+
     if (entity.hurtTime > 0) { // STARTLE
       head.xRot -= 0.10F;
       tail.yRot += 0.07F;

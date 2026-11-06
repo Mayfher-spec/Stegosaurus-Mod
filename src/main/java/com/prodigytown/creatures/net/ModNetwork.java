@@ -27,6 +27,7 @@ public final class ModNetwork {
         CHANNEL.registerMessage(0, TalentAction.class, TalentAction::encode, TalentAction::decode, TalentAction::handle);
         CHANNEL.registerMessage(1, UseAbility.class, UseAbility::encode, UseAbility::decode, UseAbility::handle);
         CHANNEL.registerMessage(2, RenamePet.class, RenamePet::encode, RenamePet::decode, RenamePet::handle);
+        CHANNEL.registerMessage(3, SetOrder.class, SetOrder::encode, SetOrder::decode, SetOrder::handle);
     }
 
     /** action 0 = subir rango de un talento (index), 1 = restablecer, 2 = sentar/levantar, 3 = quitar silla, 4 = quitar armadura, 5 = volver a chibi. */
@@ -45,6 +46,24 @@ public final class ModNetwork {
                 else if (m.action == 3) stego.removeSaddle();
                 else if (m.action == 4) stego.removeArmor();
                 else if (m.action == 5) stego.revertToChibi();
+            });
+            ctx.get().setPacketHandled(true);
+        }
+    }
+
+    /** Orden para el adulto o el chibi propio (ver PetOrders). */
+    public record SetOrder(int entityId, int order) {
+        public static void encode(SetOrder m, FriendlyByteBuf buf) { buf.writeInt(m.entityId); buf.writeByte(m.order); }
+        public static SetOrder decode(FriendlyByteBuf buf) { return new SetOrder(buf.readInt(), buf.readByte()); }
+        public static void handle(SetOrder m, Supplier<NetworkEvent.Context> ctx) {
+            ctx.get().enqueueWork(() -> {
+                ServerPlayer sp = ctx.get().getSender();
+                if (sp == null) return;
+                Entity e = sp.level().getEntity(m.entityId);
+                if (e instanceof net.minecraft.world.entity.TamableAnimal t && e instanceof com.prodigytown.creatures.PetOrders.Holder
+                        && t.isTame() && t.isOwnedBy(sp) && t.distanceTo(sp) <= 40.0F) {
+                    com.prodigytown.creatures.PetOrders.setOrder(t, m.order);
+                }
             });
             ctx.get().setPacketHandled(true);
         }

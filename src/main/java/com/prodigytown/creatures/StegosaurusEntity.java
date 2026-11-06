@@ -62,7 +62,7 @@ import net.minecraft.world.entity.AnimationState;
 import org.jetbrains.annotations.Nullable;
 
 /** Original Stegosaurus; does not import, modify or redistribute ROR code or artwork. */
-public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.creatures.progress.ProdigyPet {
+public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.creatures.progress.ProdigyPet, PetOrders.Holder {
     public final AnimationState idleAnimationState = new AnimationState();
     public final AnimationState tailWhipAnimationState = new AnimationState();
     public final AnimationState biteAnimationState = new AnimationState();
@@ -73,6 +73,9 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         if (this.level().isClientSide) {
             this.idleAnimationState.startIfStopped(this.tickCount);
             updateGait();
+            sitAnimO = sitAnim; sleepAnimO = sleepAnim;
+            sitAnim += ((getOrder() == PetOrders.SIT ? 1.0F : 0.0F) - sitAnim) * 0.12F;
+            sleepAnim += (((getOrder() == PetOrders.SLEEP || isFallen()) ? 1.0F : 0.0F) - sleepAnim) * 0.08F;
             if (flashFade > 0) flashFade--;
             if (this.tailWhipAnimationState.isStarted() && this.tailWhipAnimationState.getAccumulatedTime() > 1800L) this.tailWhipAnimationState.stop();
             if (this.biteAnimationState.isStarted() && this.biteAnimationState.getAccumulatedTime() > 1200L) this.biteAnimationState.stop();
@@ -86,6 +89,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
             revertTick();
             ultTick();
             if (this.tickCount % 20 == 7) unstick();
+            PetOrders.serverTick(this);
         }
         if (!this.level().isClientSide && this.getTarget() != null && !this.isOrderedToSit() && this.tickCount % 240 == 0 && this.random.nextInt(4) == 0) {
             // Periodic roar while in combat, synced to nearby clients. Not every tick.
@@ -111,6 +115,18 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
     /** Sexo (solo hembras silvestres sueltan huevo). */
     private static final EntityDataAccessor<Boolean> FEMALE = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.BOOLEAN);
     private boolean sexAssigned = false;
+    private static final EntityDataAccessor<Integer> ORDER = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Boolean> FALLEN = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.BOOLEAN);
+    @Nullable private BlockPos orderHome;
+    private boolean revertWeak = false;
+    @Override public int getOrder() { return this.entityData.get(ORDER); }
+    @Override public void setOrderRaw(int order) { this.entityData.set(ORDER, order); }
+    @Override public boolean isFallen() { return this.entityData.get(FALLEN); }
+    @Override public void setFallenRaw(boolean fallen) { this.entityData.set(FALLEN, fallen); }
+    @Override @Nullable public BlockPos orderHome() { return orderHome; }
+    @Override public void setOrderHome(@Nullable BlockPos pos) { this.orderHome = pos; }
+    /** Solo cliente (animacion): 0..1 de lo sentado / dormido que esta, suavizado. */
+    public float sitAnim, sitAnimO, sleepAnim, sleepAnimO;
     private static final EntityDataAccessor<Integer> ARMOR_TIER = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.INT);
     /** Recargas visibles en el HUD: (tick de juego en que terminan << 12) | duracion en ticks. */
     private static final EntityDataAccessor<Long> CD_CHARGE = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.LONG);
@@ -210,6 +226,8 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         this.entityData.define(CD_TAIL, 0L);
         this.entityData.define(CD_BITE, 0L);
         this.entityData.define(CD_ULT, 0L);
+        this.entityData.define(ORDER, 0);
+        this.entityData.define(FALLEN, false);
     }
 
     public boolean isFemale() { return this.entityData.get(FEMALE); }
@@ -270,6 +288,9 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         tag.putBoolean("Female", isFemale());
         tag.putBoolean("SexAssigned", sexAssigned);
         if (guardPos != null) tag.putLong("GuardPos", guardPos.asLong());
+        tag.putInt("PetOrder", getOrder());
+        tag.putBoolean("PetFallen", isFallen());
+        if (orderHome != null) tag.putLong("OrderHome", orderHome.asLong());
     }
     @Override public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
@@ -282,6 +303,10 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         this.entityData.set(FEMALE, tag.getBoolean("Female"));
         this.sexAssigned = tag.getBoolean("SexAssigned");
         if (tag.contains("GuardPos")) setGuard(BlockPos.of(tag.getLong("GuardPos")));
+        if (tag.contains("PetOrder")) this.entityData.set(ORDER, PetOrders.clamp(tag.getInt("PetOrder")));
+        else if (isOrderedToSit()) this.entityData.set(ORDER, PetOrders.SIT); // mundos anteriores: sentado
+        this.entityData.set(FALLEN, tag.getBoolean("PetFallen"));
+        if (tag.contains("OrderHome")) orderHome = BlockPos.of(tag.getLong("OrderHome"));
         applyStats();
     }
 
@@ -316,15 +341,29 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
     @Override protected void registerGoals() {
         this.goalSelector.addGoal(0, new FloatGoal(this));
         this.goalSelector.addGoal(1, new SitWhenOrderedToGoal(this));
-        this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.22, true));
+        this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.22, true) {
+            @Override public boolean canUse() { return !isFallen() && stayOk() && super.canUse(); }
+            @Override public boolean canContinueToUse() { return !isFallen() && stayOk() && super.canContinueToUse(); }
+        });
         this.goalSelector.addGoal(3, new RejoinFollowGoal(1.15, 16.0f, 9.0f));
         this.goalSelector.addGoal(4, new net.minecraft.world.entity.ai.goal.MoveTowardsRestrictionGoal(this, 0.8));
-        this.goalSelector.addGoal(5, new RandomStrollGoal(this, 0.85));
+        this.goalSelector.addGoal(5, new PetOrders.PatrolGoal(this));
+        this.goalSelector.addGoal(5, new RandomStrollGoal(this, 0.85) {
+            @Override public boolean canUse() { return !isTame() || (getOrder() != PetOrders.STAY && getOrder() != PetOrders.PATROL && !isFallen() && super.canUse()); }
+        });
         this.goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 12.0f));
         this.goalSelector.addGoal(7, new RandomLookAroundGoal(this));
         this.targetSelector.addGoal(1, new OwnerHurtByTargetGoal(this));
         this.targetSelector.addGoal(2, new OwnerHurtTargetGoal(this));
         this.targetSelector.addGoal(3, new HurtByTargetGoal(this));
+        this.targetSelector.addGoal(4, PetOrders.patrolTargeting(this));
+    }
+
+    /** En "quieto" solo se defiende de lo que tiene al lado (no sale a perseguir). */
+    private boolean stayOk() {
+        if (!isTame() || getOrder() != PetOrders.STAY) return true;
+        LivingEntity t = getTarget();
+        return t != null && this.distanceToSqr(t) < 36.0;
     }
 
     /** Pienso para estegosaurio: cura y da experiencia. */
@@ -332,12 +371,24 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
 
     @Override public InteractionResult mobInteract(Player player, InteractionHand hand) {
         ItemStack held = player.getItemInHand(hand);
+        if (isFallen()) {
+            // Fuera de combate: solo la ensalada de domesticacion del dueno lo reanima.
+            if (this.isTame() && this.isOwnedBy(player) && held.is(ProdigyCreatures.TAMING_SALAD.get())) {
+                if (!this.level().isClientSide) {
+                    if (!player.getAbilities().instabuild) held.shrink(1);
+                    PetOrders.revive(this);
+                }
+            } else if (!this.level().isClientSide && this.isOwnedBy(player)) {
+                player.displayClientMessage(Component.literal("Esta fuera de combate: reanimalo con la ensalada de domesticacion"), true);
+            }
+            return InteractionResult.sidedSuccess(this.level().isClientSide);
+        }
         if (held.is(ProdigyCreatures.TAMING_SALAD.get()) && !this.isTame()) {
             // Los adultos silvestres no se domestican: solo se consiguen de un huevo (creativo puede, para pruebas).
             if (!player.getAbilities().instabuild) return InteractionResult.PASS;
             if (!this.level().isClientSide) {
                 this.tame(player);
-                this.setOrderedToSit(false);
+                PetOrders.setOrder(this, PetOrders.FOLLOW);
                 this.level().broadcastEntityEvent(this, (byte)7);
                 this.heal(this.getMaxHealth());
             }
@@ -382,17 +433,13 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         if (this.isTame() && this.isOwnedBy(player) && !player.isShiftKeyDown() && isSaddled()) {
             // Con silla: clic = montar. Sentar/levantar se hace desde la pantalla de habilidades.
             if (!this.level().isClientSide && !this.isVehicle()) {
-                this.setOrderedToSit(false);
+                PetOrders.setOrder(this, PetOrders.FOLLOW);
                 player.startRiding(this);
             }
             return InteractionResult.sidedSuccess(this.level().isClientSide);
         }
         if (this.isTame() && this.isOwnedBy(player) && !player.isShiftKeyDown()) {
-            if (!this.level().isClientSide) {
-                this.setOrderedToSit(!this.isOrderedToSit());
-                this.getNavigation().stop();
-                this.setTarget(null);
-            }
+            if (!this.level().isClientSide) PetOrders.setOrder(this, this.isOrderedToSit() ? PetOrders.FOLLOW : PetOrders.SIT);
             return InteractionResult.sidedSuccess(this.level().isClientSide);
         }
         return super.mobInteract(player, hand);
@@ -453,8 +500,12 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
      * Vuelve a chibi: el adulto se convierte en un chibi de su misma raza (conserva dueno, nombre, nivel y progreso),
      * suelta la silla y la armadura y desmonta al jinete. Solo servidor, solo el dueno (lo comprueba la red).
      */
-    public void revertToChibi() {
-        if (!(this.level() instanceof ServerLevel server) || !isAlive() || getEvolveTicks() > 0 || getRevertTicks() > 0) return;
+    public void revertToChibi() { revertToChibi(false); }
+
+    /** weak = se encoge herido (10 % de vida) en vez de por voluntad del dueno. */
+    public void revertToChibi(boolean weak) {
+        if (!(this.level() instanceof ServerLevel server) || !isAlive() || isFallen() || getEvolveTicks() > 0 || getRevertTicks() > 0) return;
+        this.revertWeak = weak;
         com.prodigytown.chibi.ChibiStego probe = com.prodigytown.chibi.ChibiAlpha.STEGO.get().create(server);
         if (probe == null) return;
         probe.moveTo(getX(), getY(), getZ(), getYRot(), 0.0F);
@@ -484,11 +535,11 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         chibi.setFemale(isFemale());
         chibi.setOwnerUUID(getOwnerUUID());
         chibi.setTame(true);
-        chibi.setOrderedToSit(isOrderedToSit());
+        PetOrders.copy(this, chibi);
         if (hasCustomName()) chibi.setCustomName(getCustomName());
         chibi.adoptProgress(progress);
         chibi.setGear(getArmorTier(), isSaddled());
-        chibi.setHealth(chibi.getMaxHealth());
+        chibi.setHealth(revertWeak ? Math.max(1.0F, chibi.getMaxHealth() * 0.10F) : chibi.getMaxHealth());
         server.addFreshEntity(chibi);
         server.sendParticles(net.minecraft.core.particles.ParticleTypes.POOF, getX(), getY() + 0.4, getZ(), 18, 0.4, 0.3, 0.4, 0.04);
         server.sendParticles(net.minecraft.core.particles.ParticleTypes.END_ROD, getX(), getY() + 0.5, getZ(), 12, 0.3, 0.3, 0.3, 0.06);
@@ -551,7 +602,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
     public int getRevertTicks() { return this.entityData.get(REVERT); }
     public int getEvolveTicks() { return this.entityData.get(EVOLVE); }
 
-    @Override protected boolean isImmobile() { return super.isImmobile() || getEvolveTicks() > 0 || getRevertTicks() > 0; }
+    @Override protected boolean isImmobile() { return super.isImmobile() || getEvolveTicks() > 0 || getRevertTicks() > 0 || isFallen(); }
 
     /** La llama el chibi al convertirse en adulto (solo servidor). */
     public static final int EVOLVE_LEN_QUICK = 30;
@@ -676,10 +727,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
 
     public void toggleSit() {
         if (this.level().isClientSide) return;
-        this.ejectPassengers();
-        this.setOrderedToSit(!this.isOrderedToSit());
-        this.getNavigation().stop();
-        this.setTarget(null);
+        PetOrders.setOrder(this, this.isOrderedToSit() ? PetOrders.FOLLOW : PetOrders.SIT);
     }
 
     /** D5 Guardia del Estegosaurio: porcentaje del dano al jinete que absorbe el estegosaurio (0 si no aplica). */
@@ -1255,6 +1303,11 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
                 other.setTarget(culprit);
             }
         }
+        if (result && !this.level().isClientSide && isTame() && isAlive() && !isFallen() && getRevertTicks() == 0 && getEvolveTicks() == 0
+                && getHealth() <= getMaxHealth() * 0.10F) {
+            // A punto de caer: se encoge a chibi (con 10 % de vida) para protegerse; sin espacio libre sigue como adulto.
+            revertToChibi(true);
+        }
         if (result && !this.level().isClientSide) {
             // D4 Instinto defensivo: al bajar del 50 % de vida
             int d4 = progress.rank("D4");
@@ -1308,12 +1361,12 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         private LivingEntity owner() { return StegosaurusEntity.this.getOwner(); }
         @Override public boolean canUse() {
             LivingEntity o = owner();
-            if (o == null || o.isSpectator() || StegosaurusEntity.this.isOrderedToSit() || StegosaurusEntity.this.isLeashed()) return false;
+            if (o == null || o.isSpectator() || StegosaurusEntity.this.isOrderedToSit() || StegosaurusEntity.this.isLeashed() || getOrder() != PetOrders.FOLLOW) return false;
             return StegosaurusEntity.this.distanceToSqr(o) >= (double)(startDist * startDist);
         }
         @Override public boolean canContinueToUse() {
             LivingEntity o = owner();
-            if (o == null || StegosaurusEntity.this.isOrderedToSit()) return false;
+            if (o == null || StegosaurusEntity.this.isOrderedToSit() || getOrder() != PetOrders.FOLLOW) return false;
             return StegosaurusEntity.this.distanceToSqr(o) > (double)(stopDist * stopDist);
         }
         @Override public void start() { recalc = 0; }
@@ -1352,11 +1405,11 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
 
     @Override public boolean isInvulnerableTo(DamageSource damage) {
         if (damage.is(net.minecraft.world.damagesource.DamageTypes.IN_WALL)) return true; // los arboles/muros no lo asfixian
-        if (getEvolveTicks() > 0 && !damage.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) return true;
+        if ((getEvolveTicks() > 0 || getRevertTicks() > 0 || isFallen()) && !damage.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) return true;
         return (this.getVariant() == MAGMA && damage.is(DamageTypeTags.IS_FIRE)) || super.isInvulnerableTo(damage);
     }
 
-    @Nullable @Override protected SoundEvent getAmbientSound() { return ModSounds.STEGO_AMBIENT.get(); }
+    @Nullable @Override protected SoundEvent getAmbientSound() { return (isFallen() || getOrder() == PetOrders.SLEEP) ? null : ModSounds.STEGO_AMBIENT.get(); }
     @Override protected SoundEvent getHurtSound(DamageSource source) { return ModSounds.STEGO_HURT.get(); }
     @Override protected SoundEvent getDeathSound() { return ModSounds.STEGO_DEATH.get(); }
     @Override protected void playStepSound(BlockPos pos, net.minecraft.world.level.block.state.BlockState state) {

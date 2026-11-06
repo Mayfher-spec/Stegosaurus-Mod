@@ -46,6 +46,7 @@ class ChibiModel extends GeoModel<ChibiStego> {
         return resource("textures/entity/stegosaurus_chibi_" + race(entity) + "_glow.png");
     }
     @Override public ResourceLocation getAnimationResource(ChibiStego entity) {
+        if (entity.usesOrderAnims()) return resource("animations/stegosaurus_chibi_orders.animation.json");
         return resource("animations/stegosaurus_chibi.animation.json");
     }
 }

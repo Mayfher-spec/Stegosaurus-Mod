@@ -62,7 +62,7 @@ import java.util.UUID;
  * Chibi domable: niveles 1-29 (bebe y juvenil). Al llegar al nivel 30 evoluciona a estegosaurio adulto
  * conservando dueño, variante, nombre, XP y puntos. Mantiene el NBT "ChibiVariant" y las variantes 0..3.
  */
-public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
+public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet, com.prodigytown.creatures.PetOrders.Holder {
     private static final EntityDataAccessor<Integer> VARIANT =
         SynchedEntityData.defineId(ChibiStego.class, EntityDataSerializers.INT);
     public static final int NATURAL = 0, CYBER = 1, MAGMA = 2, GOLD = 3;
@@ -76,6 +76,17 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
     private static final EntityDataAccessor<Integer> CHARGE = SynchedEntityData.defineId(ChibiStego.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> GEAR_ARMOR = SynchedEntityData.defineId(ChibiStego.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> GEAR_SADDLE = SynchedEntityData.defineId(ChibiStego.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Integer> ORDER = SynchedEntityData.defineId(ChibiStego.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Boolean> FALLEN = SynchedEntityData.defineId(ChibiStego.class, EntityDataSerializers.BOOLEAN);
+    @Nullable private net.minecraft.core.BlockPos orderHome;
+    @Override public int getOrder() { return entityData.get(ORDER); }
+    @Override public void setOrderRaw(int order) { entityData.set(ORDER, order); }
+    @Override public boolean isFallen() { return entityData.get(FALLEN); }
+    @Override public void setFallenRaw(boolean fallen) { entityData.set(FALLEN, fallen); }
+    @Override @Nullable public net.minecraft.core.BlockPos orderHome() { return orderHome; }
+    @Override public void setOrderHome(@Nullable net.minecraft.core.BlockPos pos) { this.orderHome = pos; }
+    /** Asustado: poca vida. No ataca, huye de monstruos y te sigue muy cerca. */
+    public boolean isWeak() { return com.prodigytown.creatures.PetOrders.weak(this); }
     private static final UUID M_HP = UUID.fromString("c41b1000-0001-4d1e-9a10-5e90a5a10001");
     private static final UUID M_DMG = UUID.fromString("c41b1000-0002-4d1e-9a10-5e90a5a10002");
     private static final UUID M_ARM = UUID.fromString("c41b1000-0003-4d1e-9a10-5e90a5a10003");
@@ -98,6 +109,15 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
     private static final RawAnimation TAIL_SWIPE = play("tail_swipe");
     private static final RawAnimation SLEEP = loop("sleep");
     private static final RawAnimation HAPPY = play("happy");
+    // Ordenes (archivo propio: stegosaurus_chibi_orders.animation.json): sentarse como un perro y dormir echado
+    private static final RawAnimation SIT_POSE = RawAnimation.begin().then("animation.chibi_stegosaurus.sit_down", software.bernie.geckolib.core.animation.Animation.LoopType.PLAY_ONCE).thenLoop("animation.chibi_stegosaurus.sit_idle");
+    private static final RawAnimation SLEEP_POSE = RawAnimation.begin().then("animation.chibi_stegosaurus.sleep_down", software.bernie.geckolib.core.animation.Animation.LoopType.PLAY_ONCE).thenLoop("animation.chibi_stegosaurus.sleep_idle");
+    private static final RawAnimation STAND_UP = RawAnimation.begin().then("animation.chibi_stegosaurus.stand_up", software.bernie.geckolib.core.animation.Animation.LoopType.PLAY_ONCE);
+    /** Solo cliente: 0 de pie, 1 sentado, 2 dormido/caido. */
+    private int poseMode = 0;
+    private int standUntil = -1;
+    /** Solo cliente: verdadero mientras las animaciones vienen del archivo de ordenes (sentado, dormido, o levantandose). */
+    public boolean usesOrderAnims() { return poseMode != 0 || tickCount < standUntil; }
 
     /** Velocidad del suelo (bloques/tick) para la que estan escritos walk y run: 11,4 u/s y 21,3 u/s a 16 u/bloque. */
     private static final float WALK_SPEED = 0.0357F, RUN_SPEED = 0.0666F;
@@ -132,6 +152,8 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
         entityData.define(QUICK, false);
         entityData.define(GLACIAL_LINE, false);
         entityData.define(FEMALE, false);
+        entityData.define(ORDER, 0);
+        entityData.define(FALLEN, false);
     }
 
     /** Verdadero si nacio de un huevo glacial: se ve como chibi natural pero crece como adulto glacial. */
@@ -182,6 +204,9 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
         tag.putBoolean("QuickEvolve", isQuickEvolve());
         tag.putBoolean("Female", isFemale());
         tag.put("ProdigyProgress", progress.save());
+        tag.putInt("PetOrder", getOrder());
+        tag.putBoolean("PetFallen", isFallen());
+        if (orderHome != null) tag.putLong("OrderHome", orderHome.asLong());
     }
 
     @Override public void readAdditionalSaveData(CompoundTag tag) {
@@ -195,6 +220,10 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
         entityData.set(FEMALE, tag.contains("Female") ? tag.getBoolean("Female") : random.nextBoolean());
         // Chibis guardados antes de este sistema: nivel 1.
         progress = ProdigyProgress.load(tag.contains("ProdigyProgress") ? tag.getCompound("ProdigyProgress") : null, 1);
+        if (tag.contains("PetOrder")) entityData.set(ORDER, com.prodigytown.creatures.PetOrders.clamp(tag.getInt("PetOrder")));
+        else if (isOrderedToSit()) entityData.set(ORDER, com.prodigytown.creatures.PetOrders.SIT);
+        entityData.set(FALLEN, tag.getBoolean("PetFallen"));
+        if (tag.contains("OrderHome")) orderHome = net.minecraft.core.BlockPos.of(tag.getLong("OrderHome"));
         applyStats();
     }
 
@@ -225,26 +254,55 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
         goalSelector.addGoal(0, new FloatGoal(this));
         goalSelector.addGoal(1, new SitWhenOrderedToGoal(this));
         goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.2D, true) {
-            @Override public boolean canUse() { return progress.level() >= 10 && !isOrderedToSit() && super.canUse(); }
+            private boolean ok() {
+                if (progress.level() < 10 || isOrderedToSit() || isFallen() || isWeak()) return false;
+                if (getOrder() != com.prodigytown.creatures.PetOrders.STAY) return true;
+                net.minecraft.world.entity.LivingEntity t = getTarget();
+                return t != null && distanceToSqr(t) < 25.0;
+            }
+            @Override public boolean canUse() { return ok() && super.canUse(); }
+            @Override public boolean canContinueToUse() { return ok() && super.canContinueToUse(); }
         });
-        goalSelector.addGoal(3, new FollowOwnerGoal(this, 1.1D, 6.0F, 2.0F, false));
-        goalSelector.addGoal(4, new RandomStrollGoal(this, 0.75));
+        goalSelector.addGoal(1, new com.prodigytown.creatures.PetOrders.FleeGoal(this));
+        goalSelector.addGoal(2, new com.prodigytown.creatures.PetOrders.CloseFollowGoal(this));
+        goalSelector.addGoal(3, new FollowOwnerGoal(this, 1.1D, 6.0F, 2.0F, false) {
+            @Override public boolean canUse() { return getOrder() == com.prodigytown.creatures.PetOrders.FOLLOW && !isFallen() && !isWeak() && super.canUse(); }
+            @Override public boolean canContinueToUse() { return getOrder() == com.prodigytown.creatures.PetOrders.FOLLOW && !isWeak() && super.canContinueToUse(); }
+        });
+        goalSelector.addGoal(4, new net.minecraft.world.entity.ai.goal.MoveTowardsRestrictionGoal(this, 0.8D));
+        goalSelector.addGoal(4, new com.prodigytown.creatures.PetOrders.PatrolGoal(this));
+        goalSelector.addGoal(4, new RandomStrollGoal(this, 0.75) {
+            @Override public boolean canUse() { return !isTame() || (getOrder() != com.prodigytown.creatures.PetOrders.STAY && getOrder() != com.prodigytown.creatures.PetOrders.PATROL && !isFallen() && super.canUse()); }
+        });
         goalSelector.addGoal(5, new LookAtPlayerGoal(this, Player.class, 8.0F));
         goalSelector.addGoal(6, new RandomLookAroundGoal(this));
         targetSelector.addGoal(1, new OwnerHurtByTargetGoal(this));
         targetSelector.addGoal(2, new OwnerHurtTargetGoal(this));
         targetSelector.addGoal(3, new HurtByTargetGoal(this));
+        targetSelector.addGoal(4, com.prodigytown.creatures.PetOrders.patrolTargeting(this));
     }
 
     private boolean isSalad(ItemStack stack) { return stack.is(com.prodigytown.creatures.ProdigyCreatures.FEED.get()); }
 
     @Override public InteractionResult mobInteract(Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
+        if (isFallen()) {
+            // Fuera de combate: solo la ensalada de domesticacion del dueno lo reanima.
+            if (isTame() && isOwnedBy(player) && stack.is(com.prodigytown.creatures.ProdigyCreatures.TAMING_SALAD.get())) {
+                if (!level().isClientSide) {
+                    if (!player.getAbilities().instabuild) stack.shrink(1);
+                    com.prodigytown.creatures.PetOrders.revive(this);
+                }
+            } else if (!level().isClientSide && isOwnedBy(player)) {
+                player.displayClientMessage(Component.literal("Esta fuera de combate: reanimalo con la ensalada de domesticacion"), true);
+            }
+            return InteractionResult.sidedSuccess(level().isClientSide);
+        }
         if (stack.is(com.prodigytown.creatures.ProdigyCreatures.TAMING_SALAD.get()) && !isTame()) {
             if (!player.getAbilities().instabuild) return InteractionResult.PASS; // solo se obtiene de un huevo
             if (!level().isClientSide) {
                 tame(player);
-                setOrderedToSit(false);
+                com.prodigytown.creatures.PetOrders.setOrder(this, com.prodigytown.creatures.PetOrders.FOLLOW);
                 level().broadcastEntityEvent(this, (byte) 7);
                 heal(getMaxHealth());
             }
@@ -271,19 +329,16 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
             return InteractionResult.sidedSuccess(level().isClientSide());
         }
         if (isTame() && isOwnedBy(player) && stack.isEmpty()) {
-            if (!level().isClientSide) {
-                if (player.isShiftKeyDown() && evolveLock && progress.level() >= EVOLVE_LEVEL) {
+            if (player.isShiftKeyDown()) {
+                // Agachado + mano vacia: pantalla de ordenes (la reactivacion de la evolucion se conserva)
+                if (level().isClientSide) {
+                    net.minecraftforge.fml.DistExecutor.unsafeRunWhenOn(net.minecraftforge.api.distmarker.Dist.CLIENT, () -> () -> com.prodigytown.creatures.client.ClientHooks.openOrders(this));
+                } else if (evolveLock && progress.level() >= EVOLVE_LEVEL) {
                     evolveLock = false; // vuelve a poder evolucionar (lo hara en cuanto haya espacio)
                     player.displayClientMessage(Component.literal("Tu chibi volvera a evolucionar a adulto"), true);
-                } else if (player.isShiftKeyDown()) {
-                    int need = progress.xpToNext();
-                    player.displayClientMessage(Component.literal("Chibi nivel " + progress.level() + "  XP " + progress.xp() + "/" + need
-                        + (evolveLock ? "  (evolucion en pausa: agachate y mano vacia para activarla)" : "  (evoluciona a adulto en el nivel " + EVOLVE_LEVEL + ")")), true);
-                } else {
-                    setOrderedToSit(!isOrderedToSit());
-                    getNavigation().stop();
-                    setTarget(null);
                 }
+            } else if (!level().isClientSide) {
+                com.prodigytown.creatures.PetOrders.setOrder(this, isOrderedToSit() ? com.prodigytown.creatures.PetOrders.FOLLOW : com.prodigytown.creatures.PetOrders.SIT);
             }
             return InteractionResult.sidedSuccess(level().isClientSide);
         }
@@ -359,9 +414,9 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
 
     public boolean isQuickEvolve() { return entityData.get(QUICK); }
     public int chargeTotal() { return isQuickEvolve() ? 20 : EVOLVE_PRE; }
-    @Override protected boolean isImmobile() { return super.isImmobile() || chargeTicks() > 0; }
+    @Override protected boolean isImmobile() { return super.isImmobile() || chargeTicks() > 0 || isFallen(); }
     @Override public boolean isInvulnerableTo(net.minecraft.world.damagesource.DamageSource source) {
-        if (chargeTicks() > 0 && !source.is(net.minecraft.tags.DamageTypeTags.BYPASSES_INVULNERABILITY)) return true;
+        if ((chargeTicks() > 0 || isFallen()) && !source.is(net.minecraft.tags.DamageTypeTags.BYPASSES_INVULNERABILITY)) return true;
         return super.isInvulnerableTo(source);
     }
 
@@ -383,7 +438,8 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
 
     /** Nivel 30: si hay espacio empieza la evolucion (fase 1: el chibi se carga de luz). */
     private void tryEvolve() {
-        if (!(level() instanceof ServerLevel server) || !isAlive() || !isTame() || progress.level() < EVOLVE_LEVEL || evolveLock || chargeTicks() > 0) return;
+        if (!(level() instanceof ServerLevel server) || !isAlive() || !isTame() || progress.level() < EVOLVE_LEVEL || evolveLock || chargeTicks() > 0
+            || isFallen() || getHealth() < getMaxHealth() * 0.5F) return;
         StegosaurusEntity probe = makeAdultIfRoom(server);
         if (probe == null) return;
         probe.discard();
@@ -417,19 +473,19 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
         adult.setFemale(isFemale());
         adult.setOwnerUUID(getOwnerUUID());
         adult.setTame(true);
-        adult.setOrderedToSit(isOrderedToSit());
+        com.prodigytown.creatures.PetOrders.copy(this, adult);
         if (hasCustomName()) adult.setCustomName(getCustomName());
         adult.adoptProgress(progress);
         adult.setSaddled(isSaddled());
         adult.equipArmor(armorTier());
-        adult.setHealth(adult.getMaxHealth());
+        adult.setHealth(Math.max(1.0F, adult.getMaxHealth() * (getHealth() / getMaxHealth())));
         server.addFreshEntity(adult);
         adult.startEvolution(isQuickEvolve());
         if (getOwner() instanceof Player p) p.displayClientMessage(Component.literal("Tu chibi evoluciono a Estegosaurio adulto"), false);
         discard();
     }
 
-    @Nullable @Override protected SoundEvent getAmbientSound() { return ModSounds.CHIBI_AMBIENT.get(); }
+    @Nullable @Override protected SoundEvent getAmbientSound() { return (isFallen() || getOrder() == com.prodigytown.creatures.PetOrders.SLEEP) ? null : ModSounds.CHIBI_AMBIENT.get(); }
     @Override protected SoundEvent getHurtSound(net.minecraft.world.damagesource.DamageSource source) { return ModSounds.CHIBI_HURT.get(); }
     @Override protected SoundEvent getDeathSound() { return ModSounds.CHIBI_DEATH.get(); }
     @Override public int getAmbientSoundInterval() { return 160; }
@@ -441,10 +497,17 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
             float v = (float) Math.sqrt(dx * dx + dz * dz);
             movedPerTick += (v - movedPerTick) * 0.3F;
             walking = walking ? movedPerTick > 0.006F : movedPerTick > 0.012F; // histeresis
+            int want = (isFallen() || getOrder() == com.prodigytown.creatures.PetOrders.SLEEP) ? 2 : (getOrder() == com.prodigytown.creatures.PetOrders.SIT ? 1 : 0);
+            if (want != poseMode) {
+                if (want == 0) standUntil = tickCount + 12; // se levanta (0,6 s)
+                poseMode = want;
+            }
         } else if (level() instanceof ServerLevel server && chargeTicks() > 0) {
             chargeTick(server);
-        } else if (tickCount % 20 == 0) {
-            tryEvolve();
+        } else {
+            com.prodigytown.creatures.PetOrders.serverTick(this);
+            if (isWeak() && getTarget() != null && tickCount % 10 == 0) setTarget(null);
+            if (tickCount % 20 == 0) tryEvolve();
         }
     }
 
@@ -452,6 +515,9 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
         controllers.add(new AnimationController<>(this, "movement", 4, state -> {
             // Se camina segun el desplazamiento REAL medido, no state.isMoving(): a velocidad baja
             // limbSwingAmount queda bajo el umbral y se reproducia idle mientras la entidad avanzaba (deslizamiento).
+            if (poseMode == 1) { state.getController().setAnimationSpeed(1.0D); return state.setAndContinue(SIT_POSE); }
+            if (poseMode == 2) { state.getController().setAnimationSpeed(1.0D); return state.setAndContinue(SLEEP_POSE); }
+            if (tickCount < standUntil) { state.getController().setAnimationSpeed(1.0D); return state.setAndContinue(STAND_UP); }
             if (walking && !isOrderedToSit()) {
                 boolean run = movedPerTick > 0.052F;
                 double ref = run ? RUN_SPEED : WALK_SPEED;
