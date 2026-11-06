@@ -114,6 +114,7 @@ public class ProdigyCreatures {
                 Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
                 (type, level, reason, pos, random) ->
                     level.getBlockState(pos.below()).isFaceSturdy(level, pos.below(), Direction.UP)
+                    && StegosaurusEntity.roomFor(level, pos)
                     && Mob.checkMobSpawnRules(type, level, reason, pos, random),
                 SpawnPlacementRegisterEvent.Operation.REPLACE
             );

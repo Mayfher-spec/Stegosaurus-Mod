@@ -80,7 +80,8 @@ public final class StegosaurusNestFeature extends Feature<NoneFeatureConfigurati
                 BlockPos p = nest.offset(dx, dy, dz);
                 if (level.getBlockState(p.below()).isFaceSturdy(level, p.below(), net.minecraft.core.Direction.UP)
                     && level.getBlockState(p).isAir() && level.getBlockState(p.above(2)).isAir() && level.getBlockState(p.above()).isAir()
-                    && level.getBlockState(p.east()).isAir() && level.getBlockState(p.west()).isAir()) return p;
+                    && level.getBlockState(p.east()).isAir() && level.getBlockState(p.west()).isAir()
+                    && StegosaurusEntity.roomFor(level, p)) return p;
             }
         }
         return nest.above();

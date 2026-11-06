@@ -85,6 +85,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
             evolveTick();
             revertTick();
             ultTick();
+            if (this.tickCount % 20 == 7) unstick();
         }
         if (!this.level().isClientSide && this.getTarget() != null && !this.isOrderedToSit() && this.tickCount % 240 == 0 && this.random.nextInt(4) == 0) {
             // Periodic roar while in combat, synced to nearby clients. Not every tick.
@@ -1326,7 +1327,28 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         }
     }
 
+    /** Hay sitio libre (3x3, 4 de alto) para un adulto en este punto? Evita nacer dentro de arboles o muros. */
+    public static boolean roomFor(net.minecraft.world.level.BlockGetter level, net.minecraft.core.BlockPos pos) {
+        for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++) for (int dy = 0; dy <= 3; dy++) {
+            net.minecraft.core.BlockPos p = pos.offset(dx, dy, dz);
+            if (!level.getBlockState(p).getCollisionShape(level, p).isEmpty() || !level.getFluidState(p).isEmpty()) return false;
+        }
+        return true;
+    }
+
+    /** Si queda atrapado en un arbol o muro, sube hasta el primer hueco libre (y nunca muere asfixiado). */
+    private void unstick() {
+        if (this.level().noCollision(this, this.getBoundingBox())) return;
+        for (int dy = 1; dy <= 12; dy++) {
+            if (this.level().noCollision(this, this.getBoundingBox().move(0.0, dy, 0.0))) {
+                this.setPos(this.getX(), this.getY() + dy, this.getZ());
+                return;
+            }
+        }
+    }
+
     @Override public boolean isInvulnerableTo(DamageSource damage) {
+        if (damage.is(net.minecraft.world.damagesource.DamageTypes.IN_WALL)) return true; // los arboles/muros no lo asfixian
         if (getEvolveTicks() > 0 && !damage.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) return true;
         return (this.getVariant() == MAGMA && damage.is(DamageTypeTags.IS_FIRE)) || super.isInvulnerableTo(damage);
     }
