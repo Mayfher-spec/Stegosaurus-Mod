@@ -33,5 +33,7 @@
   "subtitles.prodigycreatures.stegosaurus.tail_power": "Estegosaurio azota con la cola",
   "subtitles.prodigycreatures.stegosaurus.charge_power": "Estegosaurio embiste",
   "key.prodigycreatures.ultimate": "Habilidad definitiva",
-  "effect.prodigycreatures.spectral_burn": "Fuego espectral"
+  "effect.prodigycreatures.spectral_burn": "Fuego espectral",
+  "item.prodigycreatures.stegosaurus_taming_salad": "Ensalada de domesticación",
+  "item.prodigycreatures.stegosaurus_feed": "Pienso para estegosaurio"
 }

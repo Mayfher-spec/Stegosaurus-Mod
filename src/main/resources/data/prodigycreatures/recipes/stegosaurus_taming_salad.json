@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "PCP",
+    "CGC",
+    "PCP"
+  ],
+  "key": {
+    "P": {
+      "item": "minecraft:potato"
+    },
+    "C": {
+      "item": "minecraft:carrot"
+    },
+    "G": {
+      "item": "minecraft:golden_apple"
+    }
+  },
+  "result": {
+    "item": "prodigycreatures:stegosaurus_taming_salad"
+  }
+}

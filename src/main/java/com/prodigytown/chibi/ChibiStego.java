@@ -66,7 +66,6 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
     private static final EntityDataAccessor<Integer> VARIANT =
         SynchedEntityData.defineId(ChibiStego.class, EntityDataSerializers.INT);
     public static final int NATURAL = 0, CYBER = 1, MAGMA = 2, GOLD = 3;
-    private static final ResourceLocation SALAD_ID = new ResourceLocation("ror", "redwood_salad");
     private static final int SALAD_XP = 25;
     private static final int EVOLVE_LEVEL = 30;
     /** Duracion de la fase de carga del chibi (2,5 s) antes de convertirse en la silueta del adulto. */
@@ -237,21 +236,24 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
         targetSelector.addGoal(3, new HurtByTargetGoal(this));
     }
 
-    private boolean isSalad(ItemStack stack) {
-        Item salad = BuiltInRegistries.ITEM.get(SALAD_ID);
-        return salad != Items.AIR && stack.is(salad);
-    }
+    private boolean isSalad(ItemStack stack) { return stack.is(com.prodigytown.creatures.ProdigyCreatures.FEED.get()); }
 
     @Override public InteractionResult mobInteract(Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
+        if (stack.is(com.prodigytown.creatures.ProdigyCreatures.TAMING_SALAD.get()) && !isTame()) {
+            if (!player.getAbilities().instabuild) return InteractionResult.PASS; // solo se obtiene de un huevo
+            if (!level().isClientSide) {
+                tame(player);
+                setOrderedToSit(false);
+                level().broadcastEntityEvent(this, (byte) 7);
+                heal(getMaxHealth());
+            }
+            return InteractionResult.sidedSuccess(level().isClientSide);
+        }
         if (isSalad(stack)) {
             if (!level().isClientSide) {
                 if (!isTame()) {
-                    if (!player.getAbilities().instabuild) return InteractionResult.PASS; // solo se obtiene de un huevo
-                    tame(player);
-                    setOrderedToSit(false);
-                    level().broadcastEntityEvent(this, (byte) 7);
-                    heal(getMaxHealth());
+                    return InteractionResult.PASS;
                 } else if (isOwnedBy(player)) {
                     if (!player.getAbilities().instabuild) stack.shrink(1);
                     heal(10.0F);

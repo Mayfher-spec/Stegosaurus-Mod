@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " W ",
+    "WXW",
+    " W "
+  ],
+  "key": {
+    "W": {
+      "item": "minecraft:wheat"
+    },
+    "X": {
+      "item": "minecraft:beetroot"
+    }
+  },
+  "result": {
+    "item": "prodigycreatures:stegosaurus_feed",
+    "count": 2
+  }
+}

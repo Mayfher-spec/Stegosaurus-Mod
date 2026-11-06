@@ -175,7 +175,6 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
             if (gaitPhase > wrap) gaitPhase -= wrap;
         }
     }
-    private static final ResourceLocation SALAD_ID = new ResourceLocation("ror", "redwood_salad");
     // Preserve previously saved NBT variant numbers: 0 -> cyber, 1 -> golden, 2 -> magma.
     public static final int CYBERNETIC = 0, GOLDEN = 1, MAGMA = 2, GLACIAL = 3, NATURAL = 4;
     public static final int NORMAL = CYBERNETIC, ALBINO = GOLDEN; // deprecated aliases
@@ -328,22 +327,26 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         this.targetSelector.addGoal(3, new HurtByTargetGoal(this));
     }
 
-    private boolean isSalad(ItemStack stack) {
-        Item salad = BuiltInRegistries.ITEM.get(SALAD_ID);
-        return salad != net.minecraft.world.item.Items.AIR && stack.is(salad);
-    }
+    /** Pienso para estegosaurio: cura y da experiencia. */
+    private boolean isSalad(ItemStack stack) { return stack.is(ProdigyCreatures.FEED.get()); }
 
     @Override public InteractionResult mobInteract(Player player, InteractionHand hand) {
         ItemStack held = player.getItemInHand(hand);
+        if (held.is(ProdigyCreatures.TAMING_SALAD.get()) && !this.isTame()) {
+            // Los adultos silvestres no se domestican: solo se consiguen de un huevo (creativo puede, para pruebas).
+            if (!player.getAbilities().instabuild) return InteractionResult.PASS;
+            if (!this.level().isClientSide) {
+                this.tame(player);
+                this.setOrderedToSit(false);
+                this.level().broadcastEntityEvent(this, (byte)7);
+                this.heal(this.getMaxHealth());
+            }
+            return InteractionResult.sidedSuccess(this.level().isClientSide);
+        }
         if (isSalad(held)) {
             if (!this.level().isClientSide) {
                 if (!this.isTame()) {
-                    // Los adultos silvestres no se domestican: solo se consiguen de un huevo (creativo puede, para pruebas).
-                    if (!player.getAbilities().instabuild) return InteractionResult.PASS;
-                    this.tame(player);
-                    this.setOrderedToSit(false);
-                    this.level().broadcastEntityEvent(this, (byte)7);
-                    this.heal(this.getMaxHealth());
+                    return InteractionResult.PASS;
                 } else if (this.isOwnedBy(player)) {
                     if (!player.getAbilities().instabuild) held.shrink(1);
                     this.heal(40.0f);

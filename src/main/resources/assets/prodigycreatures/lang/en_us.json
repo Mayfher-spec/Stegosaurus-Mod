@@ -33,5 +33,7 @@
   "subtitles.prodigycreatures.stegosaurus.tail_power": "Stegosaurus whips its tail",
   "subtitles.prodigycreatures.stegosaurus.charge_power": "Stegosaurus charges",
   "key.prodigycreatures.ultimate": "Ultimate ability",
-  "effect.prodigycreatures.spectral_burn": "Spectral Fire"
+  "effect.prodigycreatures.spectral_burn": "Spectral Fire",
+  "item.prodigycreatures.stegosaurus_taming_salad": "Stegosaurus Taming Salad",
+  "item.prodigycreatures.stegosaurus_feed": "Stegosaurus Feed"
 }

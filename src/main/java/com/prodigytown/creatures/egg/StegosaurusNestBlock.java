@@ -49,6 +49,11 @@ public final class StegosaurusNestBlock extends BaseEntityBlock {
         this.registerDefaultState(this.stateDefinition.any().setValue(EGG, 0).setValue(WILD, false));
     }
 
+    /** Un nido silvestre (con padres cuidandolo) resiste explosiones: un creeper no revienta los huevos. */
+    @Override public float getExplosionResistance(BlockState state, net.minecraft.world.level.BlockGetter level, net.minecraft.core.BlockPos pos, net.minecraft.world.level.Explosion explosion) {
+        return state.getValue(WILD) ? 3600000.0F : super.getExplosionResistance(state, level, pos, explosion);
+    }
+
     @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> b) { b.add(EGG, WILD); }
     @Override public RenderShape getRenderShape(BlockState state) { return RenderShape.MODEL; } // el nido es modelo normal; solo el huevo va por BER
     @Override public VoxelShape getShape(BlockState s, BlockGetter l, BlockPos p, CollisionContext c) { return SHAPE; }

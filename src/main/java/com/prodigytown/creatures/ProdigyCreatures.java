@@ -59,6 +59,10 @@ public class ProdigyCreatures {
     public static final RegistryObject<Item> STEGOSAURUS_EGG = ITEMS.register("stegosaurus_spawn_egg", () ->
         new ProdigyStegosaurusEgg(new Item.Properties()));
 
+    /** Ensalada de domesticacion (manzana dorada rodeada de zanahorias y papas) y pienso (alimento y crecimiento). */
+    public static final RegistryObject<Item> TAMING_SALAD = ITEMS.register("stegosaurus_taming_salad", () -> new Item(new Item.Properties().stacksTo(16)));
+    public static final RegistryObject<Item> FEED = ITEMS.register("stegosaurus_feed", () -> new Item(new Item.Properties().stacksTo(64)));
+
     public static final String[] ARMOR_NAMES = {"iron", "gold", "diamond", "netherite"};
     /** ARMOR_ITEMS.get(tier - 1) es la armadura de ese nivel (1 hierro .. 4 netherite). */
     public static final java.util.List<RegistryObject<Item>> ARMOR_ITEMS = new java.util.ArrayList<>();
@@ -94,6 +98,10 @@ public class ProdigyCreatures {
                 event.accept(STEGOSAURUS_EGG.get());
                 event.accept(NEST_ITEM.get());
                 for (RegistryObject<Item> egg : EGG_ITEMS) event.accept(egg.get());
+            }
+            if (event.getTabKey() == CreativeModeTabs.FOOD_AND_DRINKS) {
+                event.accept(TAMING_SALAD.get());
+                event.accept(FEED.get());
             }
             if (event.getTabKey() == CreativeModeTabs.COMBAT) {
                 for (RegistryObject<Item> armor : ARMOR_ITEMS) event.accept(armor.get());
