@@ -14,9 +14,9 @@ public final class ClientModEvents {
     }
     @SubscribeEvent public static void registerParticles(net.minecraftforge.client.event.RegisterParticleProvidersEvent event) {
         event.registerSpriteSet(com.prodigytown.creatures.ModParticles.SPECTRAL_FLAME.get(), net.minecraft.client.particle.FlameParticle.Provider::new);
-        event.registerSpriteSet(com.prodigytown.creatures.ModParticles.SPECTRAL_FLAME_BIG.get(), sprites -> big(sprites, 3.5F));
+        event.registerSpriteSet(com.prodigytown.creatures.ModParticles.SPECTRAL_FLAME_BIG.get(), sprites -> big(sprites, 8.0F));
         event.registerSpriteSet(com.prodigytown.creatures.ModParticles.ZZZ.get(), sprites -> zzz(sprites));
-        event.registerSpriteSet(com.prodigytown.creatures.ModParticles.BIG_FLAME.get(), sprites -> big(sprites, 3.5F));
+        event.registerSpriteSet(com.prodigytown.creatures.ModParticles.BIG_FLAME.get(), sprites -> big(sprites, 8.0F));
     }
     /** La "Z" del sueno: el tamano viaja en la velocidad x (el servidor lo manda con count 0). */
     private static net.minecraft.client.particle.ParticleProvider<net.minecraft.core.particles.SimpleParticleType> zzz(net.minecraft.client.particle.SpriteSet sprites) {
