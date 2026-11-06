@@ -49,6 +49,6 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: The-Stegosaurus-Mod-4.9.1-beta
+          name: The-Stegosaurus-Mod-1.0.0
           path: dist/The_Stegosaurus_Mod_v1.0.0_Forge_1.20.1.jar
           if-no-files-found: error
