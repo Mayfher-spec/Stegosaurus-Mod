@@ -7,6 +7,8 @@ import net.minecraft.client.model.geom.EntityModelSet;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.client.renderer.entity.RenderLayerParent;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
@@ -33,5 +35,8 @@ public final class StegosaurusArmorLayer extends RenderLayer<StegosaurusEntity, 
         armor.sync(theirs);
         VertexConsumer vc = buffers.getBuffer(RenderType.entityCutoutNoCull(StegosaurusArmorModel.texture(tier)));
         armor.renderToBuffer(stack, vc, packedLight, LivingEntityRenderer.getOverlayCoords(entity, 0.0F), 1.0F, 1.0F, 1.0F, 1.0F);
+        ResourceLocation base = StegosaurusArmorModel.texture(tier);
+        ResourceLocation glowTex = new ResourceLocation(base.getNamespace(), base.getPath().replace(".png", "_glow.png"));
+        armor.renderToBuffer(stack, buffers.getBuffer(RenderType.eyes(glowTex)), 15728640, OverlayTexture.NO_OVERLAY, 1.0F, 1.0F, 1.0F, 1.0F);
     }
 }
