@@ -135,36 +135,6 @@
       }
     ]
   },
-  "stegosaurus.bite_power": {
-    "subtitle": "subtitles.prodigycreatures.stegosaurus.bite_power",
-    "sounds": [
-      {
-        "name": "prodigycreatures:stegosaurus/bite_power",
-        "stream": false,
-        "volume": 1.0
-      }
-    ]
-  },
-  "stegosaurus.tail_power": {
-    "subtitle": "subtitles.prodigycreatures.stegosaurus.tail_power",
-    "sounds": [
-      {
-        "name": "prodigycreatures:stegosaurus/tail_power",
-        "stream": false,
-        "volume": 1.0
-      }
-    ]
-  },
-  "stegosaurus.charge_power": {
-    "subtitle": "subtitles.prodigycreatures.stegosaurus.charge_power",
-    "sounds": [
-      {
-        "name": "prodigycreatures:stegosaurus/charge_power",
-        "stream": false,
-        "volume": 1.0
-      }
-    ]
-  },
   "stegosaurus.ult_roar": {
     "subtitle": "subtitles.prodigycreatures.stegosaurus.ult_roar",
     "sounds": [
