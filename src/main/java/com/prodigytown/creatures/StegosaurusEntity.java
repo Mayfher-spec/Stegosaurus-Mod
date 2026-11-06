@@ -115,7 +115,6 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
     private static final EntityDataAccessor<Boolean> EVOLVE_QUICK = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Integer> REVERT = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> EVOLVE = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.INT);
-    private static final EntityDataAccessor<Boolean> HAS_BAGS = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> SADDLED = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<CompoundTag> PROGRESS = SynchedEntityData.defineId(StegosaurusEntity.class, EntityDataSerializers.COMPOUND_TAG);
 
@@ -197,7 +196,6 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         this.entityData.define(VARIANT, CYBERNETIC);
         this.entityData.define(PROGRESS, new ProdigyProgress().save());
         this.entityData.define(SADDLED, Boolean.FALSE);
-        this.entityData.define(HAS_BAGS, Boolean.FALSE);
         this.entityData.define(EVOLVE, 0);
         this.entityData.define(REVERT, 0);
         this.entityData.define(EVOLVE_QUICK, false);
@@ -264,8 +262,6 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         tag.putInt("SkinVariant", getVariant());
         tag.put("ProdigyProgress", progress.save());
         tag.putBoolean("Saddled", isSaddled());
-        tag.putBoolean("HasBags", hasBags());
-        tag.put("BagItems", bags.createTag());
         tag.putInt("ArmorTier", getArmorTier());
         tag.putBoolean("Female", isFemale());
         tag.putBoolean("SexAssigned", sexAssigned);
@@ -278,8 +274,6 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         progress = ProdigyProgress.load(tag.contains("ProdigyProgress") ? tag.getCompound("ProdigyProgress") : null);
         this.entityData.set(PROGRESS, progress.save());
         this.entityData.set(SADDLED, tag.getBoolean("Saddled"));
-        this.entityData.set(HAS_BAGS, tag.getBoolean("HasBags"));
-        if (tag.contains("BagItems")) bags.fromTag(tag.getList("BagItems", 10));
         this.entityData.set(ARMOR_TIER, Math.max(0, Math.min(4, tag.getInt("ArmorTier"))));
         this.entityData.set(FEMALE, tag.getBoolean("Female"));
         this.sexAssigned = tag.getBoolean("SexAssigned");
@@ -360,15 +354,6 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
                     if (!player.getAbilities().instabuild) held.shrink(1);
                     this.playSound(SoundEvents.ARMOR_EQUIP_IRON, 1.0F, 0.8F);
                 }
-            }
-            return InteractionResult.sidedSuccess(this.level().isClientSide);
-        }
-        if (this.isTame() && this.isOwnedBy(player) && isSaddled() && !hasBags() && held.is(Items.CHEST) && held.getCount() >= 2) {
-            if (!this.level().isClientSide) {
-                this.entityData.set(HAS_BAGS, true);
-                if (!player.getAbilities().instabuild) held.shrink(2);
-                this.playSound(SoundEvents.ARMOR_EQUIP_LEATHER, 1.0F, 1.0F);
-                player.displayClientMessage(net.minecraft.network.chat.Component.literal("Maletas instaladas: abrelas desde el menu del estegosaurio"), true);
             }
             return InteractionResult.sidedSuccess(this.level().isClientSide);
         }
@@ -507,7 +492,6 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
     public void removeSaddle() {
         if (this.level().isClientSide || !isSaddled()) return;
         this.ejectPassengers();
-        removeBags();
         this.spawnAtLocation(Items.SADDLE);
         setSaddled(false);
     }
@@ -612,26 +596,6 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
 
     // ------------------------------------------------------------------ montura (silla)
 
-    /** Maletas laterales: 18 espacios (2 filas), se guardan con el dino y se sueltan al morir o quitarlas. */
-    public final net.minecraft.world.SimpleContainer bags = new net.minecraft.world.SimpleContainer(18) {
-        @Override public boolean stillValid(Player p) { return isAlive() && hasBags() && StegosaurusEntity.this.distanceTo(p) < 10.0F; }
-    };
-    public boolean hasBags() { return this.entityData.get(HAS_BAGS); }
-
-    public void openBags(net.minecraft.server.level.ServerPlayer sp) {
-        if (!hasBags() || !isOwnedBy(sp)) return;
-        sp.openMenu(new net.minecraft.world.SimpleMenuProvider((id, inv, pl) ->
-            net.minecraft.world.inventory.ChestMenu.twoRows(id, inv, bags), net.minecraft.network.chat.Component.literal("Maletas")));
-    }
-
-    public void removeBags() {
-        if (this.level().isClientSide || !hasBags()) return;
-        net.minecraft.world.Containers.dropContents(this.level(), this.blockPosition(), bags);
-        bags.clearContent();
-        this.spawnAtLocation(new ItemStack(Items.CHEST, 2));
-        this.entityData.set(HAS_BAGS, false);
-    }
-
     public boolean isSaddled() { return this.entityData.get(SADDLED); }
     public void setSaddled(boolean v) { this.entityData.set(SADDLED, v); }
 
@@ -686,7 +650,6 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
             this.spawnAtLocation(new ItemStack(ProdigyCreatures.EGG_ITEMS.get(
                 com.prodigytown.creatures.egg.StegosaurusEggs.rollVariant(this.random, getVariant())).get()));
         }
-        removeBags();
         if (isSaddled()) this.spawnAtLocation(Items.SADDLE);
         if (getArmorTier() > 0) this.spawnAtLocation(new ItemStack(ProdigyCreatures.ARMOR_ITEMS.get(getArmorTier() - 1).get()));
     }

@@ -66,7 +66,7 @@ public final class TalentScreen extends Screen {
     private int left, top, tab = 0, selected = 0;
     /** Escala para que el panel quepa siempre en pantalla; las coordenadas internas son "virtuales" (divididas por sc). */
     private float sc = 1.0F;
-    private TexButton openBags, dropBags, unlock, sit, rename, dropSaddle, dropArmor, toChibi;
+    private TexButton unlock, sit, rename, dropSaddle, dropArmor, toChibi;
     private long chibiConfirmUntil = 0L;
     private HitButton reset;
     private net.minecraft.client.gui.components.EditBox nameBox;
@@ -115,12 +115,6 @@ public final class TalentScreen extends Screen {
             ModNetwork.CHANNEL.sendToServer(new ModNetwork.TalentAction(stego.getId(), 3, 0))));
         dropArmor = this.addRenderableWidget(new TexButton(left + 240, top + 110, 110, 14, Component.literal("Quitar armadura"), b ->
             ModNetwork.CHANNEL.sendToServer(new ModNetwork.TalentAction(stego.getId(), 4, 0))));
-        openBags = this.addRenderableWidget(new TexButton(left + 124, top + 146, 110, 14, Component.literal("Abrir maletas"), b -> {
-            ModNetwork.CHANNEL.sendToServer(new ModNetwork.TalentAction(stego.getId(), 6, 0));
-            this.onClose();
-        }));
-        dropBags = this.addRenderableWidget(new TexButton(left + 240, top + 146, 110, 14, Component.literal("Quitar maletas"), b ->
-            ModNetwork.CHANNEL.sendToServer(new ModNetwork.TalentAction(stego.getId(), 7, 0))));
         toChibi = this.addRenderableWidget(new TexButton(left + 240, top + 128, 110, 14, Component.literal("Volver a chibi"), b -> {
             long now = System.currentTimeMillis();
             if (now < chibiConfirmUntil) {
@@ -223,8 +217,6 @@ public final class TalentScreen extends Screen {
         boolean eq = tab == 2;
         nameBox.visible = eq; nameBox.active = eq; rename.visible = eq; sit.visible = eq;
         dropSaddle.visible = eq; dropSaddle.active = eq && stego.isSaddled();
-        openBags.visible = eq; openBags.active = eq && stego.hasBags();
-        dropBags.visible = eq; dropBags.active = eq && stego.hasBags();
         dropArmor.visible = eq; dropArmor.active = eq && stego.getArmorTier() > 0;
         toChibi.visible = eq; toChibi.gold = System.currentTimeMillis() < chibiConfirmUntil;
         toChibi.setMessage(Component.literal(toChibi.gold ? "Seguro? Clic otra vez" : "Volver a chibi"));
