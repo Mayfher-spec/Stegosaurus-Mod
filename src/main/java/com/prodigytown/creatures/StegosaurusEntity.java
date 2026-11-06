@@ -1292,16 +1292,14 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
                         server.sendParticles(block, x + Math.cos(a) * r, y + 0.2, z + Math.sin(a) * r, 8, 0.3, 0.6, 0.3, 0.4);
                     }
                 }
-                int chunks = 0;
-                for (int i = 0; i < 60 && chunks < 26; i++) { // trozos de suelo que saltan de verdad y vuelven a caer
+                for (int i = 0; i < 40; i++) { // trozos de tierra que saltan: solo particulas, no se mueve ningun bloque real
                     double a = this.random.nextDouble() * Math.PI * 2.0, r = 2.0 + this.random.nextDouble() * 9.0;
                     net.minecraft.core.BlockPos bp = net.minecraft.core.BlockPos.containing(x + Math.cos(a) * r, y - 0.5, z + Math.sin(a) * r);
                     net.minecraft.world.level.block.state.BlockState st = server.getBlockState(bp);
-                    if (st.isAir() || st.hasBlockEntity() || !st.isCollisionShapeFullBlock(server, bp) || st.getDestroySpeed(server, bp) < 0 || st.getDestroySpeed(server, bp) > 3.0F || !server.getBlockState(bp.above()).isAir()) continue;
-                    net.minecraft.world.entity.item.FallingBlockEntity fb = net.minecraft.world.entity.item.FallingBlockEntity.fall(server, bp, st);
-                    fb.dropItem = false;
-                    fb.setDeltaMovement((this.random.nextDouble() - 0.5) * 0.15, 0.45 + this.random.nextDouble() * 0.45, (this.random.nextDouble() - 0.5) * 0.15);
-                    chunks++;
+                    if (st.isAir()) continue;
+                    var chunk = new net.minecraft.core.particles.BlockParticleOption(net.minecraft.core.particles.ParticleTypes.BLOCK, st);
+                    for (int k = 0; k < 5; k++)
+                        server.sendParticles(chunk, bp.getX() + 0.5, y + 0.3 + k * 0.1, bp.getZ() + 0.5, 0, (this.random.nextDouble() - 0.5) * 0.3, 0.8 + this.random.nextDouble() * 0.6, (this.random.nextDouble() - 0.5) * 0.3, 0.9);
                 }
                 ultRoots.clear();
                 for (int i = 0; i < 22; i++) {
