@@ -67,6 +67,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
     public final AnimationState tailWhipAnimationState = new AnimationState();
     public final AnimationState biteAnimationState = new AnimationState();
     public final AnimationState roarAnimationState = new AnimationState();
+    public final AnimationState ultAnimationState = new AnimationState();
     @Override public void tick() {
         super.tick();
         if (this.level().isClientSide) {
@@ -76,12 +77,14 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
             if (this.tailWhipAnimationState.isStarted() && this.tailWhipAnimationState.getAccumulatedTime() > 1800L) this.tailWhipAnimationState.stop();
             if (this.biteAnimationState.isStarted() && this.biteAnimationState.getAccumulatedTime() > 1200L) this.biteAnimationState.stop();
             if (this.roarAnimationState.isStarted() && this.roarAnimationState.getAccumulatedTime() > 3000L) this.roarAnimationState.stop();
+            if (this.ultAnimationState.isStarted() && this.ultAnimationState.getAccumulatedTime() > 2600L) this.ultAnimationState.stop();
         } else {
             if (!sexAssigned) assignSex();
             serverProgressTick();
             guardTick();
             evolveTick();
             revertTick();
+            ultTick();
         }
         if (!this.level().isClientSide && this.getTarget() != null && !this.isOrderedToSit() && this.tickCount % 240 == 0 && this.random.nextInt(4) == 0) {
             // Periodic roar while in combat, synced to nearby clients. Not every tick.
@@ -92,6 +95,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         if (id == 61) this.tailWhipAnimationState.start(this.tickCount);
         else if (id == 62) this.biteAnimationState.start(this.tickCount);
         else if (id == 64) this.flashFade = 24;
+        else if (id == 66) this.ultAnimationState.start(this.tickCount);
         else if (id == 63) {
             this.roarAnimationState.start(this.tickCount);
             this.level().playLocalSound(this.getX(), this.getY(), this.getZ(), ModSounds.STEGO_ROAR.get(),
@@ -619,6 +623,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
     }
 
     @Override public void travel(Vec3 travelVector) {
+        if (ultWindup > 0) { this.calculateEntityAnimation(false); return; } // concentrando la definitiva: no se mueve
         if (this.isAlive() && this.isVehicle() && this.getControllingPassenger() instanceof Player rider) {
             // giro amplio: sigue la mirada del jinete con un limite por tick (en marcha, mas lento)
             float turnCap = rider.zza > 0.0F ? 3.5F : 7.0F;
@@ -825,6 +830,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
     /** @param id 0 = embestida (C3), 1 = coletazo (basico; devastador con C5), 2 = mordida (clic izquierdo montado) */
     public boolean useAbility(Player player, int id) {
         if (this.level().isClientSide || this.isOrderedToSit() || !this.isAlive()) return false;
+        if (ultWindup > 0) return false;
         if (id == 0) {
             int r = progress.rank("C3");
             if (r <= 0) { player.displayClientMessage(Component.literal("Embestida no desbloqueada"), true); return false; }
@@ -868,7 +874,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
             this.ultReadyAt = this.tickCount + ucd;
             markCooldown(CD_ULT, ucd);
             this.lastCombatTick = this.tickCount;
-            castUltimate(player);
+            startUltimate(player);
             return true;
         }
         return false;
@@ -981,6 +987,114 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
     }
 
     /** Habilidad definitiva de cada raza (solo montado). */
+
+    // ---------------------------------------------------------------- animacion de la definitiva
+    private int ultWindup = 0, ultWave = 0;
+    private Player ultCaster;
+    private static final int ULT_WINDUP = 28; // 1,4 s: el golpe cae en el cuadro del pisoton de la animacion
+
+    private net.minecraft.core.particles.ParticleOptions ultMain() {
+        return switch (this.getVariant()) {
+            case CYBERNETIC -> net.minecraft.core.particles.ParticleTypes.ELECTRIC_SPARK;
+            case GOLDEN -> net.minecraft.core.particles.ParticleTypes.END_ROD;
+            case MAGMA -> net.minecraft.core.particles.ParticleTypes.FLAME;
+            case GLACIAL -> ModParticles.SPECTRAL_FLAME.get();
+            default -> net.minecraft.core.particles.ParticleTypes.COMPOSTER;
+        };
+    }
+
+    private void startUltimate(Player player) {
+        this.ultCaster = player;
+        this.ultWindup = ULT_WINDUP;
+        this.getNavigation().stop();
+        this.level().broadcastEntityEvent(this, (byte) 66);
+        this.playSound(net.minecraft.sounds.SoundEvents.BEACON_POWER_SELECT, 2.5F, 0.6F);
+    }
+
+    private void ultTick() {
+        if (!(this.level() instanceof net.minecraft.server.level.ServerLevel server)) return;
+        if (ultWave > 0) { // onda expansiva: un anillo que crece durante 12 ticks
+            double r = (13 - ultWave) * 0.9;
+            int n = (int) (14 + r * 7);
+            var type = this.getVariant() == GLACIAL ? emeraldDust() : ultMain();
+            for (int k = 0; k < n; k++) {
+                double a = k * Math.PI * 2.0 / n;
+                server.sendParticles(type, this.getX() + Math.cos(a) * r, this.getY() + 0.25, this.getZ() + Math.sin(a) * r, 1, 0.05, 0.12, 0.05, 0.01);
+            }
+            ultWave--;
+        }
+        if (ultWindup <= 0) return;
+        int left = ultWindup--;
+        if (!this.isAlive()) { ultWindup = 0; return; }
+        double prog = (ULT_WINDUP - left) / (double) ULT_WINDUP;
+        for (int k = 0; k < 3; k++) { // particulas que se arremolinan hacia el cuerpo y suben
+            double a = this.tickCount * 0.55 + k * 2.094, r = 3.2 * (1.0 - prog) + 0.6;
+            server.sendParticles(ultMain(), this.getX() + Math.cos(a) * r, this.getY() + 0.2 + prog * 2.6, this.getZ() + Math.sin(a) * r, 1, 0.0, 0.0, 0.0, 0.0);
+        }
+        if (left == 18) server.sendParticles(net.minecraft.core.particles.ParticleTypes.FLASH, this.getX(), this.getY() + 2.0, this.getZ(), 1, 0, 0, 0, 0);
+        if (left == 1) {
+            Player who = this.getControllingPassenger() instanceof Player p ? p : ultCaster;
+            if (who != null) { castUltimate(who); ultImpactFx(server); }
+            ultWave = 12;
+        }
+    }
+
+    /** Efecto de impacto propio de cada raza (ademas de los anillos del poder). */
+    private void ultImpactFx(net.minecraft.server.level.ServerLevel server) {
+        double x = this.getX(), y = this.getY(), z = this.getZ();
+        switch (this.getVariant()) {
+            case CYBERNETIC -> {
+                int ul = Math.max(1, ultimateLevel()), n = 0;
+                for (LivingEntity e : this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(8.0 + 2.0 * ul), this::isFoe)) {
+                    if (n++ >= 4) break;
+                    net.minecraft.world.entity.LightningBolt bolt = net.minecraft.world.entity.EntityType.LIGHTNING_BOLT.create(server);
+                    if (bolt == null) continue;
+                    bolt.moveTo(e.getX(), e.getY(), e.getZ());
+                    bolt.setVisualOnly(true);
+                    server.addFreshEntity(bolt);
+                }
+                server.sendParticles(net.minecraft.core.particles.ParticleTypes.ELECTRIC_SPARK, x, y + 1.5, z, 80, 2.5, 1.5, 2.5, 0.3);
+            }
+            case GOLDEN -> {
+                for (double h = 0; h <= 12; h += 0.5) {
+                    server.sendParticles(net.minecraft.core.particles.ParticleTypes.END_ROD, x, y + h, z, 3, 0.25, 0.0, 0.25, 0.02);
+                    server.sendParticles(net.minecraft.core.particles.ParticleTypes.WAX_ON, x, y + h, z, 2, 0.4, 0.0, 0.4, 0.0);
+                }
+                server.sendParticles(net.minecraft.core.particles.ParticleTypes.GLOW, x, y + 1.5, z, 60, 3.0, 1.2, 3.0, 0.05);
+            }
+            case MAGMA -> {
+                server.sendParticles(net.minecraft.core.particles.ParticleTypes.EXPLOSION_EMITTER, x, y + 0.5, z, 1, 0, 0, 0, 0);
+                for (int i = 0; i < 14; i++) {
+                    double a = this.random.nextDouble() * Math.PI * 2.0, r = 1.5 + this.random.nextDouble() * 6.0;
+                    double px = x + Math.cos(a) * r, pz = z + Math.sin(a) * r;
+                    server.sendParticles(net.minecraft.core.particles.ParticleTypes.FLAME, px, y + 0.3, pz, 14, 0.15, 0.9, 0.15, 0.12);
+                    server.sendParticles(net.minecraft.core.particles.ParticleTypes.LAVA, px, y + 0.5, pz, 4, 0.2, 0.3, 0.2, 0.0);
+                    server.sendParticles(net.minecraft.core.particles.ParticleTypes.LARGE_SMOKE, px, y + 1.0, pz, 3, 0.2, 0.6, 0.2, 0.03);
+                }
+            }
+            case GLACIAL -> {
+                for (int arm = 0; arm < 3; arm++) { // tres espirales de llama espectral que se abren
+                    for (int k = 0; k < 28; k++) {
+                        double a = arm * 2.094 + k * 0.28, r = 0.6 + k * 0.28;
+                        server.sendParticles(ModParticles.SPECTRAL_FLAME.get(), x + Math.cos(a) * r, y + 0.3 + k * 0.05, z + Math.sin(a) * r, 2, 0.1, 0.2, 0.1, 0.01);
+                    }
+                }
+                for (double h = 0; h <= 8; h += 0.5) server.sendParticles(emeraldDust(), x, y + h, z, 4, 0.5, 0.0, 0.5, 0.0);
+                server.sendParticles(net.minecraft.core.particles.ParticleTypes.SOUL_FIRE_FLAME, x, y + 0.5, z, 40, 3.0, 0.5, 3.0, 0.08);
+            }
+            default -> {
+                var block = new net.minecraft.core.particles.BlockParticleOption(net.minecraft.core.particles.ParticleTypes.BLOCK, this.level().getBlockState(this.blockPosition().below()));
+                for (int ring = 1; ring <= 3; ring++) {
+                    for (int k = 0; k < 24; k++) {
+                        double a = k * Math.PI * 2.0 / 24.0, r = ring * 2.0;
+                        server.sendParticles(block, x + Math.cos(a) * r, y + 0.2, z + Math.sin(a) * r, 4, 0.2, 0.1, 0.2, 0.25);
+                    }
+                }
+                server.sendParticles(net.minecraft.core.particles.ParticleTypes.CLOUD, x, y + 0.3, z, 40, 3.0, 0.2, 3.0, 0.1);
+            }
+        }
+    }
+
     private void castUltimate(Player player) {
         int ul = Math.max(1, ultimateLevel());
         float atk = (float) this.getAttributeValue(Attributes.ATTACK_DAMAGE) * new float[]{1.0F, 1.0F, 1.5F, 2.0F}[ul] // nivel 1/2/3: x1 / x1,5 / x2

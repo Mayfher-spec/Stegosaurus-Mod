@@ -14,6 +14,30 @@ public final class StegosaurusAnimations {
   public static final AnimationDefinition TAIL_WHIP = createTailWhip();
   public static final AnimationDefinition BITE = createBite();
   public static final AnimationDefinition ROAR = createRoar();
+  /** Definitiva: se agacha y junta fuerza, se alza rugiendo y descarga con un pisoton (impacto a 1,4 s). */
+  public static final AnimationDefinition ULTIMATE = createUltimate();
+  private static void ult(AnimationDefinition.Builder b, String bone, AnimationChannel.Target t, float[][] kf) {
+    Keyframe[] ks = new Keyframe[kf.length];
+    for (int i = 0; i < kf.length; i++) {
+      float[] k = kf[i];
+      ks[i] = new Keyframe(k[0], t == AnimationChannel.Targets.POSITION ? KeyframeAnimations.posVec(k[1], k[2], k[3]) : KeyframeAnimations.degreeVec(k[1], k[2], k[3]),
+        AnimationChannel.Interpolations.CATMULLROM);
+    }
+    b.addAnimation(bone, new AnimationChannel(t, ks));
+  }
+  private static AnimationDefinition createUltimate() {
+    AnimationDefinition.Builder b = AnimationDefinition.Builder.withLength(2.4F);
+    AnimationChannel.Target R = AnimationChannel.Targets.ROTATION, P = AnimationChannel.Targets.POSITION;
+    ult(b, "body2", R, new float[][]{{0F,0,0,0},{0.7F,6,0,0},{1.1F,-10,0,0},{1.4F,8,0,0},{1.55F,4,0,0},{2.0F,1,0,0},{2.4F,0,0,0}});
+    ult(b, "body2", P, new float[][]{{0F,0,0,0},{0.7F,0,-2.5F,0},{1.1F,0,1.5F,0},{1.4F,0,-3F,0},{1.55F,0,-1F,0},{2.0F,0,0,0},{2.4F,0,0,0}});
+    ult(b, "all", P, new float[][]{{0F,0,0,0},{1.1F,0,0,0},{1.25F,0,3F,0},{1.4F,0,0,0},{2.4F,0,0,0}});
+    ult(b, "neck2", R, new float[][]{{0F,0,0,0},{0.7F,8,0,0},{1.1F,-24,0,0},{1.4F,12,0,0},{1.55F,4,0,0},{2.0F,0.5F,0,0},{2.4F,0,0,0}});
+    ult(b, "neck", R, new float[][]{{0F,0,0,0},{0.7F,6,0,0},{1.1F,-20,0,0},{1.4F,10,0,0},{1.55F,3,0,0},{2.0F,0,0,0},{2.4F,0,0,0}});
+    ult(b, "head", R, new float[][]{{0F,0,0,0},{0.7F,10,0,0},{1.1F,-28,0,0},{1.4F,14,0,0},{1.55F,4,0,0},{2.0F,0,0,0},{2.4F,0,0,0}});
+    ult(b, "jaw", R, new float[][]{{0F,0,0,0},{0.7F,4,0,0},{1.1F,42,0,0},{1.4F,38,0,0},{1.55F,5,0,0},{2.0F,0,0,0},{2.4F,0,0,0}});
+    ult(b, "tail", R, new float[][]{{0F,0,0,0},{0.7F,-6,0,0},{1.1F,-10,0,0},{1.4F,6,0,0},{1.55F,0,0,0},{2.4F,0,0,0}});
+    return b.build();
+  }
   private static AnimationDefinition createIdle() {
     AnimationDefinition.Builder builder = AnimationDefinition.Builder.withLength(4F);
     builder.looping();

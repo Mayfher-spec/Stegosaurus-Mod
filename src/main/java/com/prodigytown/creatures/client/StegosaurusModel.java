@@ -137,6 +137,7 @@ public final class StegosaurusModel<T extends StegosaurusEntity> extends Hierarc
     this.animate(entity.tailWhipAnimationState, StegosaurusAnimations.TAIL_WHIP, ageInTicks);
     this.animate(entity.biteAnimationState, StegosaurusAnimations.BITE, ageInTicks);
     this.animate(entity.roarAnimationState, StegosaurusAnimations.ROAR, ageInTicks);
+    this.animate(entity.ultAnimationState, StegosaurusAnimations.ULTIMATE, ageInTicks);
     head.yRot += netHeadYaw * ((float)Math.PI / 180F) * 0.35F;
     head.xRot += headPitch * ((float)Math.PI / 180F) * 0.35F;
 
