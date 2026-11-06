@@ -75,6 +75,8 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
     private static final EntityDataAccessor<Boolean> GLACIAL_LINE = SynchedEntityData.defineId(ChibiStego.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> QUICK = SynchedEntityData.defineId(ChibiStego.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Integer> CHARGE = SynchedEntityData.defineId(ChibiStego.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> GEAR_ARMOR = SynchedEntityData.defineId(ChibiStego.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Boolean> GEAR_SADDLE = SynchedEntityData.defineId(ChibiStego.class, EntityDataSerializers.BOOLEAN);
     private static final UUID M_HP = UUID.fromString("c41b1000-0001-4d1e-9a10-5e90a5a10001");
     private static final UUID M_DMG = UUID.fromString("c41b1000-0002-4d1e-9a10-5e90a5a10002");
     private static final UUID M_ARM = UUID.fromString("c41b1000-0003-4d1e-9a10-5e90a5a10003");
@@ -124,6 +126,8 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
 
     @Override protected void defineSynchedData() {
         super.defineSynchedData();
+        entityData.define(GEAR_ARMOR, 0);
+        entityData.define(GEAR_SADDLE, Boolean.FALSE);
         entityData.define(VARIANT, NATURAL);
         entityData.define(CHARGE, 0);
         entityData.define(QUICK, false);
@@ -174,6 +178,8 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
         tag.putInt("ChibiVariant", variant());
         tag.putBoolean("GlacialLine", entityData.get(GLACIAL_LINE));
         tag.putBoolean("EvolveLock", evolveLock);
+        tag.putInt("GearArmor", armorTier());
+        tag.putBoolean("GearSaddle", isSaddled());
         tag.putBoolean("QuickEvolve", isQuickEvolve());
         tag.putBoolean("Female", isFemale());
         tag.put("ProdigyProgress", progress.save());
@@ -184,6 +190,8 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
         if (tag.contains("ChibiVariant")) setVariant(tag.getInt("ChibiVariant"));
         entityData.set(GLACIAL_LINE, tag.getBoolean("GlacialLine"));
         evolveLock = tag.getBoolean("EvolveLock");
+        entityData.set(GEAR_ARMOR, Math.max(0, Math.min(4, tag.getInt("GearArmor"))));
+        entityData.set(GEAR_SADDLE, tag.getBoolean("GearSaddle"));
         entityData.set(QUICK, tag.getBoolean("QuickEvolve"));
         entityData.set(FEMALE, tag.contains("Female") ? tag.getBoolean("Female") : random.nextBoolean());
         // Chibis guardados antes de este sistema: nivel 1.
@@ -333,6 +341,20 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
     public boolean isFemale() { return entityData.get(FEMALE); }
     public void setFemale(boolean f) { entityData.set(FEMALE, f); }
     public boolean isGlacial() { return entityData.get(GLACIAL_LINE); }
+    /** Equipo que conserva al volver de adulto (solo decorativo): silla y nivel de armadura 0..4. */
+    public int armorTier() { return entityData.get(GEAR_ARMOR); }
+    public boolean isSaddled() { return entityData.get(GEAR_SADDLE); }
+    public void setGear(int armorTier, boolean saddled) {
+        entityData.set(GEAR_ARMOR, Math.max(0, Math.min(4, armorTier)));
+        entityData.set(GEAR_SADDLE, saddled);
+    }
+
+    @Override protected void dropCustomDeathLoot(net.minecraft.world.damagesource.DamageSource source, int looting, boolean recentlyHit) {
+        super.dropCustomDeathLoot(source, looting, recentlyHit);
+        if (isSaddled()) spawnAtLocation(net.minecraft.world.item.Items.SADDLE);
+        if (armorTier() > 0) spawnAtLocation(new net.minecraft.world.item.ItemStack(ProdigyCreatures.ARMOR_ITEMS.get(armorTier() - 1).get()));
+    }
+
     public boolean isQuickEvolve() { return entityData.get(QUICK); }
     public int chargeTotal() { return isQuickEvolve() ? 20 : EVOLVE_PRE; }
     @Override protected boolean isImmobile() { return super.isImmobile() || chargeTicks() > 0; }
@@ -396,6 +418,8 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet {
         adult.setOrderedToSit(isOrderedToSit());
         if (hasCustomName()) adult.setCustomName(getCustomName());
         adult.adoptProgress(progress);
+        adult.setSaddled(isSaddled());
+        adult.equipArmor(armorTier());
         adult.setHealth(adult.getMaxHealth());
         server.addFreshEntity(adult);
         adult.startEvolution(isQuickEvolve());

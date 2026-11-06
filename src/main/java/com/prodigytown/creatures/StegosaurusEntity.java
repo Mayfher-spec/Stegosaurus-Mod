@@ -452,8 +452,6 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         probe.moveTo(getX(), getY(), getZ(), getYRot(), 0.0F);
         if (!server.noCollision(probe, probe.getBoundingBox())) return;
         probe.discard();
-        removeSaddle();
-        removeArmor();
         this.ejectPassengers();
         this.getNavigation().stop();
         this.entityData.set(REVERT, REVERT_LEN);
@@ -481,6 +479,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         chibi.setOrderedToSit(isOrderedToSit());
         if (hasCustomName()) chibi.setCustomName(getCustomName());
         chibi.adoptProgress(progress);
+        chibi.setGear(getArmorTier(), isSaddled());
         chibi.setHealth(chibi.getMaxHealth());
         server.addFreshEntity(chibi);
         server.sendParticles(net.minecraft.core.particles.ParticleTypes.POOF, getX(), getY() + 0.4, getZ(), 18, 0.4, 0.3, 0.4, 0.04);

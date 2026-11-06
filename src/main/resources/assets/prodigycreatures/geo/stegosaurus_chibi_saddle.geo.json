@@ -1,0 +1,319 @@
+{
+ "format_version": "1.12.0",
+ "minecraft:geometry": [
+  {
+   "description": {
+    "identifier": "geometry.prodigycreatures.stegosaurus_chibi_saddle",
+    "texture_width": 128,
+    "texture_height": 128,
+    "visible_bounds_width": 3.25,
+    "visible_bounds_height": 2.6,
+    "visible_bounds_offset": [
+     0.0,
+     0.975,
+     0.0
+    ]
+   },
+   "bones": [
+    {
+     "name": "root",
+     "pivot": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "cubes": []
+    },
+    {
+     "name": "body",
+     "pivot": [
+      0.0,
+      9.1,
+      0.0
+     ],
+     "cubes": [
+      {
+       "origin": [
+        -4.5,
+        12.74,
+        -3.5
+       ],
+       "size": [
+        9,
+        1,
+        9
+       ],
+       "uv": [
+        0,
+        0
+       ]
+      },
+      {
+       "origin": [
+        -4.5,
+        13.74,
+        -3.5
+       ],
+       "size": [
+        9,
+        1,
+        1
+       ],
+       "uv": [
+        37,
+        0
+       ]
+      },
+      {
+       "origin": [
+        -4.5,
+        13.74,
+        4.5
+       ],
+       "size": [
+        9,
+        2,
+        1
+       ],
+       "uv": [
+        58,
+        0
+       ]
+      },
+      {
+       "origin": [
+        -4.5,
+        15.74,
+        4.5
+       ],
+       "size": [
+        9,
+        1,
+        1
+       ],
+       "uv": [
+        79,
+        0
+       ]
+      },
+      {
+       "origin": [
+        -1,
+        13.74,
+        -3.5
+       ],
+       "size": [
+        2,
+        2,
+        2
+       ],
+       "uv": [
+        100,
+        0
+       ]
+      },
+      {
+       "origin": [
+        -5,
+        15.74,
+        4
+       ],
+       "size": [
+        2,
+        2,
+        2
+       ],
+       "uv": [
+        100,
+        0
+       ]
+      },
+      {
+       "origin": [
+        3,
+        15.74,
+        4
+       ],
+       "size": [
+        2,
+        2,
+        2
+       ],
+       "uv": [
+        100,
+        0
+       ]
+      },
+      {
+       "origin": [
+        5.7,
+        3.0,
+        -1.5
+       ],
+       "size": [
+        1,
+        5,
+        3
+       ],
+       "uv": [
+        109,
+        0
+       ]
+      }
+     ],
+     "parent": "root"
+    },
+    {
+     "name": "neck",
+     "pivot": [
+      0.0,
+      9.75,
+      -6.5
+     ],
+     "cubes": [],
+     "parent": "body"
+    },
+    {
+     "name": "head",
+     "pivot": [
+      0.0,
+      10.335,
+      -9.1
+     ],
+     "cubes": [],
+     "parent": "neck"
+    },
+    {
+     "name": "jaw",
+     "pivot": [
+      0.0,
+      7.28,
+      -14.95
+     ],
+     "cubes": [],
+     "parent": "head"
+    },
+    {
+     "name": "leg_front_right",
+     "pivot": [
+      -4.16,
+      6.5,
+      -4.68
+     ],
+     "cubes": [],
+     "parent": "body"
+    },
+    {
+     "name": "leg_front_left",
+     "pivot": [
+      4.16,
+      6.5,
+      -4.68
+     ],
+     "cubes": [],
+     "parent": "body"
+    },
+    {
+     "name": "leg_back_right",
+     "pivot": [
+      -4.225,
+      6.5,
+      4.615
+     ],
+     "cubes": [],
+     "parent": "body"
+    },
+    {
+     "name": "leg_back_left",
+     "pivot": [
+      4.225,
+      6.5,
+      4.615
+     ],
+     "cubes": [],
+     "parent": "body"
+    },
+    {
+     "name": "plates",
+     "pivot": [
+      0.0,
+      12.35,
+      0.0
+     ],
+     "cubes": [],
+     "parent": "body"
+    },
+    {
+     "name": "tail_base",
+     "pivot": [
+      0.0,
+      9.75,
+      6.825
+     ],
+     "cubes": [],
+     "parent": "body"
+    },
+    {
+     "name": "tail_tip",
+     "pivot": [
+      0.0,
+      9.425,
+      14.625
+     ],
+     "cubes": [],
+     "parent": "tail_base"
+    },
+    {
+     "name": "tail_spike_1",
+     "pivot": [
+      1.3975,
+      9.295,
+      16.575
+     ],
+     "cubes": [],
+     "parent": "tail_tip"
+    },
+    {
+     "name": "tail_spike_2",
+     "pivot": [
+      -1.3975,
+      9.295,
+      16.575
+     ],
+     "cubes": [],
+     "parent": "tail_tip"
+    },
+    {
+     "name": "tail_spike_3",
+     "pivot": [
+      1.105,
+      8.385,
+      16.575
+     ],
+     "cubes": [],
+     "parent": "tail_tip"
+    },
+    {
+     "name": "tail_spike_4",
+     "pivot": [
+      -1.105,
+      8.385,
+      16.575
+     ],
+     "cubes": [],
+     "parent": "tail_tip"
+    },
+    {
+     "name": "saddle_anchor",
+     "pivot": [
+      0.0,
+      13.325,
+      -0.455
+     ],
+     "cubes": [],
+     "parent": "body"
+    }
+   ]
+  }
+ ]
+}

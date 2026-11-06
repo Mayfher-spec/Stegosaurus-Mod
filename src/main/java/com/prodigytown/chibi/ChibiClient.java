@@ -53,6 +53,7 @@ class ChibiRenderer extends GeoEntityRenderer<ChibiStego> {
     public ChibiRenderer(EntityRendererProvider.Context context) {
         super(context, new ChibiModel());
         shadowRadius = 0.55F;
+        addRenderLayer(new ChibiGearLayer(this));
         addRenderLayer(new ChibiGlowLayer(this));
     }
     /** El parpadeo blanco se dibuja brillante (sin sombreado), como una silueta de luz. */
