@@ -638,9 +638,9 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
                 this.yRotO = this.getYRot(); this.yBodyRot = this.getYRot(); this.yHeadRot = this.getYRot();
                 if (this.isControlledByLocalInstance()) {
                     Vec3 d = Vec3.directionFromRotation(0.0F, this.getYRot()), mv = this.getDeltaMovement();
-                    this.setDeltaMovement(d.x * 0.55, mv.y, d.z * 0.55);
+                    this.setDeltaMovement(d.x * 0.75, mv.y, d.z * 0.75);
                     this.move(net.minecraft.world.entity.MoverType.SELF, this.getDeltaMovement());
-                    this.setDeltaMovement(d.x * 0.55, (mv.y - 0.08) * 0.98, d.z * 0.55);
+                    this.setDeltaMovement(d.x * 0.75, (mv.y - 0.08) * 0.98, d.z * 0.75);
                 }
                 this.calculateEntityAnimation(false);
                 return;
@@ -805,7 +805,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
             this.entityData.set(CHARGE_LEFT, chargeTicks);
             Vec3 mv = this.getDeltaMovement();
             Vec3 cdir = this.getControllingPassenger() instanceof Player ? Vec3.directionFromRotation(0.0F, this.getYRot()) : chargeDir;
-            this.setDeltaMovement(cdir.x * 0.55, mv.y, cdir.z * 0.55);
+            this.setDeltaMovement(cdir.x * 0.75, mv.y, cdir.z * 0.75);
             if (chargeTicks % 2 == 0) powerFx(this.getX() - cdir.x * 1.5, this.getY() + 0.3, this.getZ() - cdir.z * 1.5, 8, 0.8);
             if (this.horizontalCollision && this.tickCount % 2 == 0 && chargeTicks > 4) { // choca con un muro: termina la carrera
                 chargeTicks = 3;
@@ -855,7 +855,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
             this.chargeDir = Vec3.directionFromRotation(0.0F, player.getYRot());
             this.setYRot(player.getYRot()); this.yBodyRot = player.getYRot(); this.setYHeadRot(player.getYRot());
             this.chargeHit.clear();
-            this.chargeTicks = new int[]{0, 40, 50, 60}[r]; // carrera de 2 / 2,5 / 3 s
+            this.chargeTicks = 30; // carrera de 1,5 s
             this.entityData.set(CHARGE_LEFT, chargeTicks);
             this.playSound(ModSounds.STEGO_ROAR.get(), 2.0F, 1.0F);
             this.playSound(ModSounds.STEGO_CHARGE_POWER.get(), 2.4F, 1.0F);
