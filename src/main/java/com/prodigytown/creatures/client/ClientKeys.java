@@ -19,7 +19,7 @@ import org.lwjgl.glfw.GLFW;
 
 import java.util.List;
 
-/** Teclas: K abre el arbol, V embestida, B coletazo; montado: clic izquierdo muerde y clic derecho da el coletazo. */
+/** Teclas: K abre el arbol del adulto o las ordenes del chibi, V embestida, B coletazo; montado: clic izquierdo muerde y clic derecho da el coletazo. */
 public final class ClientKeys {
     private static final String CATEGORY = "key.categories.prodigycreatures";
     public static final KeyMapping OPEN = new KeyMapping("key.prodigycreatures.open_talents", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_K, CATEGORY);
@@ -67,11 +67,13 @@ public final class ClientKeys {
             while (ULTIMATE.consumeClick()) ModNetwork.CHANNEL.sendToServer(new ModNetwork.UseAbility(3));
             while (OPEN.consumeClick()) {
                 if (mc.screen != null) continue;
-                List<StegosaurusEntity> pets = mc.level.getEntitiesOfClass(StegosaurusEntity.class,
-                    player.getBoundingBox().inflate(24.0), s -> s.isTame() && s.isOwnedBy(player));
-                StegosaurusEntity best = null;
-                for (StegosaurusEntity s : pets) if (best == null || s.distanceToSqr(player) < best.distanceToSqr(player)) best = s;
-                if (best != null) ClientHooks.openTalents(best);
+                net.minecraft.world.entity.TamableAnimal best = null;
+                for (net.minecraft.world.entity.TamableAnimal s : mc.level.getEntitiesOfClass(net.minecraft.world.entity.TamableAnimal.class,
+                        player.getBoundingBox().inflate(24.0), e -> (e instanceof StegosaurusEntity || e instanceof com.prodigytown.chibi.ChibiStego) && e.isTame() && e.isOwnedBy(player))) {
+                    if (best == null || s.distanceToSqr(player) < best.distanceToSqr(player)) best = s;
+                }
+                if (best instanceof StegosaurusEntity adult) ClientHooks.openTalents(adult);
+                else if (best instanceof com.prodigytown.chibi.ChibiStego chibi) ClientHooks.openOrders(chibi);
                 else player.displayClientMessage(net.minecraft.network.chat.Component.literal("No hay un estegosaurio tuyo cerca"), true);
             }
         }

@@ -99,17 +99,60 @@ public final class PetOrders {
             if (mob.getTarget() != null) mob.setTarget(null);
             if (mob.getHealth() > 1.0F) mob.setHealth(1.0F);
             if (mob.tickCount % 50 == 0) {
-                level.sendParticles(ModParticles.ZZZ.get(), mob.getX() + fx * mob.getBbWidth() * 0.55, mob.getY() + mob.getBbHeight() * 0.7,
-                    mob.getZ() + fz * mob.getBbWidth() * 0.55, 1, 0.1, 0.05, 0.1, 0.0);
+                zzz(level, mob, fx, fz);
             }
             return;
         }
         if (order == SLEEP) {
             if (mob.tickCount % 20 == 0 && mob.getHealth() < mob.getMaxHealth()) mob.heal(Math.max(1.0F, mob.getMaxHealth() * 0.02F));
             if (mob.tickCount % 30 == 0) {
-                level.sendParticles(ModParticles.ZZZ.get(), mob.getX() + fx * mob.getBbWidth() * 0.55, mob.getY() + mob.getBbHeight() * 0.7,
-                    mob.getZ() + fz * mob.getBbWidth() * 0.55, 1, 0.1, 0.05, 0.1, 0.0);
+                zzz(level, mob, fx, fz);
             }
+        }
+    }
+
+    /** Tres "Z" que suben desde la cara; mas grandes y mas lejos del centro en el adulto. El tamano viaja en dx (el cliente lo lee). */
+    private static void zzz(ServerLevel level, TamableAnimal mob, double fx, double fz) {
+        boolean big = mob instanceof com.prodigytown.creatures.StegosaurusEntity;
+        double fwd = big ? 2.9 : mob.getBbWidth() * 0.55;
+        double base = big ? 1.1 : mob.getBbHeight() * 0.7;
+        float size = big ? 3.2F : 1.0F;
+        for (int k = 0; k < 3; k++) {
+            double rise = k * (big ? 0.75 : 0.22);
+            level.sendParticles(ModParticles.ZZZ.get(), mob.getX() + fx * fwd + fz * 0.15 * k, mob.getY() + base + rise,
+                mob.getZ() + fz * fwd - fx * 0.15 * k, 0, size * (0.7F + 0.15F * k), 0.0, 0.0, 1.0);
+        }
+    }
+
+    /** Dormido o caido: no gira. Sentado: gira suave y poco hacia el jugador. */
+    public static final class PetLookControl extends net.minecraft.world.entity.ai.control.LookControl {
+        private final TamableAnimal pet;
+        public PetLookControl(TamableAnimal mob) { super(mob); this.pet = mob; }
+        @Override public void tick() {
+            Holder h = (Holder) pet;
+            if (h.isFallen() || h.getOrder() == SLEEP) {
+                pet.yHeadRot = pet.yBodyRot;
+                pet.setYRot(pet.yBodyRot);
+                pet.setXRot(0.0F);
+                return;
+            }
+            if (h.getOrder() == SIT) {
+                Player near = pet.level().getNearestPlayer(pet, 10.0);
+                if (near != null) {
+                    double dx = near.getX() - pet.getX(), dz = near.getZ() - pet.getZ();
+                    float want = (float) (Math.toDegrees(Math.atan2(dz, dx)) - 90.0);
+                    float d = net.minecraft.util.Mth.degreesDifference(pet.yBodyRot, want);
+                    if (Math.abs(d) > 4.0F) {
+                        float y = pet.yBodyRot + net.minecraft.util.Mth.clamp(d, -0.8F, 0.8F);
+                        pet.setYRot(y);
+                        pet.yBodyRot = y;
+                    }
+                }
+                pet.yHeadRot = pet.yBodyRot;
+                pet.setXRot(0.0F);
+                return;
+            }
+            super.tick();
         }
     }
 

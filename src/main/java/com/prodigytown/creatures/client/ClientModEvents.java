@@ -15,8 +15,16 @@ public final class ClientModEvents {
     @SubscribeEvent public static void registerParticles(net.minecraftforge.client.event.RegisterParticleProvidersEvent event) {
         event.registerSpriteSet(com.prodigytown.creatures.ModParticles.SPECTRAL_FLAME.get(), net.minecraft.client.particle.FlameParticle.Provider::new);
         event.registerSpriteSet(com.prodigytown.creatures.ModParticles.SPECTRAL_FLAME_BIG.get(), sprites -> big(sprites, 3.5F));
-        event.registerSpriteSet(com.prodigytown.creatures.ModParticles.ZZZ.get(), net.minecraft.client.particle.HeartParticle.Provider::new);
+        event.registerSpriteSet(com.prodigytown.creatures.ModParticles.ZZZ.get(), sprites -> zzz(sprites));
         event.registerSpriteSet(com.prodigytown.creatures.ModParticles.BIG_FLAME.get(), sprites -> big(sprites, 3.5F));
+    }
+    /** La "Z" del sueno: el tamano viaja en la velocidad x (el servidor lo manda con count 0). */
+    private static net.minecraft.client.particle.ParticleProvider<net.minecraft.core.particles.SimpleParticleType> zzz(net.minecraft.client.particle.SpriteSet sprites) {
+        net.minecraft.client.particle.HeartParticle.Provider base = new net.minecraft.client.particle.HeartParticle.Provider(sprites);
+        return (type, level, x, y, z, dx, dy, dz) -> {
+            net.minecraft.client.particle.Particle p = base.createParticle(type, level, x, y, z, 0.0, 0.0, 0.0);
+            return p == null ? null : (dx > 0.0 ? p.scale((float) dx) : p);
+        };
     }
     private static net.minecraft.client.particle.ParticleProvider<net.minecraft.core.particles.SimpleParticleType> big(net.minecraft.client.particle.SpriteSet sprites, float scale) {
         net.minecraft.client.particle.FlameParticle.Provider base = new net.minecraft.client.particle.FlameParticle.Provider(sprites);

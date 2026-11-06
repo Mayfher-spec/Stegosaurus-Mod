@@ -76,10 +76,8 @@ public final class StegosaurusModel<T extends StegosaurusEntity> extends Hierarc
       tail2.yRot += 0.04F * w * net.minecraft.util.Mth.sin(phase * 0.5F + 0.35F);
     } else if (resting) {
       // Sleep: lower head, breathe, small tail motion. Dorsals stay still.
-      neckBase.xRot += 0.14F;
-      neck.xRot += 0.10F;
-      head.xRot += 0.10F + 0.012F * net.minecraft.util.Mth.sin(ageInTicks * 0.09F);
-      jaw.xRot += 0.018F;
+      head.xRot += 0.012F * net.minecraft.util.Mth.sin(ageInTicks * 0.09F);
+      jaw.xRot += 0.012F;
       tail.yRot += 0.018F * net.minecraft.util.Mth.sin(ageInTicks * 0.055F);
     } else {
       // Idle, look around, sniff, startle, stomp, yawn, sleep, happy and tail swipe:
@@ -125,7 +123,7 @@ public final class StegosaurusModel<T extends StegosaurusEntity> extends Hierarc
       backL.getChild("leg_l2").xRot += 1.1F * lw; backR.getChild("leg_r2").xRot += 1.1F * lw;
       frontL.xRot -= 1.1F * lw; frontR.xRot -= 1.1F * lw;
       frontL.getChild("hand_l").xRot += 1.0F * lw; frontR.getChild("hand_r").xRot += 1.0F * lw;
-      neckBase.xRot += 0.22F * lw; neck.xRot += 0.12F * lw; head.xRot += 0.05F * lw;
+      neckBase.xRot += 0.08F * lw; neck.xRot += 0.04F * lw;
       tail.yRot += 0.45F * lw;
       fore.yScale = 1.0F + 0.012F * lw * net.minecraft.util.Mth.sin(ageInTicks * 0.08F); // respiracion lenta
     }

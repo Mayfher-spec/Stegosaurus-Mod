@@ -199,6 +199,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         super(type, level);
         this.setMaxUpStep(1.0F);
         this.moveControl = new SmoothMoveControl(this, 4.0F);
+        this.lookControl = new PetOrders.PetLookControl(this);
     }
 
     public static AttributeSupplier.Builder createAttributes() {

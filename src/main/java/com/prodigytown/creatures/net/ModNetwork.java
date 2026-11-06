@@ -60,6 +60,10 @@ public final class ModNetwork {
                 ServerPlayer sp = ctx.get().getSender();
                 if (sp == null) return;
                 Entity e = sp.level().getEntity(m.entityId);
+                if (m.order == 9) { // reactivar la evolucion del chibi
+                    if (e instanceof com.prodigytown.chibi.ChibiStego c && c.isOwnedBy(sp) && c.distanceTo(sp) <= 40.0F) c.unlockEvolve();
+                    return;
+                }
                 if (e instanceof net.minecraft.world.entity.TamableAnimal t && e instanceof com.prodigytown.creatures.PetOrders.Holder
                         && t.isTame() && t.isOwnedBy(sp) && t.distanceTo(sp) <= 40.0F) {
                     com.prodigytown.creatures.PetOrders.setOrder(t, m.order);

@@ -76,6 +76,7 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet, 
     private static final EntityDataAccessor<Integer> CHARGE = SynchedEntityData.defineId(ChibiStego.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> GEAR_ARMOR = SynchedEntityData.defineId(ChibiStego.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> GEAR_SADDLE = SynchedEntityData.defineId(ChibiStego.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Integer> LEVEL = SynchedEntityData.defineId(ChibiStego.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> ORDER = SynchedEntityData.defineId(ChibiStego.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> FALLEN = SynchedEntityData.defineId(ChibiStego.class, EntityDataSerializers.BOOLEAN);
     @Nullable private net.minecraft.core.BlockPos orderHome;
@@ -86,6 +87,15 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet, 
     @Override @Nullable public net.minecraft.core.BlockPos orderHome() { return orderHome; }
     @Override public void setOrderHome(@Nullable net.minecraft.core.BlockPos pos) { this.orderHome = pos; }
     /** Asustado: poca vida. No ataca, huye de monstruos y te sigue muy cerca. */
+    /** Nivel visible en el cliente (el progreso completo solo vive en el servidor). */
+    public int syncedLevel() { return entityData.get(LEVEL); }
+    /** El dueno permite que vuelva a evolucionar a adulto (pantalla de ordenes). */
+    public boolean evolveLocked() { return evolveLock; }
+    public void unlockEvolve() {
+        if (level().isClientSide || !evolveLock || progress.level() < EVOLVE_LEVEL) return;
+        evolveLock = false;
+        if (getOwner() instanceof Player p) p.displayClientMessage(Component.literal("Tu chibi volvera a evolucionar a adulto"), true);
+    }
     public boolean isWeak() { return com.prodigytown.creatures.PetOrders.weak(this); }
     private static final UUID M_HP = UUID.fromString("c41b1000-0001-4d1e-9a10-5e90a5a10001");
     private static final UUID M_DMG = UUID.fromString("c41b1000-0002-4d1e-9a10-5e90a5a10002");
@@ -133,6 +143,7 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet, 
         super(type, world);
         setMaxUpStep(0.65F);
         this.moveControl = new com.prodigytown.creatures.SmoothMoveControl(this, 7.0F);
+        this.lookControl = new com.prodigytown.creatures.PetOrders.PetLookControl(this);
     }
 
     public static AttributeSupplier.Builder attributes() {
@@ -153,6 +164,7 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet, 
         entityData.define(GLACIAL_LINE, false);
         entityData.define(FEMALE, false);
         entityData.define(ORDER, 0);
+        entityData.define(LEVEL, 1);
         entityData.define(FALLEN, false);
     }
 
@@ -329,15 +341,8 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet, 
             return InteractionResult.sidedSuccess(level().isClientSide());
         }
         if (isTame() && isOwnedBy(player) && stack.isEmpty()) {
-            if (player.isShiftKeyDown()) {
-                // Agachado + mano vacia: pantalla de ordenes (la reactivacion de la evolucion se conserva)
-                if (level().isClientSide) {
-                    net.minecraftforge.fml.DistExecutor.unsafeRunWhenOn(net.minecraftforge.api.distmarker.Dist.CLIENT, () -> () -> com.prodigytown.creatures.client.ClientHooks.openOrders(this));
-                } else if (evolveLock && progress.level() >= EVOLVE_LEVEL) {
-                    evolveLock = false; // vuelve a poder evolucionar (lo hara en cuanto haya espacio)
-                    player.displayClientMessage(Component.literal("Tu chibi volvera a evolucionar a adulto"), true);
-                }
-            } else if (!level().isClientSide) {
+            // Agachado + mano vacia no hace nada (antes reactivaba la evolucion): la pantalla se abre con K.
+            if (!player.isShiftKeyDown() && !level().isClientSide) {
                 com.prodigytown.creatures.PetOrders.setOrder(this, isOrderedToSit() ? com.prodigytown.creatures.PetOrders.FOLLOW : com.prodigytown.creatures.PetOrders.SIT);
             }
             return InteractionResult.sidedSuccess(level().isClientSide);
@@ -362,6 +367,7 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet, 
     public void applyStats() {
         if (level().isClientSide) return;
         int lv = progress.level();
+        entityData.set(LEVEL, lv);
         setMod(Attributes.MAX_HEALTH, M_HP, GrowthTable.HEALTH[lv] - 24.0);
         setMod(Attributes.ATTACK_DAMAGE, M_DMG, GrowthTable.DAMAGE[lv]);
         setMod(Attributes.ARMOR, M_ARM, GrowthTable.ARMOR[lv]);
