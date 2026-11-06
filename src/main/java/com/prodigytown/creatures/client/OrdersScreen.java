@@ -60,7 +60,7 @@ public final class OrdersScreen extends Screen {
                 g.renderOutline(x + 1, y + 1, width - 2, height - 2, 0x99FFD35A);
             } else if (hot) g.renderOutline(x, y, width, height, 0xFFE8C46A);
             g.setColor(1.0F, 1.0F, 1.0F, active ? 1.0F : 0.4F);
-            g.blit(icon, x + 3, y + 3, 66, 44, 0.0F, 0.0F, 96, 64, 96, 64);
+            g.blit(icon, x + 3, y + 3, 66, 44, 0.0F, 0.0F, 192, 128, 192, 128);
             g.setColor(1.0F, 1.0F, 1.0F, 1.0F);
             net.minecraft.client.gui.Font font = Minecraft.getInstance().font;
             g.drawCenteredString(font, getMessage(), x + width / 2, y + 52, selected ? GOLD : active ? 0xFFFFFFFF : 0xFF7A7F85);
