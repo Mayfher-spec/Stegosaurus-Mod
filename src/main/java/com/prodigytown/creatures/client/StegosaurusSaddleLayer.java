@@ -35,8 +35,5 @@ public final class StegosaurusSaddleLayer extends RenderLayer<StegosaurusEntity,
         saddle.sync(theirs);
         VertexConsumer vc = buffers.getBuffer(RenderType.entityCutoutNoCull(StegosaurusSaddleModel.TEXTURE));
         saddle.renderToBuffer(stack, vc, packedLight, LivingEntityRenderer.getOverlayCoords(entity, 0.0F), 1.0F, 1.0F, 1.0F, 1.0F);
-        ResourceLocation base = StegosaurusSaddleModel.TEXTURE;
-        ResourceLocation glowTex = new ResourceLocation(base.getNamespace(), base.getPath().replace(".png", "_glow.png"));
-        saddle.renderToBuffer(stack, buffers.getBuffer(RenderType.eyes(glowTex)), 15728640, OverlayTexture.NO_OVERLAY, 1.0F, 1.0F, 1.0F, 1.0F);
     }
 }
