@@ -1110,6 +1110,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         this.ultWindup = ULT_WINDUP;
         this.getNavigation().stop();
         this.level().broadcastEntityEvent(this, (byte) 66);
+        if (this.getVariant() == CYBERNETIC && this.level() instanceof net.minecraft.server.level.ServerLevel sl) startNight(sl); // la noche cae mientras carga: ya es de noche cuando caen los rayos
         this.playSound(net.minecraft.sounds.SoundEvents.BEACON_POWER_SELECT, 2.5F, 0.6F);
     }
 
@@ -1212,11 +1213,14 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         long natural = nightBase + (cycle ? t + 1 : 0);
         nightTick--;
         long tod = natural % 24000L;
-        double f = Math.sin(Math.PI * (t + 1) / (double) NIGHT_TICKS); // 0 -> 1 -> 0
+        double u = t < 22 ? (t + 1) / 22.0 : t < 62 ? 1.0 : Math.max(0.0, (NIGHT_TICKS - t) / (double) (NIGHT_TICKS - 62)); // sube rapido, aguanta y vuelve
+        double f = u * u * (3.0 - 2.0 * u);
         long goal = 15000L; // anochecer oscuro, no negro total
         long target = tod >= goal && tod < 23000L ? tod : (long) (tod + ((tod < goal ? goal : goal + 24000L) - tod) * f);
-        server.setDayTime(natural - tod + target);
-        if (nightTick == 0) server.setDayTime(natural);
+        long out = nightTick == 0 ? natural : natural - tod + target;
+        server.setDayTime(out);
+        var pk = new net.minecraft.network.protocol.game.ClientboundSetTimePacket(server.getGameTime(), cycle ? out : -out, cycle);
+        for (net.minecraft.server.level.ServerPlayer sp : server.players()) sp.connection.send(pk); // cada tick, para que el cambio sea fluido y rapido
     }
 
     /** Esfera de humo oscuro: simula nubes que ciegan. */
@@ -1242,7 +1246,6 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
                     b2.setVisualOnly(true);
                     server.addFreshEntity(b2);
                 }
-                startNight(server);
                 for (LivingEntity e : this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(8.0 + 2.0 * ul), this::isFoe)) {
                     if (n++ >= 3) break;
                     net.minecraft.world.entity.LightningBolt bolt = net.minecraft.world.entity.EntityType.LIGHTNING_BOLT.create(server);
