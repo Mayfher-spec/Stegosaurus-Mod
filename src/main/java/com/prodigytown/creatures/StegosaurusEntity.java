@@ -1110,7 +1110,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         this.ultWindup = ULT_WINDUP;
         this.getNavigation().stop();
         this.level().broadcastEntityEvent(this, (byte) 66);
-        if (this.getVariant() == CYBERNETIC && this.level() instanceof net.minecraft.server.level.ServerLevel sl) startNight(sl); // la noche cae mientras carga: ya es de noche cuando caen los rayos
+        if ((this.getVariant() == CYBERNETIC || this.getVariant() == MAGMA || this.getVariant() == GLACIAL) && this.level() instanceof net.minecraft.server.level.ServerLevel sl) startNight(sl); // anochece mientras carga (azul, magma y esmeralda)
         this.playSound(net.minecraft.sounds.SoundEvents.BEACON_POWER_SELECT, 2.5F, 0.6F);
     }
 
