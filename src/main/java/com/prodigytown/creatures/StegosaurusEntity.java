@@ -1536,7 +1536,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         return (this.getVariant() == MAGMA && damage.is(DamageTypeTags.IS_FIRE)) || super.isInvulnerableTo(damage);
     }
 
-    @Nullable @Override protected SoundEvent getAmbientSound() { return (isFallen() || getOrder() == PetOrders.SLEEP) ? null : ModSounds.STEGO_AMBIENT.get(); }
+    @Nullable @Override protected SoundEvent getAmbientSound() { return null; } // sin gruñido ambiental ("mm, mm")
     @Override protected SoundEvent getHurtSound(DamageSource source) { return ModSounds.STEGO_HURT.get(); }
     @Override protected SoundEvent getDeathSound() { return ModSounds.STEGO_DEATH.get(); }
     @Override protected void playStepSound(BlockPos pos, net.minecraft.world.level.block.state.BlockState state) {
