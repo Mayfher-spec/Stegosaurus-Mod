@@ -56,7 +56,13 @@ public final class PetOrders {
     public static void setOrder(TamableAnimal mob, int order) {
         if (mob.level().isClientSide || !(mob instanceof Holder h) || h.isFallen()) return;
         order = clamp(order);
+        int prev = h.getOrder();
         h.setOrderRaw(order);
+        if (mob instanceof StegosaurusEntity && prev != order) { // sonidos del adulto (el chibi no se toca)
+            if (order == SIT) mob.playSound(ModSounds.STEGO_ADULT_SIT.get(), 1.6F, 1.0F);
+            else if (order == SLEEP) mob.playSound(ModSounds.STEGO_ADULT_SLEEP.get(), 1.6F, 1.0F);
+            else if (prev == SLEEP) mob.playSound(ModSounds.STEGO_ADULT_WAKE.get(), 1.8F, 1.0F);
+        }
         boolean sit = isSittingOrder(order);
         mob.setOrderedToSit(sit);
         if (sit) mob.ejectPassengers();
@@ -104,6 +110,7 @@ public final class PetOrders {
             return;
         }
         if (order == SLEEP) {
+            if (mob instanceof StegosaurusEntity && mob.tickCount % 110 == 0) mob.playSound(ModSounds.STEGO_ADULT_BREATHE.get(), 1.0F, 1.0F);
             if (mob.tickCount % 20 == 0 && mob.getHealth() < mob.getMaxHealth()) mob.heal(Math.max(1.0F, mob.getMaxHealth() * 0.02F));
             if (mob.tickCount % 30 == 0) {
                 zzz(level, mob, fx, fz);

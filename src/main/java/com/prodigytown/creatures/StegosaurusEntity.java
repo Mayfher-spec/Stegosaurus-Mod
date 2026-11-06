@@ -378,6 +378,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
                 if (!this.level().isClientSide) {
                     if (!player.getAbilities().instabuild) held.shrink(1);
                     PetOrders.revive(this);
+                    this.playSound(ModSounds.STEGO_ADULT_HAPPY.get(), 1.8F, 1.0F);
                 }
             } else if (!this.level().isClientSide && this.isOwnedBy(player)) {
                 player.displayClientMessage(Component.literal("Esta fuera de combate: reanimalo con la ensalada de domesticacion"), true);
@@ -403,6 +404,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
                     if (!player.getAbilities().instabuild) held.shrink(1);
                     this.heal(40.0f);
                     this.gainXp(25);
+                    this.playSound(ModSounds.STEGO_ADULT_EAT.get(), 1.4F, 1.0F);
                 } else return InteractionResult.PASS;
             }
             return InteractionResult.sidedSuccess(this.level().isClientSide);
@@ -1178,7 +1180,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         }
         if (left == 24) this.playSound(net.minecraft.sounds.SoundEvents.BEACON_AMBIENT, 3.0F, 1.5F);
         if (left == 18) this.playSound(net.minecraft.sounds.SoundEvents.WARDEN_SONIC_CHARGE, 3.0F, 1.0F);
-        if (left == 10) this.playSound(ModSounds.STEGO_ULT_ROAR.get(), 4.0F, 1.0F); // el rugido coincide con la boca abierta
+        if (left == 10) this.playSound((switch (this.getVariant()) { case CYBERNETIC -> ModSounds.STEGO_ULT_ROAR_CYBER; case GOLDEN -> ModSounds.STEGO_ULT_ROAR_GOLD; case MAGMA -> ModSounds.STEGO_ULT_ROAR_MAGMA; case GLACIAL -> ModSounds.STEGO_ULT_ROAR_GLACIAL; default -> ModSounds.STEGO_ULT_ROAR; }).get(), 4.0F, 1.0F); // el rugido coincide con la boca abierta
         if (left == 6 && isNaturalUlt()) ultImpactFx(server); // la tierra salta antes del pisoton
         if (left == 1) {
             Player who = this.getControllingPassenger() instanceof Player p ? p : ultCaster;

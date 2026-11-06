@@ -164,5 +164,105 @@
         "volume": 1.0
       }
     ]
+  },
+  "stegosaurus.adult_sit": {
+    "subtitle": "subtitles.prodigycreatures.stegosaurus.adult_sit",
+    "sounds": [
+      {
+        "name": "prodigycreatures:stegosaurus/adult_sit",
+        "stream": false,
+        "volume": 1.0
+      }
+    ]
+  },
+  "stegosaurus.adult_sleep": {
+    "subtitle": "subtitles.prodigycreatures.stegosaurus.adult_sleep",
+    "sounds": [
+      {
+        "name": "prodigycreatures:stegosaurus/adult_sleep",
+        "stream": false,
+        "volume": 1.0
+      }
+    ]
+  },
+  "stegosaurus.adult_wake": {
+    "subtitle": "subtitles.prodigycreatures.stegosaurus.adult_wake",
+    "sounds": [
+      {
+        "name": "prodigycreatures:stegosaurus/adult_wake",
+        "stream": false,
+        "volume": 1.0
+      }
+    ]
+  },
+  "stegosaurus.adult_happy": {
+    "subtitle": "subtitles.prodigycreatures.stegosaurus.adult_happy",
+    "sounds": [
+      {
+        "name": "prodigycreatures:stegosaurus/adult_happy",
+        "stream": false,
+        "volume": 1.0
+      }
+    ]
+  },
+  "stegosaurus.adult_eat": {
+    "subtitle": "subtitles.prodigycreatures.stegosaurus.adult_eat",
+    "sounds": [
+      {
+        "name": "prodigycreatures:stegosaurus/adult_eat",
+        "stream": false,
+        "volume": 1.0
+      }
+    ]
+  },
+  "stegosaurus.adult_breathe": {
+    "subtitle": "subtitles.prodigycreatures.stegosaurus.adult_breathe",
+    "sounds": [
+      {
+        "name": "prodigycreatures:stegosaurus/adult_breathe",
+        "stream": false,
+        "volume": 1.0
+      }
+    ]
+  },
+  "stegosaurus.ult_roar_cyber": {
+    "subtitle": "subtitles.prodigycreatures.stegosaurus.ult_roar_cyber",
+    "sounds": [
+      {
+        "name": "prodigycreatures:stegosaurus/ult_roar_cyber",
+        "stream": false,
+        "volume": 1.0
+      }
+    ]
+  },
+  "stegosaurus.ult_roar_gold": {
+    "subtitle": "subtitles.prodigycreatures.stegosaurus.ult_roar_gold",
+    "sounds": [
+      {
+        "name": "prodigycreatures:stegosaurus/ult_roar_gold",
+        "stream": false,
+        "volume": 1.0
+      }
+    ]
+  },
+  "stegosaurus.ult_roar_magma": {
+    "subtitle": "subtitles.prodigycreatures.stegosaurus.ult_roar_magma",
+    "sounds": [
+      {
+        "name": "prodigycreatures:stegosaurus/ult_roar_magma",
+        "stream": false,
+        "volume": 1.0
+      }
+    ]
+  },
+  "stegosaurus.ult_roar_glacial": {
+    "subtitle": "subtitles.prodigycreatures.stegosaurus.ult_roar_glacial",
+    "sounds": [
+      {
+        "name": "prodigycreatures:stegosaurus/ult_roar_glacial",
+        "stream": false,
+        "volume": 1.0
+      }
+    ]
   }
 }

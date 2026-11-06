@@ -23,6 +23,16 @@ public final class ModSounds {
     public static final RegistryObject<SoundEvent> STEGO_ULT_ROAR = reg("stegosaurus.ult_roar");
     public static final RegistryObject<SoundEvent> STEGO_TAIL_TREE = reg("stegosaurus.tail_tree");
     public static final RegistryObject<SoundEvent> STEGO_CHARGE_HIT = reg("stegosaurus.charge_hit");
+    public static final RegistryObject<SoundEvent> STEGO_ADULT_SIT = reg("stegosaurus.adult_sit");
+    public static final RegistryObject<SoundEvent> STEGO_ADULT_SLEEP = reg("stegosaurus.adult_sleep");
+    public static final RegistryObject<SoundEvent> STEGO_ADULT_WAKE = reg("stegosaurus.adult_wake");
+    public static final RegistryObject<SoundEvent> STEGO_ADULT_HAPPY = reg("stegosaurus.adult_happy");
+    public static final RegistryObject<SoundEvent> STEGO_ADULT_EAT = reg("stegosaurus.adult_eat");
+    public static final RegistryObject<SoundEvent> STEGO_ADULT_BREATHE = reg("stegosaurus.adult_breathe");
+    public static final RegistryObject<SoundEvent> STEGO_ULT_ROAR_CYBER = reg("stegosaurus.ult_roar_cyber");
+    public static final RegistryObject<SoundEvent> STEGO_ULT_ROAR_GOLD = reg("stegosaurus.ult_roar_gold");
+    public static final RegistryObject<SoundEvent> STEGO_ULT_ROAR_MAGMA = reg("stegosaurus.ult_roar_magma");
+    public static final RegistryObject<SoundEvent> STEGO_ULT_ROAR_GLACIAL = reg("stegosaurus.ult_roar_glacial");
     public static final RegistryObject<SoundEvent> STEGO_STEP = reg("stegosaurus.step");
     public static final RegistryObject<SoundEvent> STEGO_EVOLVE = reg("stegosaurus.evolve");
     public static final RegistryObject<SoundEvent> CHIBI_EVOLVE = reg("chibi.evolve");
