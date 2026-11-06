@@ -28,14 +28,15 @@ public final class StegosaurusAnimations {
   private static AnimationDefinition createUltimate() {
     AnimationDefinition.Builder b = AnimationDefinition.Builder.withLength(2.4F);
     AnimationChannel.Target R = AnimationChannel.Targets.ROTATION, P = AnimationChannel.Targets.POSITION;
-    ult(b, "body2", R, new float[][]{{0F,0,0,0},{0.7F,6,0,0},{1.1F,-10,0,0},{1.4F,8,0,0},{1.55F,4,0,0},{2.0F,1,0,0},{2.4F,0,0,0}});
-    ult(b, "body2", P, new float[][]{{0F,0,0,0},{0.7F,0,-2.5F,0},{1.1F,0,1.5F,0},{1.4F,0,-3F,0},{1.55F,0,-1F,0},{2.0F,0,0,0},{2.4F,0,0,0}});
-    ult(b, "all", P, new float[][]{{0F,0,0,0},{1.1F,0,0,0},{1.25F,0,3F,0},{1.4F,0,0,0},{2.4F,0,0,0}});
-    ult(b, "neck2", R, new float[][]{{0F,0,0,0},{0.7F,8,0,0},{1.1F,-24,0,0},{1.4F,12,0,0},{1.55F,4,0,0},{2.0F,0.5F,0,0},{2.4F,0,0,0}});
-    ult(b, "neck", R, new float[][]{{0F,0,0,0},{0.7F,6,0,0},{1.1F,-20,0,0},{1.4F,10,0,0},{1.55F,3,0,0},{2.0F,0,0,0},{2.4F,0,0,0}});
-    ult(b, "head", R, new float[][]{{0F,0,0,0},{0.7F,10,0,0},{1.1F,-28,0,0},{1.4F,14,0,0},{1.55F,4,0,0},{2.0F,0,0,0},{2.4F,0,0,0}});
-    ult(b, "jaw", R, new float[][]{{0F,0,0,0},{0.7F,4,0,0},{1.1F,42,0,0},{1.4F,38,0,0},{1.55F,5,0,0},{2.0F,0,0,0},{2.4F,0,0,0}});
-    ult(b, "tail", R, new float[][]{{0F,0,0,0},{0.7F,-6,0,0},{1.1F,-10,0,0},{1.4F,6,0,0},{1.55F,0,0,0},{2.4F,0,0,0}});
+    // se agacha temblando, se alza enorme rugiendo y descarga con un pisoton violento (impacto a 1,4 s)
+    ult(b, "body2", R, new float[][]{{0F,0,0,0},{0.25F,4,0,2},{0.5F,9,0,-2},{0.7F,12,0,2},{1.1F,-24,0,0},{1.4F,16,0,0},{1.55F,6,0,0},{2.0F,1,0,0},{2.4F,0,0,0}});
+    ult(b, "body2", P, new float[][]{{0F,0,0,0},{0.25F,0,-1,0},{0.5F,0,-3,0},{0.7F,0,-5F,0},{1.1F,0,3F,0},{1.4F,0,-6F,0},{1.55F,0,-2F,0},{2.0F,0,0,0},{2.4F,0,0,0}});
+    ult(b, "all", P, new float[][]{{0F,0,0,0},{0.2F,0.6F,0,0},{0.4F,-0.6F,0,0},{0.6F,0.6F,0,0},{1.0F,0,0,0},{1.15F,0,7F,0},{1.4F,0,0,0},{1.5F,0,-1.5F,0},{1.65F,0,0,0},{2.4F,0,0,0}});
+    ult(b, "neck2", R, new float[][]{{0F,0,0,0},{0.7F,14,0,0},{1.1F,-40,0,0},{1.4F,20,0,0},{1.55F,6,0,0},{2.0F,0.5F,0,0},{2.4F,0,0,0}});
+    ult(b, "neck", R, new float[][]{{0F,0,0,0},{0.7F,10,0,0},{1.1F,-34,0,0},{1.4F,16,0,0},{1.55F,4,0,0},{2.0F,0,0,0},{2.4F,0,0,0}});
+    ult(b, "head", R, new float[][]{{0F,0,0,0},{0.7F,16,0,0},{1.1F,-46,0,0},{1.4F,22,0,0},{1.55F,6,0,0},{2.0F,0,0,0},{2.4F,0,0,0}});
+    ult(b, "jaw", R, new float[][]{{0F,0,0,0},{0.7F,6,0,0},{1.0F,55,0,0},{1.4F,50,0,0},{1.55F,8,0,0},{2.0F,0,0,0},{2.4F,0,0,0}});
+    ult(b, "tail", R, new float[][]{{0F,0,0,0},{0.4F,0,10,0},{0.7F,-10,-10,0},{1.1F,-18,12,0},{1.4F,10,-8,0},{1.55F,0,0,0},{2.4F,0,0,0}});
     return b.build();
   }
   private static AnimationDefinition createIdle() {

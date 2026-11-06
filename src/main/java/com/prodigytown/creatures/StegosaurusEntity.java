@@ -1103,29 +1103,55 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
 
     private void ultTick() {
         if (!(this.level() instanceof net.minecraft.server.level.ServerLevel server)) return;
-        if (ultWave > 0) { // onda expansiva: un anillo que crece durante 12 ticks
-            double r = (13 - ultWave) * 0.9;
-            int n = (int) (14 + r * 7);
+        double x = this.getX(), y = this.getY(), z = this.getZ();
+        if (ultWave > 0) { // ondas expansivas: tres anillos (suelo, medio y alto) que crecen durante 22 ticks
+            int step = 23 - ultWave;
+            double r = step * 0.85;
+            int n = (int) (20 + r * 9);
             var type = ultBig();
             for (int k = 0; k < n; k++) {
-                double a = k * Math.PI * 2.0 / n;
-                server.sendParticles(type, this.getX() + Math.cos(a) * r, this.getY() + 0.25, this.getZ() + Math.sin(a) * r, 1, 0.05, 0.12, 0.05, 0.01);
+                double a = k * Math.PI * 2.0 / n, c = Math.cos(a), sn = Math.sin(a);
+                server.sendParticles(type, x + c * r, y + 0.25, z + sn * r, 1, 0.05, 0.15, 0.05, 0.02);
+                if (k % 2 == 0) server.sendParticles(ultMain(), x + c * r * 0.8, y + 1.4 + step * 0.05, z + sn * r * 0.8, 1, 0.1, 0.25, 0.1, 0.03);
+                if (k % 3 == 0) server.sendParticles(ultMain(), x + c * r * 0.6, y + 3.0 + step * 0.12, z + sn * r * 0.6, 1, 0.1, 0.3, 0.1, 0.03);
             }
+            if (step % 4 == 1) server.sendParticles(net.minecraft.core.particles.ParticleTypes.EXPLOSION, x + this.random.nextGaussian() * r * 0.5, y + 0.4, z + this.random.nextGaussian() * r * 0.5, 1, 0, 0, 0, 0);
             ultWave--;
         }
         if (ultWindup <= 0) return;
         int left = ultWindup--;
         if (!this.isAlive()) { ultWindup = 0; return; }
         double prog = (ULT_WINDUP - left) / (double) ULT_WINDUP;
-        for (int k = 0; k < 3; k++) { // particulas que se arremolinan hacia el cuerpo y suben
-            double a = this.tickCount * 0.55 + k * 2.094, r = 3.2 * (1.0 - prog) + 0.6;
-            server.sendParticles(ultMain(), this.getX() + Math.cos(a) * r, this.getY() + 0.2 + prog * 2.6, this.getZ() + Math.sin(a) * r, 1, 0.0, 0.0, 0.0, 0.0);
+        for (int arm = 0; arm < 4; arm++) { // doble helice que se cierra sobre el cuerpo y sube
+            double a = this.tickCount * 0.6 + arm * 1.571, r = 4.2 * (1.0 - prog) + 0.8;
+            server.sendParticles(ultMain(), x + Math.cos(a) * r, y + 0.2 + prog * 3.5, z + Math.sin(a) * r, 1, 0.0, 0.0, 0.0, 0.0);
+            server.sendParticles(ultBig(), x + Math.cos(a + 0.8) * r * 1.2, y + 0.3 + prog * 1.5, z + Math.sin(a + 0.8) * r * 1.2, 1, 0.0, 0.0, 0.0, 0.0);
         }
-        if (left == 18) server.sendParticles(net.minecraft.core.particles.ParticleTypes.FLASH, this.getX(), this.getY() + 2.0, this.getZ(), 1, 0, 0, 0, 0);
+        // columna de energia que crece sobre el dino
+        server.sendParticles(ultMain(), x, y + 1.0 + prog * 6.0, z, 3, 0.5, 0.4 + prog * 2.0, 0.5, 0.02);
+        if (left % 4 == 0) { // anillo en el suelo que se contrae: se ve de lejos
+            double rr = 7.0 * (1.0 - prog) + 1.5;
+            for (int k = 0; k < 36; k++) {
+                double a = k * Math.PI * 2.0 / 36.0;
+                server.sendParticles(ultBig(), x + Math.cos(a) * rr, y + 0.15, z + Math.sin(a) * rr, 1, 0.0, 0.05, 0.0, 0.0);
+            }
+        }
+        if (left == 24) this.playSound(net.minecraft.sounds.SoundEvents.BEACON_AMBIENT, 3.0F, 1.5F);
+        if (left == 18) {
+            this.playSound(net.minecraft.sounds.SoundEvents.WARDEN_SONIC_CHARGE, 3.0F, 1.0F);
+            server.sendParticles(net.minecraft.core.particles.ParticleTypes.FLASH, x, y + 3.0, z, 2, 0.5, 0.5, 0.5, 0);
+        }
+        if (left == 8) server.sendParticles(net.minecraft.core.particles.ParticleTypes.FLASH, x, y + 4.0, z, 2, 0.5, 0.5, 0.5, 0);
         if (left == 1) {
             Player who = this.getControllingPassenger() instanceof Player p ? p : ultCaster;
             if (who != null) { castUltimate(who); ultImpactFx(server); }
-            ultWave = 12;
+            ultWave = 22;
+            this.playSound(net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE, 3.0F, 0.5F);
+            this.playSound(net.minecraft.sounds.SoundEvents.DRAGON_FIREBALL_EXPLODE, 3.0F, 0.6F);
+            server.sendParticles(net.minecraft.core.particles.ParticleTypes.FLASH, x, y + 2.0, z, 3, 0.5, 0.5, 0.5, 0);
+            server.sendParticles(net.minecraft.core.particles.ParticleTypes.EXPLOSION_EMITTER, x, y + 1.0, z, 3, 2.0, 0.3, 2.0, 0);
+            for (double h = 0; h <= 18; h += 0.5) // pilar gigante hacia el cielo
+                server.sendParticles(ultBig(), x, y + h, z, 3, 0.6 + h * 0.03, 0.0, 0.6 + h * 0.03, 0.01);
         }
     }
 
@@ -1136,51 +1162,51 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
             case CYBERNETIC -> {
                 int ul = Math.max(1, ultimateLevel()), n = 0;
                 for (LivingEntity e : this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(8.0 + 2.0 * ul), this::isFoe)) {
-                    if (n++ >= 4) break;
+                    if (n++ >= 8) break;
                     net.minecraft.world.entity.LightningBolt bolt = net.minecraft.world.entity.EntityType.LIGHTNING_BOLT.create(server);
                     if (bolt == null) continue;
                     bolt.moveTo(e.getX(), e.getY(), e.getZ());
                     bolt.setVisualOnly(true);
                     server.addFreshEntity(bolt);
                 }
-                server.sendParticles(net.minecraft.core.particles.ParticleTypes.ELECTRIC_SPARK, x, y + 1.5, z, 80, 2.5, 1.5, 2.5, 0.3);
+                server.sendParticles(net.minecraft.core.particles.ParticleTypes.ELECTRIC_SPARK, x, y + 1.5, z, 400, 5.0, 3.0, 5.0, 0.5);
             }
             case GOLDEN -> {
-                for (double h = 0; h <= 12; h += 0.5) {
-                    server.sendParticles(net.minecraft.core.particles.ParticleTypes.END_ROD, x, y + h, z, 3, 0.25, 0.0, 0.25, 0.02);
+                for (double h = 0; h <= 22; h += 0.5) {
+                    server.sendParticles(net.minecraft.core.particles.ParticleTypes.END_ROD, x, y + h, z, 8, 0.5, 0.0, 0.5, 0.05);
                     server.sendParticles(net.minecraft.core.particles.ParticleTypes.WAX_ON, x, y + h, z, 2, 0.4, 0.0, 0.4, 0.0);
                 }
-                server.sendParticles(net.minecraft.core.particles.ParticleTypes.GLOW, x, y + 1.5, z, 60, 3.0, 1.2, 3.0, 0.05);
+                server.sendParticles(net.minecraft.core.particles.ParticleTypes.GLOW, x, y + 1.5, z, 300, 7.0, 2.5, 7.0, 0.08);
             }
             case MAGMA -> {
                 server.sendParticles(net.minecraft.core.particles.ParticleTypes.EXPLOSION_EMITTER, x, y + 0.5, z, 1, 0, 0, 0, 0);
-                for (int i = 0; i < 14; i++) {
-                    double a = this.random.nextDouble() * Math.PI * 2.0, r = 1.5 + this.random.nextDouble() * 6.0;
+                for (int i = 0; i < 40; i++) {
+                    double a = this.random.nextDouble() * Math.PI * 2.0, r = 1.5 + this.random.nextDouble() * 12.0;
                     double px = x + Math.cos(a) * r, pz = z + Math.sin(a) * r;
-                    server.sendParticles(ModParticles.BIG_FLAME.get(), px, y + 0.3, pz, 8, 0.2, 1.2, 0.2, 0.12);
+                    server.sendParticles(ModParticles.BIG_FLAME.get(), px, y + 0.3, pz, 14, 0.3, 2.5, 0.3, 0.2);
                     server.sendParticles(net.minecraft.core.particles.ParticleTypes.LAVA, px, y + 0.5, pz, 4, 0.2, 0.3, 0.2, 0.0);
                     server.sendParticles(net.minecraft.core.particles.ParticleTypes.LARGE_SMOKE, px, y + 1.0, pz, 3, 0.2, 0.6, 0.2, 0.03);
                 }
             }
             case GLACIAL -> {
-                for (int arm = 0; arm < 3; arm++) { // tres espirales de llama espectral que se abren
-                    for (int k = 0; k < 28; k++) {
-                        double a = arm * 2.094 + k * 0.28, r = 0.6 + k * 0.28;
+                for (int arm = 0; arm < 5; arm++) { // cinco espirales de llama espectral que se abren
+                    for (int k = 0; k < 45; k++) {
+                        double a = arm * 1.2566 + k * 0.22, r = 0.6 + k * 0.33;
                         server.sendParticles(ModParticles.SPECTRAL_FLAME_BIG.get(), x + Math.cos(a) * r, y + 0.3 + k * 0.05, z + Math.sin(a) * r, 1, 0.2, 0.3, 0.2, 0.01);
                     }
                 }
-                for (double h = 0; h <= 8; h += 0.5) server.sendParticles(emeraldDust(), x, y + h, z, 4, 0.5, 0.0, 0.5, 0.0);
-                server.sendParticles(net.minecraft.core.particles.ParticleTypes.SOUL_FIRE_FLAME, x, y + 0.5, z, 40, 3.0, 0.5, 3.0, 0.08);
+                for (double h = 0; h <= 20; h += 0.5) server.sendParticles(emeraldDust(), x, y + h, z, 8, 0.8, 0.0, 0.8, 0.0);
+                server.sendParticles(net.minecraft.core.particles.ParticleTypes.SOUL_FIRE_FLAME, x, y + 0.5, z, 200, 7.0, 1.0, 7.0, 0.15);
             }
             default -> {
                 var block = new net.minecraft.core.particles.BlockParticleOption(net.minecraft.core.particles.ParticleTypes.BLOCK, this.level().getBlockState(this.blockPosition().below()));
-                for (int ring = 1; ring <= 3; ring++) {
-                    for (int k = 0; k < 24; k++) {
-                        double a = k * Math.PI * 2.0 / 24.0, r = ring * 2.0;
-                        server.sendParticles(block, x + Math.cos(a) * r, y + 0.2, z + Math.sin(a) * r, 4, 0.2, 0.1, 0.2, 0.25);
+                for (int ring = 1; ring <= 6; ring++) {
+                    for (int k = 0; k < 36; k++) {
+                        double a = k * Math.PI * 2.0 / 36.0, r = ring * 2.2;
+                        server.sendParticles(block, x + Math.cos(a) * r, y + 0.2, z + Math.sin(a) * r, 10, 0.3, 0.8, 0.3, 0.45);
                     }
                 }
-                server.sendParticles(net.minecraft.core.particles.ParticleTypes.CLOUD, x, y + 0.3, z, 40, 3.0, 0.2, 3.0, 0.1);
+                server.sendParticles(net.minecraft.core.particles.ParticleTypes.CLOUD, x, y + 0.3, z, 200, 7.0, 0.5, 7.0, 0.2);
             }
         }
     }
