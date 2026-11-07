@@ -26,6 +26,7 @@ public final class ClientKeys {
     public static final KeyMapping CHARGE = new KeyMapping("key.prodigycreatures.charge", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_V, CATEGORY);
     public static final KeyMapping TAIL = new KeyMapping("key.prodigycreatures.tail", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_B, CATEGORY);
     public static final KeyMapping ULTIMATE = new KeyMapping("key.prodigycreatures.ultimate", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_R, CATEGORY);
+    public static final KeyMapping SHRINK = new KeyMapping("key.prodigycreatures.shrink_dragon", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_H, CATEGORY);
     private ClientKeys() {}
 
     @Mod.EventBusSubscriber(modid = ProdigyCreatures.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
@@ -35,6 +36,7 @@ public final class ClientKeys {
             event.register(CHARGE);
             event.register(TAIL);
             event.register(ULTIMATE);
+            event.register(SHRINK);
         }
     }
 
@@ -65,6 +67,10 @@ public final class ClientKeys {
             while (CHARGE.consumeClick()) ModNetwork.CHANNEL.sendToServer(new ModNetwork.UseAbility(0));
             while (TAIL.consumeClick()) ModNetwork.CHANNEL.sendToServer(new ModNetwork.UseAbility(1));
             while (ULTIMATE.consumeClick()) ModNetwork.CHANNEL.sendToServer(new ModNetwork.UseAbility(3));
+            while (SHRINK.consumeClick()) { // Saint's Dragons: H = encoger/agrandar el dragon que miras (Mayus+H = todos los tuyos cercanos)
+                net.minecraft.world.entity.Entity look = mc.crosshairPickEntity;
+                ModNetwork.CHANNEL.sendToServer(new ModNetwork.ShrinkDragon(com.prodigytown.creatures.compat.SaintsDragonsCompat.isDragon(look) ? look.getId() : -1, player.isShiftKeyDown()));
+            }
             while (OPEN.consumeClick()) {
                 if (mc.screen != null) continue;
                 net.minecraft.world.entity.TamableAnimal best = null;

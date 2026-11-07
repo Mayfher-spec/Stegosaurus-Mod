@@ -28,6 +28,7 @@ public final class ModNetwork {
         CHANNEL.registerMessage(1, UseAbility.class, UseAbility::encode, UseAbility::decode, UseAbility::handle);
         CHANNEL.registerMessage(2, RenamePet.class, RenamePet::encode, RenamePet::decode, RenamePet::handle);
         CHANNEL.registerMessage(3, SetOrder.class, SetOrder::encode, SetOrder::decode, SetOrder::handle);
+        CHANNEL.registerMessage(4, ShrinkDragon.class, ShrinkDragon::encode, ShrinkDragon::decode, ShrinkDragon::handle);
     }
 
     /** action 0 = subir rango de un talento (index), 1 = restablecer, 2 = sentar/levantar, 3 = quitar silla, 4 = quitar armadura, 5 = volver a chibi. */
@@ -46,6 +47,19 @@ public final class ModNetwork {
                 else if (m.action == 3) stego.removeSaddle();
                 else if (m.action == 4) stego.removeArmor();
                 else if (m.action == 5) stego.revertToChibi();
+            });
+            ctx.get().setPacketHandled(true);
+        }
+    }
+
+    /** Compat Saint's Dragons: encoge o agranda a tu dragon (all = todos los tuyos cercanos). */
+    public record ShrinkDragon(int entityId, boolean all) {
+        public static void encode(ShrinkDragon m, FriendlyByteBuf buf) { buf.writeInt(m.entityId); buf.writeBoolean(m.all); }
+        public static ShrinkDragon decode(FriendlyByteBuf buf) { return new ShrinkDragon(buf.readInt(), buf.readBoolean()); }
+        public static void handle(ShrinkDragon m, Supplier<NetworkEvent.Context> ctx) {
+            ctx.get().enqueueWork(() -> {
+                ServerPlayer sp = ctx.get().getSender();
+                if (sp != null) com.prodigytown.creatures.compat.SaintsDragonsCompat.toggle(sp, m.entityId, m.all);
             });
             ctx.get().setPacketHandled(true);
         }
