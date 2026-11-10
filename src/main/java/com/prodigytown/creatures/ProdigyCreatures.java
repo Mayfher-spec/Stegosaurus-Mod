@@ -11,8 +11,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.CreativeModeTabs;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Rarity;
 import net.minecraftforge.common.ForgeSpawnEggItem;
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
 import net.minecraftforge.event.entity.SpawnPlacementRegisterEvent;
@@ -60,18 +58,9 @@ public class ProdigyCreatures {
 
     public static final RegistryObject<EntityType<CarnotaurusEntity>> CARNOTAURUS = ENTITIES.register("carnotaurus", () ->
         EntityType.Builder.of(CarnotaurusEntity::new, MobCategory.CREATURE)
-            .sized(2.0f, 2.8f).clientTrackingRange(10).build(MODID + ":carnotaurus"));
+            .sized(2.7f, 3.8f).clientTrackingRange(10).build(MODID + ":carnotaurus"));
     public static final RegistryObject<Item> CARNOTAURUS_EGG = ITEMS.register("carnotaurus_spawn_egg", () ->
         new ForgeSpawnEggItem(() -> CARNOTAURUS.get(), 0x8E2F25, 0xE0C9A0, new Item.Properties()));
-    /** Huevo del Brutus (variante legendaria del carnotauro): marca el item con "BrutusEgg" y la entidad lo lee al aparecer. */
-    public static final RegistryObject<Item> CARNOTAURUS_BRUTUS_EGG = ITEMS.register("carnotaurus_brutus_spawn_egg", () ->
-        new ForgeSpawnEggItem(() -> CARNOTAURUS.get(), 0x7A1E3C, 0xE8D8A0, new Item.Properties().rarity(Rarity.EPIC)) {
-            @Override public ItemStack getDefaultInstance() {
-                ItemStack st = super.getDefaultInstance();
-                st.getOrCreateTag().putBoolean("BrutusEgg", true);
-                return st;
-            }
-        });
     /** Carne curada: reanima al carnotauro caido y lo cura mucho. */
     public static final RegistryObject<Item> CARNO_JERKY = ITEMS.register("carnotaurus_jerky", () -> new Item(new Item.Properties().stacksTo(64)));
 
@@ -116,7 +105,6 @@ public class ProdigyCreatures {
             if (event.getTabKey() == CreativeModeTabs.SPAWN_EGGS) {
                 event.accept(STEGOSAURUS_EGG.get());
                 event.accept(CARNOTAURUS_EGG.get());
-                event.accept(CARNOTAURUS_BRUTUS_EGG.get().getDefaultInstance());
                 event.accept(NEST_ITEM.get());
                 for (RegistryObject<Item> egg : EGG_ITEMS) event.accept(egg.get());
             }

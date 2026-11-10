@@ -4,7 +4,7 @@ from PIL import Image
 ATLAS=512
 # ---------------------------------------------------------------- esqueleto (marco de diseno: x lateral, y arriba, z hacia delante)
 def build_spec(stage='adult'):
-    B=(stage=='brutus')   # variante legendaria: mas espinas, dientes mas grandes
+    B=(stage=='adult')   # el adulto (Brutus): mas espinas y dientes mas grandes que la cria
     P=[]
     def part(name,parent,piv,rot=(0,0,0),cubes=(),grp='body'): P.append(dict(name=name,parent=parent,piv=piv,rot=rot,cubes=list(cubes),grp=grp))
     part('body','root',(0,90,0),(0.08,0,0),[
@@ -54,13 +54,12 @@ def build_spec(stage='adult'):
     return P
 # ---------------------------------------------------------------- etapas
 STAGES={
- 'adult':dict(body=1.0,tail=1.0,neck=1.0,head=1.0,horn=1.0,arm=1.0,leg=1.0),
  'chibi':dict(body=0.52,tail=0.46,neck=0.55,head=0.82,horn=0.80,arm=0.62,leg=0.52),
- # Brutus (legendario): mas ancho, mas hondo y mas largo; piernas gruesas y cortas; cabeza y cuernos enormes (x, y, z)
- 'brutus':dict(body=(1.32,1.22,1.16),tail=(1.36,1.28,1.12),neck=(1.34,1.28,1.08),head=(1.40,1.32,1.22),horn=(1.55,1.55,1.55),arm=(1.25,1.25,1.25),leg=(1.40,1.14,1.40)),
+ # Adulto (el Brutus): mas ancho, mas hondo y mas largo; piernas gruesas y cortas; cabeza y cuernos enormes (x, y, z)
+ 'adult':dict(body=(1.32,1.22,1.16),tail=(1.36,1.28,1.12),neck=(1.34,1.28,1.08),head=(1.40,1.32,1.22),horn=(1.55,1.55,1.55),arm=(1.25,1.25,1.25),leg=(1.40,1.14,1.40)),
 }
-# posturas de reposo propias de cada etapa (Brutus: encorvado, cuello mas erguido y cabeza adelantada = actitud agresiva)
-ROT_OVERRIDE={'brutus':{'body':(0.13,0,0),'neck1':(-1.12,0,0),'neck2':(0.95,0,0),'head':(0.16,0,0),'tail1':(-0.06,0,0)}}
+# posturas de reposo propias de cada etapa (adulto: encorvado, cuello mas erguido y cabeza adelantada = actitud agresiva)
+ROT_OVERRIDE={'adult':{'body':(0.13,0,0),'neck1':(-1.12,0,0),'neck2':(0.95,0,0),'head':(0.16,0,0),'tail1':(-0.06,0,0)}}
 def _v3(s): return tuple(s) if isinstance(s,(tuple,list)) else (s,s,s)
 def scaled(stage):
     spec=build_spec(stage); sc=STAGES[stage]; byn={p['name']:p for p in spec}
@@ -123,7 +122,7 @@ def get_all():
     global _ALL
     if _ALL is not None: return _ALL
     out={}; allc=[]
-    for st in ('adult','chibi','brutus'):
+    for st in ('chibi','adult'):
         spec=scaled(st); cubes=[]
         for p in spec:
             for i,c in enumerate(p['cubes']):

@@ -1,4 +1,4 @@
-"""Exporta el carnotauro: CarnotaurusLayers.java + texturas (4 colores x 3 mallas, brillo, silla). Uso: python3 export.py <repo>"""
+"""Exporta el carnotauro: CarnotaurusLayers.java + texturas (4 colores x 2 mallas, brillo, silla). Uso: python3 export.py <repo>"""
 import sys, os, numpy as np
 HERE=os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0,HERE)
 import rig, paint
@@ -27,12 +27,10 @@ final class CarnotaurusLayers {
     /** Altura (unidades de modelo) del pivote del cuerpo sobre el suelo en reposo. */
     static final float ADULT_BODY_Y = %sF;
     static final float CHIBI_BODY_Y = %sF;
-    static final float BRUTUS_BODY_Y = %sF;
 
 %s
-%s
 %s}
-'''%(H,('%.3f'%hy['adult']),('%.3f'%hy['chibi']),('%.3f'%hy['brutus']),layer('adult'),layer('chibi'),layer('brutus'))
+'''%(H,('%.3f'%hy['adult']),('%.3f'%hy['chibi']),layer('adult'),layer('chibi'))
 open(os.path.join(repo,'src/main/java/com/prodigytown/creatures/client/CarnotaurusLayers.java'),'w').write(src)
 for var in ('scarlet','magma','steel','arena'):
     a,g=paint.make_atlas(var)

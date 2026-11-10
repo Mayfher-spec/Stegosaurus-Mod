@@ -1,15 +1,15 @@
-Carnotauro (v1.1.7): esqueleto articulado PROPIO, generado por codigo.
+Carnotauro (v1.1.8): esqueleto articulado PROPIO, generado por codigo.
 
   python3 tools/carnotaurus/export.py .      (desde la raiz del repo; necesita numpy y pillow)
 
 Genera de una vez:
-  - src/main/java/com/prodigytown/creatures/client/CarnotaurusLayers.java  (malla adulto + cria; NO editar a mano)
+  - src/main/java/com/prodigytown/creatures/client/CarnotaurusLayers.java  (malla adulto "Brutus" + cria; NO editar a mano)
   - textures/entity/carnotaurus_{scarlet,magma,steel,arena}.png, carnotaurus_{scarlet,magma,steel,arena}_glow.png, carnotaurus_saddle.png
-    (un solo atlas 512x1216 compartido por las tres mallas: adulto, cria y Brutus)
+    (un solo atlas 512x832 compartido por las dos mallas: adulto y cria)
 
 Archivos:
   rig.py    esqueleto (huesos, cubos, escalas adulto/cria) y empaquetado de UV
-  paint.py  pintor de texturas: patrones en 3D sobre la pose de reposo (sin costuras), 4 colores x 3 mallas, brillo y silla
+  paint.py  pintor de texturas: patrones en 3D sobre la pose de reposo (sin costuras), 4 colores x 2 mallas, brillo y silla
   export.py escribe todo en el repo
 
 Huesos: root > body > (tail1..tail5 | chest > (neck1 > neck2 > head > (jaw, horn_l/r 3 tramos), arm_l/r > arm2_l/r) | thigh_l/r > shin > meta > foot > toe0..2).
@@ -17,7 +17,8 @@ Las animaciones (CarnotaurusModel.java) SUMAN a la pose de reposo; si cambias ro
 Los .bbmodel de custom_assets/carnotaurus/ son los que aporto el usuario (v1.1.3) y ya no se usan para la malla.
 La anatomia (cuello en S, pata de 4 tramos, cola gruesa y larga) se inspira en la forma de los dinos de alta calidad, pero toda la geometria y las texturas son originales.
 
-Brutus (forma LEGENDARIA, independiente del color): malla propia 'brutus' en rig.py (escalas por eje en STAGES, posturas en ROT_OVERRIDE, espinas/dientes extra marcados con B).
-Cada textura de color (Rojo, Magma, Acero, Arena) contiene las tres mallas: adulto, cria y Brutus. En la malla Brutus paint.py anade escamas, cicatrices (SCARS) y puntas de cuerno brillantes
-con el color de cada paleta; "Arena" (variante 3) es el color tostado/carmesi de la foto de referencia y tambien existe en tamaño normal.
-En el juego: dato sincronizado "Legendary" (NBT), p. ej.  /summon prodigycreatures:carnotaurus ~ ~ ~ {Variant:1,Legendary:1b}  (Variant 0 Rojo, 1 Magma, 2 Acero, 3 Arena).
+El adulto es SIEMPRE el Brutus (malla 'adult' en rig.py: escalas por eje en STAGES, posturas en ROT_OVERRIDE, espinas/dientes extra marcados con B); la malla adulta anterior (v1.1.0-1.1.5) ya no existe.
+Cada textura de color (Rojo, Magma, Acero, Arena) contiene las dos mallas: adulto y cria. En el adulto paint.py anade escamas, cicatrices (SCARS) y puntas de cuerno brillantes
+con el color de cada paleta; "Arena" (variante 3) es el color tostado/carmesi de la foto de referencia.
+En el juego: variante en NBT "Variant" (0 Rojo, 1 Magma, 2 Acero, 3 Arena), p. ej.  /summon prodigycreatures:carnotaurus ~ ~ ~ {Variant:1,Adult:1b}
+Hitbox adulto 2.7 x 3.8 (tambien en ProdigyCreatures: sized) y cria 1.1 x 1.8; escala de dibujo 0.36 / 0.38 en CarnotaurusRenderer.

@@ -112,7 +112,7 @@ def base_skin(var,P,N,ly,ctx,face):
         a_,bc,cc=GLOWC['magma']
         e=(lambda dd:(dd[1]-dd[0])*11.0)(voronoi(q/11.0,31)[:2])
         crack=ss(1.2,0.38,e)*ss(0.30,0.52,fbm(q*0.07+3,19,2))*(0.35+0.65*dw)
-        if ctx['stage']=='brutus': crack=np.clip(crack*1.35,0,1)
+        if ctx['stage']=='adult': crack=np.clip(crack*1.35,0,1)
         core=ss(0.7,1.0,crack)
         gc=lerp(lerp(a_,bc,ss(0.0,0.6,crack)),cc,core)
         wgt=crack*(1-0.55*b)
@@ -122,7 +122,7 @@ def base_skin(var,P,N,ly,ctx,face):
         d1p,d2p,rp=voronoi(P/7.5,17)
         seam=ss(0.16,0.02,d2p-d1p); sheen=ss(0.55,0.0,d1p)
         col=col*(0.90+0.18*rp)[:,None]*(1-0.42*seam)[:,None]*(0.96+0.12*sheen)[:,None]
-    lg=ctx['stage']=='brutus'
+    lg=ctx['stage']=='adult'
     if lg or var=='arena':
         # escamas grandes y arrugas (referencia fotografica): fuertes en Arena, mas suaves en el resto
         d1p,d2p,rp=voronoi(q/4.0,53)
@@ -151,7 +151,7 @@ def base_skin(var,P,N,ly,ctx,face):
         elif var=='steel':
             dd=ss(0.40,0.80,top+0.30*nz)
             col=col*(1.0-0.30*dd)[:,None]
-        # cicatrices de batalla (solo en la malla legendaria; coordenadas locales de cada pieza)
+        # cicatrices de batalla (solo en el adulto; coordenadas locales de cada pieza)
         if lg:
             sc_=np.zeros(n)
             for (pn,p0,p1,wd,sgn) in SCARS:
@@ -182,8 +182,8 @@ def horn_tex(var,ly,ctx,ii,jj):
         col=lerp(pal['horn_a'],pal['horn_b'],g**1.25)*ridge[:,None]
     else:
         col=lerp(pal['horn_a'],pal['horn_b'],g**1.1)*ridge[:,None]
-    if ctx['stage']=='brutus' and var!='magma':
-        # legendario: puntas de los cuernos incandescentes en el color de sus ojos
+    if ctx['stage']=='adult' and var!='magma':
+        # adulto: puntas de los cuernos incandescentes en el color de sus ojos
         t=ss(0.80,1.0,g)*0.6; gc=np.array(pal['eye'],float); col=lerp(col,gc,t*0.8); gl=gc*t[:,None]
     return col,gl
 def spike_tex(var,ly,ctx,ii,jj):
@@ -196,7 +196,7 @@ def claw_tex(var,fu,fv,ctx,face,loc):
     col=lerp(pal['claw_a'],pal['claw_b'],t**1.5); return col,np.zeros_like(col)
 def eye_tex(var,loc,ctx,col,gl):
     """ojo redondeado: 8 texels (adulto) / 7 (cria), aro oscuro, iris, pupila vertical y brillo."""
-    pal=PAL[var]; sx,sy,sz=ctx['sv']; r={'chibi':3.6,'adult':4.0,'brutus':4.5}[ctx['stage']]
+    pal=PAL[var]; sx,sy,sz=ctx['sv']; r={'chibi':3.6,'adult':4.5}[ctx['stage']]
     cz,cy=17.0*sz,3.2*sy            # centro en la cabeza (el cuerno/ceja quedan por encima)
     dz=loc[:,2]-cz; dy=loc[:,1]-cy
     e2=(dz/r)**2+(dy/r)**2
@@ -208,7 +208,7 @@ def eye_tex(var,loc,ctx,col,gl):
     out[pup]=pal['pupil']
     glint=iris&((dz-1.3)**2+(dy-1.4)**2<0.9)
     out[glint]=np.array(out[glint])*0.35+np.array([255,255,240])*0.65
-    if var!='scarlet' or ctx['stage']=='brutus':
+    if var!='scarlet' or ctx['stage']=='adult':
         g[iris&~pup]=pal['eye']; g[glint]=(255,255,240)
     return out,g
 # ---------------------------------------------------------------- ensamblado
@@ -221,7 +221,7 @@ def make_atlas(var):
     atlas=np.zeros((H,W,4),np.uint8); glow=np.zeros((H,W,4),np.uint8)
     pal=PAL[var]
     for st,(spec,cubes) in out.items():
-        qs={'adult':1.0,'chibi':0.6,'brutus':1.3}[st]
+        qs={'adult':1.3,'chibi':0.6}[st]
         for c in cubes:
             R,T=fr[st][c['part']]
             for face,r in rig.regions(c).items():
@@ -234,7 +234,7 @@ def make_atlas(var):
                 elif role=='horn': col,gl=horn_tex(var,ly,ctx,ii,jj)
                 elif role=='spike': col,gl=spike_tex(var,ly,ctx,ii,jj)
                 elif role=='claw': col,gl=claw_tex(var,fu,fv,ctx,face,loc)
-                elif role=='tooth': col,gl=tooth_tex('tooth',face,ii,jj,fu,fv,pal,st=='brutus')
+                elif role=='tooth': col,gl=tooth_tex('tooth',face,ii,jj,fu,fv,pal,st=='adult')
                 else:
                     col=np.tile(np.array(pal['tongue'],float),(len(ii),1))*(0.9+0.1*np.cos(loc[:,0]*0.9))[:,None]; gl=np.zeros_like(col)
                     if var=='magma': gl=col*0.9
@@ -247,7 +247,7 @@ def make_atlas(var):
     return atlas,glow
 def make_saddle():
     out,H=rig.get_all(); sad=np.zeros((H,W,4),np.uint8)
-    for st in ('adult','brutus'):
+    for st in ('adult',):
         spec,cubes=out[st]
         k=dict((p['name'],p['sv']) for p in spec)['body'][2]      # escala en z del cuerpo
         Z0,Z1=-25.0*k,9.0*k

@@ -12,7 +12,7 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 
-/** Brillo: magma (grietas, espinas, cuerno y ojos), acero y arena (ojos) y toda forma legendaria Brutus (ojos y punta de los cuernos), con un pulso suave; apagado si esta caido. */
+/** Brillo: magma (grietas, espinas, cuerno y ojos); en los adultos de los demas colores, ojos y punta de los cuernos; con un pulso suave, apagado si esta caido. */
 public final class CarnotaurusGlowLayer extends RenderLayer<CarnotaurusEntity, CarnotaurusModel<CarnotaurusEntity>> {
     private static final ResourceLocation MAGMA = glow("magma");
     private static final ResourceLocation STEEL = glow("steel");
@@ -26,7 +26,7 @@ public final class CarnotaurusGlowLayer extends RenderLayer<CarnotaurusEntity, C
                                 float limbSwing, float limbSwingAmount, float partialTick, float ageInTicks,
                                 float netHeadYaw, float headPitch) {
         int v = entity.getVariant();
-        if ((v == CarnotaurusEntity.SCARLET && !entity.isBrutus()) || entity.isInvisible()) return;
+        if ((v == CarnotaurusEntity.SCARLET && !entity.isAdultStage()) || entity.isInvisible()) return;
         float k = 0.82F + 0.18F * Mth.sin(ageInTicks * 0.12F);
         if (entity.isFallen()) k *= 0.3F;
         VertexConsumer vc = buffers.getBuffer(RenderType.eyes(v == CarnotaurusEntity.MAGMA ? MAGMA : v == CarnotaurusEntity.ARENA ? ARENA : v == CarnotaurusEntity.STEEL ? STEEL : SCARLET));
