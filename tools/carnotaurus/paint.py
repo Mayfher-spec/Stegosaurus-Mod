@@ -67,9 +67,9 @@ def region_geom(c,face,r):
 PAL={
  'scarlet':dict(dark=(176,48,34),mid=(222,86,46),stripe=(122,32,32),belly=(232,200,150),belly2=(206,166,118),horn_a=(236,224,186),horn_b=(112,90,66),spike_a=(100,72,58),spike_b=(54,40,38),claw_a=(44,36,36),claw_b=(176,160,130),tooth=(242,238,222),gum=(168,66,76),tongue=(196,78,94),eye=(255,196,40),pupil=(30,14,10)),
  'magma':dict(dark=(30,26,30),mid=(70,54,54),stripe=(14,12,16),belly=(92,66,56),belly2=(66,48,42),horn_a=(40,32,36),horn_b=(16,12,16),spike_a=(36,30,34),spike_b=(14,12,16),claw_a=(26,22,24),claw_b=(90,70,60),tooth=(236,226,205),gum=(150,50,30),tongue=(255,110,30),eye=(255,150,30),pupil=(40,8,0)),
- 'emerald':dict(dark=(16,48,42),mid=(36,96,72),stripe=(8,26,28),belly=(150,196,148),belly2=(112,160,122),horn_a=(40,170,102),horn_b=(196,255,220),spike_a=(30,140,90),spike_b=(170,250,205),claw_a=(18,40,38),claw_b=(110,170,140),tooth=(226,255,238),gum=(40,110,86),tongue=(70,190,130),eye=(90,255,160),pupil=(4,30,16)),
+ 'steel':dict(dark=(86,95,108),mid=(152,163,178),stripe=(46,52,63),belly=(200,208,218),belly2=(158,166,178),horn_a=(150,160,174),horn_b=(238,244,252),spike_a=(84,92,106),spike_b=(216,224,234),claw_a=(30,34,42),claw_b=(204,212,222),tooth=(238,242,246),gum=(96,74,82),tongue=(150,92,102),eye=(120,214,255),pupil=(8,18,30)),
 }
-GLOWC={'magma':((190,40,8),(255,130,24),(255,228,120)),'emerald':((20,140,80),(46,232,122),(190,255,214))}
+GLOWC={'magma':((190,40,8),(255,130,24),(255,228,120))}
 def tooth_tex(role,face,ii,jj,fu,fv,pal,var):
     col=np.tile(np.array(pal['tooth'],float),(len(ii),1)); gl=np.zeros_like(col)
     gum=fv<0.34 if role=='tooth' and face in('xmin','xmax','north','south') else np.zeros(len(ii),bool)
@@ -98,21 +98,19 @@ def base_skin(var,P,N,ly,ctx,face):
     col=lerp(pal['dark'],pal['mid'],n1)*cell[:,None]
     gl=np.zeros((n,3))
     col=lerp(col,np.array(pal['stripe'])*cell[:,None],(st*dw*0.9))
-    if var in GLOWC:
-        a,bc,cc=GLOWC[var]
-        if var=='magma':
-            e=(lambda dd:(dd[1]-dd[0])*11.0)(voronoi(q/11.0,31)[:2])
-            crack=ss(1.2,0.38,e)*ss(0.30,0.52,fbm(q*0.07+3,19,2))*(0.35+0.65*dw)
-        else:
-            vein=ss(0.17,0.0,np.abs(wave-0.45))*ss(0.26,0.5,fbm(q*0.09+9,23,2))*(0.3+0.7*dw)
-            e=(lambda dd:(dd[1]-dd[0])*9.0)(voronoi(q/9.0,41)[:2])
-            crack2=ss(0.5,0.18,e)*ss(0.62,0.78,fbm(q*0.08+5,29,2))*0.9
-            crack=np.clip(vein+crack2,0,1)
-        if var=='emerald': core=ss(0.62,1.0,crack)
-        else: core=ss(0.7,1.0,crack)
-        gc=lerp(lerp(a,bc,ss(0.0,0.6,crack)),cc,core)
+    if var=='magma':
+        a_,bc,cc=GLOWC['magma']
+        e=(lambda dd:(dd[1]-dd[0])*11.0)(voronoi(q/11.0,31)[:2])
+        crack=ss(1.2,0.38,e)*ss(0.30,0.52,fbm(q*0.07+3,19,2))*(0.35+0.65*dw)
+        core=ss(0.7,1.0,crack)
+        gc=lerp(lerp(a_,bc,ss(0.0,0.6,crack)),cc,core)
         wgt=crack*(1-0.55*b)
         col=lerp(col,gc,wgt); gl=gc*wgt[:,None]
+    if var=='steel':
+        # placas de acero: costuras oscuras entre placas grandes, brillo suave en el centro y rebordes
+        d1p,d2p,rp=voronoi(P/7.5,17)
+        seam=ss(0.16,0.02,d2p-d1p); sheen=ss(0.55,0.0,d1p)
+        col=col*(0.90+0.18*rp)[:,None]*(1-0.42*seam)[:,None]*(0.96+0.12*sheen)[:,None]
     # vientre con escudos transversales
     sc=((P[:,2]/3.8)%1.0<0.16)
     bcol=lerp(pal['belly'],pal['belly2'],np.where(sc,0.8,fbm(q*0.1+2,13,2)*0.5))*(0.97+0.06*rid)[:,None]
@@ -128,37 +126,33 @@ def horn_tex(var,ly,ctx,ii,jj):
         col=lerp(pal['horn_a'],pal['horn_b'],g)*ridge[:,None]
         t=ss(0.55,0.95,g); gc=lerp(GLOWC['magma'][0],GLOWC['magma'][2],ss(0.7,1.0,g)*0.9+0.1); col=lerp(col,gc,t); gl=gc*t[:,None]
     else:
-        col=lerp(pal['horn_a'],pal['horn_b'],g**0.9)*(0.9+0.1*ridge)[:,None]
-        t=ss(0.1,0.9,g)*0.85; gl=col*t[:,None]
+        col=lerp(pal['horn_a'],pal['horn_b'],g**1.1)*ridge[:,None]
     return col,gl
 def spike_tex(var,ly,ctx,ii,jj):
     pal=PAL[var]; col=lerp(pal['spike_a'],pal['spike_b'],ly**1.2); gl=np.zeros_like(col)
     if var=='magma':
         t=ss(0.45,1.0,ly); gc=lerp(GLOWC['magma'][0],GLOWC['magma'][1],ly); col=lerp(col,gc,t); gl=gc*t[:,None]
-    elif var=='emerald': gl=col*(0.55*ss(0.0,1.0,ly))[:,None]
     return col,gl
 def claw_tex(var,fu,fv,ctx,face,loc):
     pal=PAL[var]; t=ctx['claw_t'](loc)
     col=lerp(pal['claw_a'],pal['claw_b'],t**1.5); return col,np.zeros_like(col)
 def eye_tex(var,loc,ctx,col,gl):
-    pal=PAL[var]; s=ctx['s']; es=6.4 if ctx['stage']=='chibi' else 5.6
-    # centro del ojo en coordenadas de la cabeza (sin escalar): z=15.5, y=3.6
-    cz,cy=18.0*s,4.6*s
-    dz=loc[:,2]-cz; dy=loc[:,1]-cy; r=es/2.0
-    m=(np.abs(dz)<=r)&(np.abs(dy)<=r)
-    ring=m&((np.abs(dz)>r-0.9)|(np.abs(dy)>r-0.9))
-    iris=m&~ring
+    """ojo redondeado: 8 texels (adulto) / 7 (cria), aro oscuro, iris, pupila vertical y brillo."""
+    pal=PAL[var]; s=ctx['s']; r=3.6 if ctx['stage']=='chibi' else 4.0
+    cz,cy=17.0*s,3.2*s            # centro en la cabeza (el cuerno/ceja quedan por encima)
+    dz=loc[:,2]-cz; dy=loc[:,1]-cy
+    e2=(dz/r)**2+(dy/r)**2
+    m=e2<=1.0; ring=m&(e2>0.58); iris=m&~ring
     out=col.copy(); g=gl.copy()
-    out[m]=pal['pupil']*np.array([1.0,1.0,1.0])
+    out[m]=pal['pupil']
     out[iris]=pal['eye']
-    pup=iris&(np.abs(dz)<0.55)
+    pup=iris&(np.abs(dz)<0.7)&(np.abs(dy)<r*0.78)
     out[pup]=pal['pupil']
-    glint=iris&(dz>0.2)&(dy>0.2)&(~pup)
-    out[glint]=np.array(out[glint])*0.4+np.array([255,255,230])*0.6
+    glint=iris&((dz-1.3)**2+(dy-1.4)**2<0.9)
+    out[glint]=np.array(out[glint])*0.35+np.array([255,255,240])*0.65
     if var!='scarlet':
-        g[iris&~pup]=pal['eye']; g[glint]=(255,255,230)
+        g[iris&~pup]=pal['eye']; g[glint]=(255,255,240)
     return out,g
-
 # ---------------------------------------------------------------- ensamblado
 def claw_axis(c):
     if c['part'].startswith('arm2'): return lambda loc:1-(loc[:,1]-c['y0'])/max(1e-6,c['h'])
@@ -186,7 +180,6 @@ def make_atlas(var):
                 else:
                     col=np.tile(np.array(pal['tongue'],float),(len(ii),1))*(0.9+0.1*np.cos(loc[:,0]*0.9))[:,None]; gl=np.zeros_like(col)
                     if var=='magma': gl=col*0.9
-                    elif var=='emerald': gl=col*0.35
                 if c['part']=='head' and c['i']==0 and face in('xmin','xmax'): col,gl=eye_tex(var,loc,ctx,col,gl)
                 x0,y0,x1,y1=rect
                 atlas[jj,ii,:3]=np.clip(col,0,255).astype(np.uint8); atlas[jj,ii,3]=255

@@ -32,7 +32,7 @@ final class CarnotaurusLayers {
 %s}
 '''%(H,('%.3f'%hy['adult']),('%.3f'%hy['chibi']),layer('adult'),layer('chibi'))
 open(os.path.join(repo,'src/main/java/com/prodigytown/creatures/client/CarnotaurusLayers.java'),'w').write(src)
-for var in ('scarlet','magma','emerald'):
+for var in ('scarlet','magma','steel'):
     a,g=paint.make_atlas(var)
     Image.fromarray(paint.dilate(a)).save(os.path.join(tex,'carnotaurus_%s.png'%var),optimize=True)
     if var!='scarlet': Image.fromarray(g).save(os.path.join(tex,'carnotaurus_%s_glow.png'%var),optimize=True)

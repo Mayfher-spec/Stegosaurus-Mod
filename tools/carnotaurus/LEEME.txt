@@ -4,7 +4,7 @@ Carnotauro (v1.1.4): esqueleto articulado PROPIO, generado por codigo.
 
 Genera de una vez:
   - src/main/java/com/prodigytown/creatures/client/CarnotaurusLayers.java  (malla adulto + cria; NO editar a mano)
-  - textures/entity/carnotaurus_{scarlet,magma,emerald}.png, carnotaurus_{magma,emerald}_glow.png, carnotaurus_saddle.png
+  - textures/entity/carnotaurus_{scarlet,magma,steel}.png, carnotaurus_{magma,steel}_glow.png, carnotaurus_saddle.png
     (un solo atlas 512x640 compartido por adulto y cria)
 
 Archivos:
