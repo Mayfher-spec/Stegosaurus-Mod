@@ -19,8 +19,10 @@ import net.minecraft.util.Mth;
 public final class CarnotaurusModel<T extends CarnotaurusEntity> extends EntityModel<T> {
     public static final ModelLayerLocation LAYER_ADULT = new ModelLayerLocation(new ResourceLocation(ProdigyCreatures.MODID, "carnotaurus"), "adult");
     public static final ModelLayerLocation LAYER_CHIBI = new ModelLayerLocation(new ResourceLocation(ProdigyCreatures.MODID, "carnotaurus"), "chibi");
+    public static final ModelLayerLocation LAYER_BRUTUS = new ModelLayerLocation(new ResourceLocation(ProdigyCreatures.MODID, "carnotaurus"), "brutus");
     public static LayerDefinition createAdultLayer() { return CarnotaurusLayers.adult(); }
     public static LayerDefinition createChibiLayer() { return CarnotaurusLayers.chibi(); }
+    public static LayerDefinition createBrutusLayer() { return CarnotaurusLayers.brutus(); }
 
     /** Hueso con su pose de reposo guardada. */
     private static final class Bone {
@@ -32,7 +34,7 @@ public final class CarnotaurusModel<T extends CarnotaurusEntity> extends EntityM
         void move(float dy) { p.y += dy; }
     }
 
-    private final boolean adult;
+    private final boolean adult, brutus;
     private final ModelPart root;
     private final Bone body, chest, neck1, neck2, head, jaw;
     private final Bone[] tail = new Bone[5];
@@ -45,8 +47,12 @@ public final class CarnotaurusModel<T extends CarnotaurusEntity> extends EntityM
     // posturas "sentado/dormido" (sumadas al reposo), medidas contra el suelo en la vista previa
     private final float sitDrop, sleepDrop, sleepNeck1, sleepNeck2, sleepHead;
 
-    public CarnotaurusModel(ModelPart bakedRoot, boolean adult) {
+    public CarnotaurusModel(ModelPart bakedRoot, boolean adult) { this(bakedRoot, adult, false); }
+
+    /** brutus = malla de la variante legendaria (mas grande y robusta, mas pesada al andar). */
+    public CarnotaurusModel(ModelPart bakedRoot, boolean adult, boolean brutus) {
         this.adult = adult;
+        this.brutus = brutus;
         this.root = bakedRoot.getChild("root");
         ModelPart b = root.getChild("body");
         java.util.ArrayList<Bone> list = new java.util.ArrayList<>();
@@ -74,7 +80,8 @@ public final class CarnotaurusModel<T extends CarnotaurusEntity> extends EntityM
             for (int k = 0; k < 3; k++) toe[s][k] = add(list, fo.getChild("toe" + k + "_" + sd[s]));
         }
         this.all = list.toArray(new Bone[0]);
-        if (adult) { sitDrop = 39.16F; sleepDrop = 36.38F; sleepNeck1 = 0.95F; sleepNeck2 = -0.25F; sleepHead = 0.0F; }
+        if (brutus) { sitDrop = 41.87F; sleepDrop = 31.54F; sleepNeck1 = 1.12F; sleepNeck2 = -0.25F; sleepHead = 0.0F; }
+        else if (adult) { sitDrop = 39.16F; sleepDrop = 36.38F; sleepNeck1 = 0.95F; sleepNeck2 = -0.25F; sleepHead = 0.0F; }
         else { sitDrop = 20.36F; sleepDrop = 20.36F; sleepNeck1 = 0.55F; sleepNeck2 = -0.10F; sleepHead = -0.10F; }
     }
 
@@ -86,9 +93,9 @@ public final class CarnotaurusModel<T extends CarnotaurusEntity> extends EntityM
         float sit = e.sitAnim, sleep = e.sleepAnim, both = Math.max(sit, sleep);
         float walk = (1.0F - both);
         float run = e.isCharging() ? 1.0F : 0.0F;
-        float sw = limbSwing * (adult ? 0.62F : 0.9F);
-        float stride = (0.45F + 0.15F * run) * amp * walk;
-        float bob = adult ? 7.0F : 3.6F;
+        float sw = limbSwing * (brutus ? 0.50F : adult ? 0.62F : 0.9F);
+        float stride = ((brutus ? 0.40F : 0.45F) + 0.15F * run) * amp * walk;
+        float bob = brutus ? 9.0F : adult ? 7.0F : 3.6F;
 
         // ---- marcha bipeda: muslo -> tibia -> metatarso -> pie (el pie se mantiene plano) ----
         for (int s = 0; s < 2; s++) {
@@ -106,7 +113,7 @@ public final class CarnotaurusModel<T extends CarnotaurusEntity> extends EntityM
 
         // ---- cuello, cabeza y cola ----
         float breathe = Mth.sin(age * 0.07F);
-        chest.rotX(breathe * 0.012F);
+        chest.rotX(breathe * (brutus ? 0.02F : 0.012F));
         neck1.rotX(Mth.sin(sw * 2.0F) * 0.03F * amp * walk + breathe * 0.01F + 0.22F * run);
         neck2.rotX(-Mth.sin(sw * 2.0F) * 0.02F * amp * walk);
         head.rotX(-0.10F * run);
@@ -127,7 +134,7 @@ public final class CarnotaurusModel<T extends CarnotaurusEntity> extends EntityM
         float yawR = Mth.clamp(yaw, -60.0F, 60.0F) * Mth.DEG_TO_RAD;
         neck1.rotY(yawR * 0.22F * look); neck2.rotY(yawR * 0.30F * look); head.rotY(yawR * 0.30F * look);
         head.rotX(Mth.clamp(pitch, -45.0F, 45.0F) * Mth.DEG_TO_RAD * 0.6F * look);
-        jaw.rotX(0.04F + Mth.sin(age * 0.09F) * 0.02F);
+        jaw.rotX((brutus ? 0.16F : 0.04F) + Mth.sin(age * 0.09F) * 0.02F);
 
         // ---- mordida del ataque basico ----
         float atk = e.attackAnim;

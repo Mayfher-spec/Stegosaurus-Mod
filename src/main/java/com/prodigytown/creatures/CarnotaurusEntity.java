@@ -60,13 +60,16 @@ import java.util.Set;
  * Comparte con el estegosaurio las ordenes y el estado "caido" (ver PetOrders y PetEvents).
  */
 public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder {
-    public static final int SCARLET = 0, MAGMA = 1, STEEL = 2, VARIANTS = 3;
-    public static final String[] VARIANT_NAMES = {"Rojo", "Magma", "Acero"};
+    public static final int SCARLET = 0, MAGMA = 1, STEEL = 2, BRUTUS = 3, VARIANTS = 4;
+    public static final String[] VARIANT_NAMES = {"Rojo", "Magma", "Acero", "Brutus"};
     public static final int CHARGE_LEN = 24, BUTT_LEN = 14, ROAR_LEN = 40;
     /** Carnes crudas que necesita la cria para convertirse en adulto. */
     public static final int FEEDS_TO_GROW = 6;
     private static final EntityDimensions ADULT_DIM = EntityDimensions.fixed(2.0F, 2.8F);
     private static final EntityDimensions CHIBI_DIM = EntityDimensions.fixed(1.0F, 1.6F);
+    /** Brutus (variante legendaria): mas grande y robusto. */
+    private static final EntityDimensions BRUTUS_DIM = EntityDimensions.fixed(2.7F, 3.8F);
+    private static final EntityDimensions BRUTUS_CHIBI_DIM = EntityDimensions.fixed(1.1F, 1.8F);
 
     private static final EntityDataAccessor<Integer> VARIANT = SynchedEntityData.defineId(CarnotaurusEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> ADULT = SynchedEntityData.defineId(CarnotaurusEntity.class, EntityDataSerializers.BOOLEAN);
@@ -140,6 +143,9 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
     public int getVariant() { return this.entityData.get(VARIANT); }
     public void setVariant(int v) { this.entityData.set(VARIANT, Math.max(0, Math.min(VARIANTS - 1, v))); }
     public boolean isAdultStage() { return this.entityData.get(ADULT); }
+    public boolean isBrutus() { return getVariant() == BRUTUS; }
+    /** Multiplicador de tono: el Brutus suena mas grave. */
+    private float vp() { return isBrutus() ? 0.82F : 1.0F; }
     public boolean isSaddled() { return this.entityData.get(SADDLED); }
     public int getAbilityKind() { return this.entityData.get(ABILITY_KIND); }
     public int getAbilityLeft() { return this.entityData.get(ABILITY_LEFT); }
@@ -159,20 +165,25 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
 
     @Override public void onSyncedDataUpdated(EntityDataAccessor<?> key) {
         super.onSyncedDataUpdated(key);
-        if (ADULT.equals(key)) this.refreshDimensions();
+        if (ADULT.equals(key) || VARIANT.equals(key)) this.refreshDimensions();
     }
 
-    @Override public EntityDimensions getDimensions(Pose pose) { return isAdultStage() ? ADULT_DIM : CHIBI_DIM; }
+    @Override public EntityDimensions getDimensions(Pose pose) {
+        if (isBrutus()) return isAdultStage() ? BRUTUS_DIM : BRUTUS_CHIBI_DIM;
+        return isAdultStage() ? ADULT_DIM : CHIBI_DIM;
+    }
     @Override protected float getStandingEyeHeight(Pose pose, EntityDimensions dims) { return dims.height * 0.82F; }
 
     /** Ajusta vida, ataque y velocidad a la etapa; conserva la fraccion de vida. */
     private void applyStageStats(boolean keepFraction) {
         boolean adult = isAdultStage();
         float frac = this.getMaxHealth() <= 0 ? 1.0F : this.getHealth() / this.getMaxHealth();
-        setBase(Attributes.MAX_HEALTH, adult ? 110.0 : 28.0);
-        setBase(Attributes.ATTACK_DAMAGE, adult ? 16.0 : 4.0);
-        setBase(Attributes.MOVEMENT_SPEED, adult ? 0.34 : 0.30);
-        setBase(Attributes.ARMOR, adult ? 4.0 : 0.0);
+        boolean big = isBrutus();   // legendario: mucha mas vida, daño y armadura; algo mas lento por su peso
+        setBase(Attributes.MAX_HEALTH, big ? (adult ? 220.0 : 50.0) : (adult ? 110.0 : 28.0));
+        setBase(Attributes.ATTACK_DAMAGE, big ? (adult ? 26.0 : 7.0) : (adult ? 16.0 : 4.0));
+        setBase(Attributes.MOVEMENT_SPEED, big ? (adult ? 0.31 : 0.30) : (adult ? 0.34 : 0.30));
+        setBase(Attributes.ARMOR, big ? (adult ? 10.0 : 2.0) : (adult ? 4.0 : 0.0));
+        setBase(Attributes.KNOCKBACK_RESISTANCE, big ? 0.85 : 0.5);
         if (keepFraction) this.setHealth(Math.max(1.0F, this.getMaxHealth() * frac));
         else if (this.getHealth() > this.getMaxHealth()) this.setHealth(this.getMaxHealth());
         this.refreshDimensions();
@@ -197,6 +208,10 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
         if (biome.is(net.minecraft.tags.BiomeTags.IS_SAVANNA) || biome.is(net.minecraft.tags.BiomeTags.IS_BADLANDS)) magmaChance = 35;
         if (biome.is(net.minecraft.tags.BiomeTags.IS_FOREST) || biome.is(net.minecraft.tags.BiomeTags.IS_JUNGLE)) steelChance = 35;
         int v = roll < magmaChance ? MAGMA : roll < magmaChance + steelChance ? STEEL : SCARLET;
+        // legendario: ~3 % de los silvestres, solo si hay hueco alto para su tamaño
+        BlockPos bp = this.blockPosition();
+        if (this.random.nextInt(100) < 3 && roomFor(level, bp.above(2)) && roomFor(level, bp.above(3))) v = BRUTUS;
+        if (reason == MobSpawnType.SPAWN_EGG && tag != null && tag.contains("BrutusEgg")) v = BRUTUS;
         setVariant(v);
         if (reason == MobSpawnType.NATURAL || reason == MobSpawnType.CHUNK_GENERATION || reason == MobSpawnType.STRUCTURE) {
             this.entityData.set(ADULT, this.random.nextInt(100) < 35); // la mayoria de los silvestres son crias que se pueden domesticar
@@ -349,7 +364,7 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
                 if (cdButt > 0 || getAbilityLeft() > 0) return;
                 cdButt = 70;
                 startAbility(2, BUTT_LEN);
-                this.playSound(ModSounds.CARNO_ROAR.get(), 1.0F, 1.5F);
+                this.playSound(ModSounds.CARNO_ROAR.get(), 1.0F, 1.5F * vp());
                 Vec3 c = this.position().add(look.scale(2.6)).add(0, 1.2, 0);
                 for (LivingEntity e : server.getEntitiesOfClass(LivingEntity.class, new AABB(c, c).inflate(2.4, 1.6, 2.4), x -> !isAlly(x))) {
                     e.hurt(this.damageSources().mobAttack(this), atk * 1.3F);
@@ -372,7 +387,7 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
                     if (d < bd) { bd = d; best = e; }
                 }
                 this.swing(InteractionHand.MAIN_HAND);
-                this.playSound(ModSounds.CARNO_BITE.get(), 1.4F, 0.95F + this.random.nextFloat() * 0.1F);
+                this.playSound(ModSounds.CARNO_BITE.get(), 1.4F, (0.95F + this.random.nextFloat() * 0.1F) * vp());
                 if (best != null) {
                     best.hurt(this.damageSources().mobAttack(this), atk);
                     best.knockback(0.5, -look.x, -look.z);
@@ -382,7 +397,7 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
                 if (cdRoar > 0 || getAbilityLeft() > 0) return;
                 cdRoar = 500;
                 startAbility(3, ROAR_LEN);
-                this.playSound(ModSounds.CARNO_ROAR.get(), 4.0F, 1.0F);
+                this.playSound(ModSounds.CARNO_ROAR.get(), 4.0F, vp());
                 for (LivingEntity e : server.getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(12.0), x -> x != this)) {
                     if (isAlly(e)) e.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 160, 0));
                     else if (e.isAlive()) {
@@ -408,7 +423,7 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
         boolean hit = entity.hurt(this.damageSources().mobAttack(this), damage);
         if (hit) {
             this.swing(InteractionHand.MAIN_HAND);
-            this.playSound(ModSounds.CARNO_BITE.get(), isAdultStage() ? 1.3F : 0.8F, (isAdultStage() ? 0.95F : 1.5F) + this.random.nextFloat() * 0.1F);
+            this.playSound(ModSounds.CARNO_BITE.get(), isAdultStage() ? 1.3F : 0.8F, ((isAdultStage() ? 0.95F : 1.5F) + this.random.nextFloat() * 0.1F) * vp());
             living.knockback(0.5, this.getX() - entity.getX(), this.getZ() - entity.getZ());
         }
         return hit;
@@ -520,10 +535,10 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
         Entity first = this.getFirstPassenger();
         return first instanceof Player p && this.isOwnedBy(p) ? p : null;
     }
-    @Override public double getPassengersRidingOffset() { return 2.35; }
+    @Override public double getPassengersRidingOffset() { return isBrutus() ? 2.9 : 2.35; }
     @Override public void positionRider(Entity passenger, Entity.MoveFunction callback) {
         if (!this.hasPassenger(passenger)) return;
-        Vec3 off = new Vec3(0.0, 0.0, -0.17).yRot(-this.yBodyRot * ((float) Math.PI / 180.0F));
+        Vec3 off = new Vec3(0.0, 0.0, isBrutus() ? -0.2 : -0.17).yRot(-this.yBodyRot * ((float) Math.PI / 180.0F));
         callback.accept(passenger, this.getX() + off.x, this.getY() + this.getPassengersRidingOffset() + passenger.getMyRidingOffset(), this.getZ() + off.z);
     }
 
@@ -571,7 +586,7 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
     @Override protected SoundEvent getHurtSound(DamageSource source) { return isAdultStage() ? ModSounds.CARNO_HURT.get() : ModSounds.CARNO_HURT_BABY.get(); }
     @Override protected SoundEvent getDeathSound() { return isAdultStage() ? ModSounds.CARNO_DEATH.get() : ModSounds.CARNO_HURT_BABY.get(); }
     @Override protected void playStepSound(BlockPos pos, net.minecraft.world.level.block.state.BlockState state) {
-        this.playSound(ModSounds.CARNO_STEP.get(), isAdultStage() ? 0.8F : 0.35F, 0.9F + this.random.nextFloat() * 0.2F);
+        this.playSound(ModSounds.CARNO_STEP.get(), isAdultStage() ? 0.8F : 0.35F, (0.9F + this.random.nextFloat() * 0.2F) * vp());
     }
     @Override protected float getSoundVolume() { return isAdultStage() ? 1.4F : 1.0F; }
     @Nullable @Override protected SoundEvent getAmbientSound() { return null; }

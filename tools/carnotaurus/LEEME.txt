@@ -1,11 +1,11 @@
-Carnotauro (v1.1.4): esqueleto articulado PROPIO, generado por codigo.
+Carnotauro (v1.1.6): esqueleto articulado PROPIO, generado por codigo.
 
   python3 tools/carnotaurus/export.py .      (desde la raiz del repo; necesita numpy y pillow)
 
 Genera de una vez:
   - src/main/java/com/prodigytown/creatures/client/CarnotaurusLayers.java  (malla adulto + cria; NO editar a mano)
-  - textures/entity/carnotaurus_{scarlet,magma,steel}.png, carnotaurus_{magma,steel}_glow.png, carnotaurus_saddle.png
-    (un solo atlas 512x640 compartido por adulto y cria)
+  - textures/entity/carnotaurus_{scarlet,magma,steel,brutus}.png, carnotaurus_{magma,steel,brutus}_glow.png, carnotaurus_saddle.png
+    (un solo atlas 512x1216 compartido por las tres mallas: adulto, cria y Brutus)
 
 Archivos:
   rig.py    esqueleto (huesos, cubos, escalas adulto/cria) y empaquetado de UV
@@ -16,3 +16,5 @@ Huesos: root > body > (tail1..tail5 | chest > (neck1 > neck2 > head > (jaw, horn
 Las animaciones (CarnotaurusModel.java) SUMAN a la pose de reposo; si cambias rotaciones de reposo en rig.py, repasa las posturas de sentado/dormido.
 Los .bbmodel de custom_assets/carnotaurus/ son los que aporto el usuario (v1.1.3) y ya no se usan para la malla.
 La anatomia (cuello en S, pata de 4 tramos, cola gruesa y larga) se inspira en la forma de los dinos de alta calidad, pero toda la geometria y las texturas son originales.
+
+Brutus (variante legendaria, id 3): malla propia 'brutus' en rig.py (escalas por eje en STAGES, posturas en ROT_OVERRIDE, espinas/dientes extra marcados con B). Su textura usa la malla Brutus (adulto) y la cria normal.
