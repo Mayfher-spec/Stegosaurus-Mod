@@ -1,3 +1,18 @@
-Fuente del carnotauro: los .bbmodel de custom_assets/carnotaurus (Blockbench).
-bb2java.py convierte la geometria a CarnotaurusLayers.java y recompone la textura (UV por cara -> UV de caja); finalize.py instala texturas, brillo y silla.
-Las rutas dentro de los scripts apuntan al entorno donde se generaron: ajustalas antes de volver a ejecutarlos.
+Carnotauro (v1.1.4): esqueleto articulado PROPIO, generado por codigo.
+
+  python3 tools/carnotaurus/export.py .      (desde la raiz del repo; necesita numpy y pillow)
+
+Genera de una vez:
+  - src/main/java/com/prodigytown/creatures/client/CarnotaurusLayers.java  (malla adulto + cria; NO editar a mano)
+  - textures/entity/carnotaurus_{scarlet,magma,emerald}.png, carnotaurus_{magma,emerald}_glow.png, carnotaurus_saddle.png
+    (un solo atlas 512x640 compartido por adulto y cria)
+
+Archivos:
+  rig.py    esqueleto (huesos, cubos, escalas adulto/cria) y empaquetado de UV
+  paint.py  pintor de texturas: patrones en 3D sobre la pose de reposo (sin costuras), 3 variantes, brillo y silla
+  export.py escribe todo en el repo
+
+Huesos: root > body > (tail1..tail5 | chest > (neck1 > neck2 > head > (jaw, horn_l/r 3 tramos), arm_l/r > arm2_l/r) | thigh_l/r > shin > meta > foot > toe0..2).
+Las animaciones (CarnotaurusModel.java) SUMAN a la pose de reposo; si cambias rotaciones de reposo en rig.py, repasa las posturas de sentado/dormido.
+Los .bbmodel de custom_assets/carnotaurus/ son los que aporto el usuario (v1.1.3) y ya no se usan para la malla.
+La anatomia (cuello en S, pata de 4 tramos, cola gruesa y larga) se inspira en la forma de los dinos de alta calidad, pero toda la geometria y las texturas son originales.

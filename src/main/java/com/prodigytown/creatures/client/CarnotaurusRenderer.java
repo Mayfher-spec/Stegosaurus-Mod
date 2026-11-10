@@ -13,10 +13,13 @@ public final class CarnotaurusRenderer extends MobRenderer<CarnotaurusEntity, Ca
     private static final ResourceLocation[] SKINS = {tex("scarlet"), tex("magma"), tex("emerald")};
     private static ResourceLocation tex(String n) { return new ResourceLocation(ProdigyCreatures.MODID, "textures/entity/carnotaurus_" + n + ".png"); }
 
+    /** El esqueleto esta dibujado a ~300 unidades de largo (1 texel por unidad): se reduce para que el adulto mida ~6 bloques de largo y ~2.9 de alto. */
+    private static final float MODEL_SCALE = 0.34F;
+
     private final CarnotaurusModel<CarnotaurusEntity> adultModel, chibiModel;
 
     public CarnotaurusRenderer(EntityRendererProvider.Context context) {
-        super(context, new CarnotaurusModel<>(context.bakeLayer(CarnotaurusModel.LAYER_ADULT), true), 1.3F);
+        super(context, new CarnotaurusModel<>(context.bakeLayer(CarnotaurusModel.LAYER_ADULT), true), 1.5F);
         this.adultModel = this.model;
         this.chibiModel = new CarnotaurusModel<>(context.bakeLayer(CarnotaurusModel.LAYER_CHIBI), false);
         this.addLayer(new CarnotaurusSaddleLayer(this));
@@ -34,8 +37,7 @@ public final class CarnotaurusRenderer extends MobRenderer<CarnotaurusEntity, Ca
     }
 
     @Override protected void scale(CarnotaurusEntity e, PoseStack stack, float partialTick) {
-        float s = e.isAdultStage() ? 0.85F : 1.0F;
-        stack.scale(s, s, s);
-        this.shadowRadius = e.isAdultStage() ? 1.3F : 0.6F;
+        stack.scale(MODEL_SCALE, MODEL_SCALE, MODEL_SCALE);
+        this.shadowRadius = e.isAdultStage() ? 1.5F : 0.75F;
     }
 }
