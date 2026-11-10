@@ -58,7 +58,7 @@ public class ProdigyCreatures {
 
     public static final RegistryObject<EntityType<CarnotaurusEntity>> CARNOTAURUS = ENTITIES.register("carnotaurus", () ->
         EntityType.Builder.of(CarnotaurusEntity::new, MobCategory.CREATURE)
-            .sized(2.3f, 3.0f).clientTrackingRange(10).build(MODID + ":carnotaurus"));
+            .sized(2.0f, 2.7f).clientTrackingRange(10).build(MODID + ":carnotaurus"));
     public static final RegistryObject<Item> CARNOTAURUS_EGG = ITEMS.register("carnotaurus_spawn_egg", () ->
         new ForgeSpawnEggItem(() -> CARNOTAURUS.get(), 0x8E2F25, 0xE0C9A0, new Item.Properties()));
     /** Carne curada: reanima al carnotauro caido y lo cura mucho. */

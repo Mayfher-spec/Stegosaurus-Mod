@@ -65,8 +65,8 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
     public static final int CHARGE_LEN = 24, BUTT_LEN = 14, ROAR_LEN = 40;
     /** Carnes crudas que necesita la cria para convertirse en adulto. */
     public static final int FEEDS_TO_GROW = 6;
-    private static final EntityDimensions ADULT_DIM = EntityDimensions.fixed(2.3F, 3.0F);
-    private static final EntityDimensions CHIBI_DIM = EntityDimensions.fixed(0.95F, 1.15F);
+    private static final EntityDimensions ADULT_DIM = EntityDimensions.fixed(2.0F, 2.7F);
+    private static final EntityDimensions CHIBI_DIM = EntityDimensions.fixed(1.0F, 1.5F);
 
     private static final EntityDataAccessor<Integer> VARIANT = SynchedEntityData.defineId(CarnotaurusEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> ADULT = SynchedEntityData.defineId(CarnotaurusEntity.class, EntityDataSerializers.BOOLEAN);
@@ -520,7 +520,7 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
         Entity first = this.getFirstPassenger();
         return first instanceof Player p && this.isOwnedBy(p) ? p : null;
     }
-    @Override public double getPassengersRidingOffset() { return 2.75; }
+    @Override public double getPassengersRidingOffset() { return 2.3; }
     @Override public void positionRider(Entity passenger, Entity.MoveFunction callback) {
         if (!this.hasPassenger(passenger)) return;
         Vec3 off = new Vec3(0.0, 0.0, -0.05).yRot(-this.yBodyRot * ((float) Math.PI / 180.0F));

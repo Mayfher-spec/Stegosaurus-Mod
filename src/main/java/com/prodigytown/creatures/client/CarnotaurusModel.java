@@ -7,94 +7,65 @@ import com.prodigytown.creatures.ProdigyCreatures;
 import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.ModelPart;
-import net.minecraft.client.model.geom.PartPose;
-import net.minecraft.client.model.geom.builders.CubeDeformation;
-import net.minecraft.client.model.geom.builders.CubeListBuilder;
 import net.minecraft.client.model.geom.builders.LayerDefinition;
-import net.minecraft.client.model.geom.builders.MeshDefinition;
-import net.minecraft.client.model.geom.builders.PartDefinition;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 
-/** Carnotauro: modelo de ModelPart (mismo tipo de render que el adulto del estegosaurio). Cuerpo, cola de 4 tramos, cuello, cabeza con cuernos, mandibula, brazos diminutos y patas de 3 huesos. */
+/**
+ * Carnotauro (modelo de Blockbench convertido a ModelPart; ver CarnotaurusLayers). Dos mallas con los mismos huesos:
+ * adulto y cria (chibi). Huesos: root > body > (chest > neck > head > jaw / horns, arm_left, arm_right), tail_1 > tail_2 > tail_3, leg_left, leg_right.
+ */
 public final class CarnotaurusModel<T extends CarnotaurusEntity> extends EntityModel<T> {
-    public static final ModelLayerLocation LAYER_LOCATION = new ModelLayerLocation(new ResourceLocation(ProdigyCreatures.MODID, "carnotaurus"), "main");
-    private static final float BODY_Y = -11.2F;
-    private static final float R_TAIL1 = -0.04F, R_TAIL2 = 0.03F, R_TAIL3 = 0.04F, R_TAIL4 = 0.05F;
-    private static final float R_NECK = -0.45F, R_HEAD = 0.55F, R_ARM = -0.6F, R_THIGH = -0.3F, R_SHIN = 0.75F, R_FOOT = -0.45F;
-    private final ModelPart root, body, tail1, tail2, tail3, tail4, neck, head, jaw, armL, armR, thighL, shinL, footL, thighR, shinR, footR;
+    public static final ModelLayerLocation LAYER_ADULT = new ModelLayerLocation(new ResourceLocation(ProdigyCreatures.MODID, "carnotaurus"), "adult");
+    public static final ModelLayerLocation LAYER_CHIBI = new ModelLayerLocation(new ResourceLocation(ProdigyCreatures.MODID, "carnotaurus"), "chibi");
+    public static LayerDefinition createAdultLayer() { return CarnotaurusLayers.adult(); }
+    public static LayerDefinition createChibiLayer() { return CarnotaurusLayers.chibi(); }
 
-    public CarnotaurusModel(ModelPart root) {
-        this.root = root;
+    private final boolean adult;
+    private final ModelPart root, body, chest, neck, head, jaw, armL, armR, tail1, tail2, tail3, legL, legR;
+    private final float restBodyY;
+
+    public CarnotaurusModel(ModelPart bakedRoot, boolean adult) {
+        this.adult = adult;
+        this.root = bakedRoot.getChild("root");
         this.body = root.getChild("body");
-        this.tail1 = body.getChild("tail1");
-        this.tail2 = tail1.getChild("tail2");
-        this.tail3 = tail2.getChild("tail3");
-        this.tail4 = tail3.getChild("tail4");
-        this.neck = body.getChild("neck");
+        this.chest = body.getChild("chest");
+        this.neck = chest.getChild("neck");
         this.head = neck.getChild("head");
         this.jaw = head.getChild("jaw");
-        this.armL = body.getChild("arm_l");
-        this.armR = body.getChild("arm_r");
-        this.thighL = body.getChild("thigh_l");
-        this.shinL = thighL.getChild("shin_l");
-        this.footL = shinL.getChild("foot_l");
-        this.thighR = body.getChild("thigh_r");
-        this.shinR = thighR.getChild("shin_r");
-        this.footR = shinR.getChild("foot_r");
-    }
-
-    public static LayerDefinition createBodyLayer() {
-        MeshDefinition mesh = new MeshDefinition();
-        PartDefinition root = mesh.getRoot();
-        PartDefinition part_body = root.addOrReplaceChild("body", CubeListBuilder.create().texOffs(0, 0).addBox(-9F, -12F, -14F, 18F, 22F, 34F).texOffs(0, 126).addBox(-1.5F, -14.5F, -12F, 3F, 3F, 3F).texOffs(12, 126).addBox(-1.5F, -14.5F, 10F, 3F, 3F, 3F).texOffs(24, 126).addBox(-1.5F, -14.5F, 13.5F, 3F, 3F, 3F).texOffs(36, 126).addBox(-1.5F, -14.5F, 17F, 3F, 3F, 3F), PartPose.offset(0F, -11.2F, 0F));
-        PartDefinition part_tail1 = part_body.addOrReplaceChild("tail1", CubeListBuilder.create().texOffs(104, 0).addBox(-6.5F, -6F, 0F, 13F, 12F, 20F).texOffs(64, 126).addBox(-1.5F, -8.5F, 4F, 3F, 2.5F, 3F).texOffs(76, 126).addBox(-1.5F, -8.5F, 13F, 3F, 2.5F, 3F), PartPose.offsetAndRotation(0F, -3F, 19F, -0.04F, 0F, 0F));
-        PartDefinition part_tail2 = part_tail1.addOrReplaceChild("tail2", CubeListBuilder.create().texOffs(170, 0).addBox(-5F, -5F, 0F, 10F, 10F, 20F).texOffs(112, 126).addBox(-1.25F, -7.5F, 5F, 2.5F, 2.5F, 2.5F).texOffs(122, 126).addBox(-1.25F, -7.5F, 14F, 2.5F, 2.5F, 2.5F), PartPose.offsetAndRotation(0F, 0F, 20F, 0.03F, 0F, 0F));
-        PartDefinition part_tail3 = part_tail2.addOrReplaceChild("tail3", CubeListBuilder.create().texOffs(190, 56).addBox(-3.5F, -3.5F, 0F, 7F, 7F, 18F).texOffs(156, 126).addBox(-1F, -5.5F, 5F, 2F, 2F, 2F).texOffs(164, 126).addBox(-1F, -5.5F, 13F, 2F, 2F, 2F), PartPose.offsetAndRotation(0F, 0F, 20F, 0.04F, 0F, 0F));
-        PartDefinition part_tail4 = part_tail3.addOrReplaceChild("tail4", CubeListBuilder.create().texOffs(110, 85).addBox(-2F, -2.5F, 0F, 4F, 5F, 14F).texOffs(172, 126).addBox(-0.75F, -4.5F, 3F, 1.5F, 2F, 2F), PartPose.offsetAndRotation(0F, 0F, 18F, 0.05F, 0F, 0F));
-        PartDefinition part_neck = part_body.addOrReplaceChild("neck", CubeListBuilder.create().texOffs(0, 56).addBox(-5.5F, -7F, -15F, 11F, 13F, 16F).texOffs(88, 126).addBox(-1.5F, -9.5F, -12F, 3F, 2.5F, 3F).texOffs(100, 126).addBox(-1.5F, -9.5F, -5F, 3F, 2.5F, 3F), PartPose.offsetAndRotation(0F, -5F, -13F, -0.45F, 0F, 0F));
-        PartDefinition part_head = part_neck.addOrReplaceChild("head", CubeListBuilder.create().texOffs(138, 56).addBox(-6.5F, -6.5F, -13F, 13F, 13F, 13F).texOffs(146, 85).addBox(-5F, -3F, -23F, 10F, 8F, 10F).texOffs(66, 108).addBox(-6.7F, -8.3F, -12F, 13.4F, 2F, 9F), PartPose.offsetAndRotation(0F, -1F, -14F, 0.55F, 0F, 0F));
-        PartDefinition part_jaw = part_head.addOrReplaceChild("jaw", CubeListBuilder.create().texOffs(0, 85).addBox(-4.5F, 0.5F, -21F, 9F, 3F, 20F), PartPose.offset(0F, 3.5F, -1F));
-        PartDefinition part_horn_l = part_head.addOrReplaceChild("horn_l", CubeListBuilder.create().texOffs(111, 108).addBox(-2.5F, -6F, -2.5F, 5F, 6F, 5F), PartPose.offsetAndRotation(5.2F, -7.2F, -8F, 0F, 0F, -0.5F));
-        PartDefinition part_horn_l2 = part_horn_l.addOrReplaceChild("horn_l2", CubeListBuilder.create().texOffs(151, 108).addBox(-1.75F, -5F, -1.75F, 3.5F, 5F, 3.5F), PartPose.offsetAndRotation(0F, -6F, 0F, 0F, 0F, -0.3F));
-        PartDefinition part_horn_l3 = part_horn_l2.addOrReplaceChild("horn_l3", CubeListBuilder.create().texOffs(48, 126).addBox(-1F, -4F, -1F, 2F, 4F, 2F), PartPose.offsetAndRotation(0F, -5F, 0F, 0F, 0F, -0.3F));
-        PartDefinition part_horn_r = part_head.addOrReplaceChild("horn_r", CubeListBuilder.create().texOffs(131, 108).addBox(-2.5F, -6F, -2.5F, 5F, 6F, 5F), PartPose.offsetAndRotation(-5.2F, -7.2F, -8F, 0F, 0F, 0.5F));
-        PartDefinition part_horn_r2 = part_horn_r.addOrReplaceChild("horn_r2", CubeListBuilder.create().texOffs(165, 108).addBox(-1.75F, -5F, -1.75F, 3.5F, 5F, 3.5F), PartPose.offsetAndRotation(0F, -6F, 0F, 0F, 0F, 0.3F));
-        PartDefinition part_horn_r3 = part_horn_r2.addOrReplaceChild("horn_r3", CubeListBuilder.create().texOffs(56, 126).addBox(-1F, -4F, -1F, 2F, 4F, 2F), PartPose.offsetAndRotation(0F, -5F, 0F, 0F, 0F, 0.3F));
-        PartDefinition part_arm_l = part_body.addOrReplaceChild("arm_l", CubeListBuilder.create().texOffs(42, 108).addBox(-1.5F, 0F, -1.5F, 3F, 10F, 3F).texOffs(132, 126).addBox(-1.5F, 10F, -2.5F, 1F, 2.5F, 2F).texOffs(138, 126).addBox(0.5F, 10F, -2.5F, 1F, 2.5F, 2F), PartPose.offsetAndRotation(9F, 4F, -10F, -0.6F, 0F, 0F));
-        PartDefinition part_arm_r = part_body.addOrReplaceChild("arm_r", CubeListBuilder.create().texOffs(54, 108).addBox(-1.5F, 0F, -1.5F, 3F, 10F, 3F).texOffs(144, 126).addBox(-1.5F, 10F, -2.5F, 1F, 2.5F, 2F).texOffs(150, 126).addBox(0.5F, 10F, -2.5F, 1F, 2.5F, 2F), PartPose.offsetAndRotation(-9F, 4F, -10F, -0.6F, 0F, 0F));
-        PartDefinition part_thigh_l = part_body.addOrReplaceChild("thigh_l", CubeListBuilder.create().texOffs(54, 56).addBox(-4.5F, -2F, -6F, 9F, 17F, 12F), PartPose.offsetAndRotation(8F, 6F, 6F, -0.3F, 0F, 0F));
-        PartDefinition part_shin_l = part_thigh_l.addOrReplaceChild("shin_l", CubeListBuilder.create().texOffs(58, 85).addBox(-3F, 0F, -3F, 6F, 15F, 7F), PartPose.offsetAndRotation(0F, 13F, 2F, 0.75F, 0F, 0F));
-        PartDefinition part_foot_l = part_shin_l.addOrReplaceChild("foot_l", CubeListBuilder.create().texOffs(186, 85).addBox(-3.5F, 0F, -10F, 7F, 4F, 14F).texOffs(205, 108).addBox(-3.4F, 0.8F, -13.5F, 2F, 3F, 3.5F).texOffs(179, 108).addBox(-1F, 0.8F, -14.5F, 2F, 3F, 4.5F).texOffs(216, 108).addBox(1.4F, 0.8F, -13.5F, 2F, 3F, 3.5F), PartPose.offsetAndRotation(0F, 14F, 1F, -0.45F, 0F, 0F));
-        PartDefinition part_thigh_r = part_body.addOrReplaceChild("thigh_r", CubeListBuilder.create().texOffs(96, 56).addBox(-4.5F, -2F, -6F, 9F, 17F, 12F), PartPose.offsetAndRotation(-8F, 6F, 6F, -0.3F, 0F, 0F));
-        PartDefinition part_shin_r = part_thigh_r.addOrReplaceChild("shin_r", CubeListBuilder.create().texOffs(84, 85).addBox(-3F, 0F, -3F, 6F, 15F, 7F), PartPose.offsetAndRotation(0F, 13F, 2F, 0.75F, 0F, 0F));
-        PartDefinition part_foot_r = part_shin_r.addOrReplaceChild("foot_r", CubeListBuilder.create().texOffs(0, 108).addBox(-3.5F, 0F, -10F, 7F, 4F, 14F).texOffs(227, 108).addBox(-3.4F, 0.8F, -13.5F, 2F, 3F, 3.5F).texOffs(192, 108).addBox(-1F, 0.8F, -14.5F, 2F, 3F, 4.5F).texOffs(238, 108).addBox(1.4F, 0.8F, -13.5F, 2F, 3F, 3.5F), PartPose.offsetAndRotation(0F, 14F, 1F, -0.45F, 0F, 0F));
-        return LayerDefinition.create(mesh, 256, 256);
+        this.armL = chest.getChild("arm_left");
+        this.armR = chest.getChild("arm_right");
+        this.tail1 = body.getChild("tail_1");
+        this.tail2 = tail1.getChild("tail_2");
+        this.tail3 = tail2.getChild("tail_3");
+        this.legL = body.getChild("leg_left");
+        this.legR = body.getChild("leg_right");
+        this.restBodyY = body.y;
     }
 
     @Override public void setupAnim(T e, float limbSwing, float limbSwingAmount, float age, float yaw, float pitch) {
         float amp = Math.min(1.0F, limbSwingAmount * 1.5F);
-        float sw = limbSwing * 0.55F;
+        float sw = limbSwing * (adult ? 0.55F : 0.85F);
+        float stride = adult ? 0.55F : 0.8F;
         float sit = e.sitAnim, sleep = e.sleepAnim, both = Math.max(sit, sleep);
         float run = e.isCharging() ? 1.0F : 0.0F;
         // reposo
-        body.y = BODY_Y; body.xRot = 0.0F; body.zRot = 0.0F; body.yRot = 0.0F;
-        neck.xRot = R_NECK; neck.yRot = 0.0F;
-        head.xRot = R_HEAD; head.yRot = 0.0F; head.zRot = 0.0F;
+        body.y = restBodyY; body.xRot = 0.0F; body.zRot = 0.0F; body.yRot = 0.0F;
+        chest.yScale = 1.0F;
+        neck.xRot = 0.0F; neck.yRot = 0.0F;
+        head.xRot = 0.0F; head.yRot = 0.0F; head.zRot = 0.0F;
         jaw.xRot = 0.0F;
-        // marcha: muslos y espinillas alternados, pie compensa
-        float tl = Mth.cos(sw) * 0.85F * amp, tr = Mth.cos(sw + Mth.PI) * 0.85F * amp;
-        float sl = Math.max(0.0F, Mth.sin(sw)) * 0.95F * amp, sr = Math.max(0.0F, Mth.sin(sw + Mth.PI)) * 0.95F * amp;
-        thighL.xRot = R_THIGH + tl; thighR.xRot = R_THIGH + tr;
-        shinL.xRot = R_SHIN + sl; shinR.xRot = R_SHIN + sr;
-        footL.xRot = R_FOOT - tl * 0.55F - sl * 0.45F; footR.xRot = R_FOOT - tr * 0.55F - sr * 0.45F;
-        body.y += -Math.abs(Mth.cos(sw)) * 1.3F * amp;
-        body.xRot += 0.10F * run + 0.04F * amp;
-        armL.xRot = R_ARM + Mth.sin(age * 0.07F) * 0.05F + tl * 0.25F; armR.xRot = R_ARM - Mth.sin(age * 0.07F) * 0.05F + tr * 0.25F;
-        // cola: balanceo lento + contrapeso al andar
-        float idle = Mth.sin(age * 0.06F), step = Mth.sin(sw) * 0.18F * amp;
-        tail1.xRot = R_TAIL1; tail2.xRot = R_TAIL2; tail3.xRot = R_TAIL3; tail4.xRot = R_TAIL4;
-        tail1.yRot = idle * 0.05F + step; tail2.yRot = idle * 0.08F + step * 1.2F; tail3.yRot = idle * 0.10F + step * 1.4F; tail4.yRot = idle * 0.12F + step * 1.6F;
+        legL.yScale = 1.0F; legR.yScale = 1.0F;
+        // marcha: patas alternadas, brazos y cola de contrapeso
+        float tl = Mth.cos(sw) * stride * amp, tr = Mth.cos(sw + Mth.PI) * stride * amp;
+        legL.xRot = tl; legR.xRot = tr;
+        body.y -= Math.abs(Mth.cos(sw)) * (adult ? 1.1F : 0.7F) * amp;
+        body.xRot += 0.10F * run + 0.03F * amp;
+        float breathe = Mth.sin(age * 0.07F);
+        armL.xRot = breathe * 0.05F + tl * 0.25F; armR.xRot = -breathe * 0.05F + tr * 0.25F;
+        float idle = Mth.sin(age * 0.06F), step = Mth.sin(sw) * 0.16F * amp;
+        tail1.xRot = 0.0F; tail2.xRot = 0.0F; tail3.xRot = 0.0F;
+        tail1.yRot = idle * 0.05F + step; tail2.yRot = idle * 0.08F + step * 1.2F; tail3.yRot = idle * 0.10F + step * 1.4F;
         // mirada (no al dormir)
         float look = 1.0F - sleep;
         neck.yRot = yaw * Mth.DEG_TO_RAD * 0.35F * look;
@@ -115,28 +86,24 @@ public final class CarnotaurusModel<T extends CarnotaurusEntity> extends EntityM
             float s = Mth.sin(p * Mth.PI);
             switch (kind) {
                 case 1 -> { neck.xRot += 0.30F; head.xRot += 0.10F; body.xRot += 0.18F; jaw.xRot += 0.15F; } // embestida
-                case 2 -> { neck.xRot += s * 1.05F; head.xRot += s * 0.40F; body.xRot += s * 0.28F; jaw.xRot += s * 0.2F; thighL.xRot += s * 0.3F; thighR.xRot += s * 0.3F; } // cabezazo
+                case 2 -> { neck.xRot += s * 1.05F; head.xRot += s * 0.40F; body.xRot += s * 0.28F; jaw.xRot += s * 0.2F; legL.xRot += s * 0.3F; legR.xRot += s * 0.3F; } // cabezazo
                 case 3 -> { neck.xRot -= s * 0.55F; head.xRot -= s * 0.55F; jaw.xRot += s * 1.0F; body.xRot -= s * 0.12F; body.zRot += Mth.sin(age * 2.2F) * 0.025F * s; } // rugido
                 default -> {}
             }
         }
-        // sentado y dormido
+        // sentado y dormido: el cuerpo baja hasta apoyarse, las patas se pliegan hacia delante
         if (both > 0.0F) {
-            float b = sit, z = sleep;
-            body.y += 10.5F * b + 13.5F * z;
-            body.xRot += -0.12F * b;
-            thighL.xRot = Mth.lerp(both, thighL.xRot, Mth.lerp(z, -1.35F, -1.5F)); thighR.xRot = Mth.lerp(both, thighR.xRot, Mth.lerp(z, -1.35F, -1.5F));
-            shinL.xRot = Mth.lerp(both, shinL.xRot, Mth.lerp(z, 1.9F, 2.2F)); shinR.xRot = Mth.lerp(both, shinR.xRot, Mth.lerp(z, 1.9F, 2.2F));
-            footL.xRot = Mth.lerp(both, footL.xRot, -0.55F); footR.xRot = Mth.lerp(both, footR.xRot, -0.55F);
-            tail1.xRot += -0.22F * b; tail1.yRot += 0.45F * z;
-            neck.xRot += 0.75F * z; head.xRot += 0.45F * z; jaw.xRot = Mth.lerp(z, jaw.xRot, 0.0F);
-            body.yScale = 1.0F + Mth.sin(age * 0.07F) * 0.015F * z;
-        } else {
-            body.yScale = 1.0F;
+            float drop = adult ? Mth.lerp(sleep, 14.0F, 15.5F) : Mth.lerp(sleep, 4.6F, 5.6F);
+            body.y += drop * both;
+            float fold = Mth.lerp(sleep, -1.2F, -0.9F);
+            legL.xRot = Mth.lerp(both, legL.xRot, fold); legR.xRot = Mth.lerp(both, legR.xRot, fold);
+            float ys = Mth.lerp(sleep, 0.75F, 0.5F);
+            legL.yScale = Mth.lerp(both, 1.0F, ys); legR.yScale = legL.yScale;
+            body.xRot += -0.10F * sit;
+            tail1.xRot += -0.22F * both; tail2.xRot += -0.12F * both; tail1.yRot += 0.45F * sleep;
+            neck.xRot += 0.75F * sleep; head.xRot += 0.45F * sleep; jaw.xRot = Mth.lerp(sleep, jaw.xRot, 0.0F);
+            chest.yScale = 1.0F + Mth.sin(age * 0.07F) * 0.015F * sleep;
         }
-        // cria: cabeza grande
-        float hs = e.isAdultStage() ? 1.0F : 1.45F;
-        head.xScale = hs; head.yScale = hs; head.zScale = hs;
     }
 
     @Override public void renderToBuffer(PoseStack pose, VertexConsumer buffer, int light, int overlay, float r, float g, float b, float a) {

@@ -1,0 +1,3 @@
+Fuente del carnotauro: los .bbmodel de custom_assets/carnotaurus (Blockbench).
+bb2java.py convierte la geometria a CarnotaurusLayers.java y recompone la textura (UV por cara -> UV de caja); finalize.py instala texturas, brillo y silla.
+Las rutas dentro de los scripts apuntan al entorno donde se generaron: ajustalas antes de volver a ejecutarlos.

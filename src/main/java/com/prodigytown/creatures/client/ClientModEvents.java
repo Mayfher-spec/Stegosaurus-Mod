@@ -35,7 +35,8 @@ public final class ClientModEvents {
         };
     }
     @SubscribeEvent public static void registerLayers(EntityRenderersEvent.RegisterLayerDefinitions event) {
-        event.registerLayerDefinition(CarnotaurusModel.LAYER_LOCATION, CarnotaurusModel::createBodyLayer);
+        event.registerLayerDefinition(CarnotaurusModel.LAYER_ADULT, CarnotaurusModel::createAdultLayer);
+        event.registerLayerDefinition(CarnotaurusModel.LAYER_CHIBI, CarnotaurusModel::createChibiLayer);
         event.registerLayerDefinition(StegosaurusModel.LAYER_LOCATION, StegosaurusModel::createBodyLayer);
         event.registerLayerDefinition(StegosaurusSaddleModel.LAYER_LOCATION, StegosaurusSaddleModel::createBodyLayer);
         event.registerLayerDefinition(StegosaurusArmorModel.LAYER_LOCATION, StegosaurusArmorModel::createBodyLayer);
