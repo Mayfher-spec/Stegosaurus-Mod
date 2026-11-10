@@ -9,12 +9,13 @@ import net.minecraft.resources.ResourceLocation;
 
 /** Renderer del carnotauro: textura segun variante, escala segun etapa (cria / adulto). */
 public final class CarnotaurusRenderer extends MobRenderer<CarnotaurusEntity, CarnotaurusModel<CarnotaurusEntity>> {
-    private static final ResourceLocation[] SKINS = {tex("scarlet"), tex("shadow"), tex("jungle")};
+    private static final ResourceLocation[] SKINS = {tex("scarlet"), tex("magma"), tex("emerald")};
     private static ResourceLocation tex(String n) { return new ResourceLocation(ProdigyCreatures.MODID, "textures/entity/carnotaurus_" + n + ".png"); }
 
     public CarnotaurusRenderer(EntityRendererProvider.Context context) {
         super(context, new CarnotaurusModel<>(context.bakeLayer(CarnotaurusModel.LAYER_LOCATION)), 1.6F);
         this.addLayer(new CarnotaurusSaddleLayer(this));
+        this.addLayer(new CarnotaurusGlowLayer(this));
     }
 
     @Override public ResourceLocation getTextureLocation(CarnotaurusEntity e) {

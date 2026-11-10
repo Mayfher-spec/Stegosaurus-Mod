@@ -60,8 +60,8 @@ import java.util.Set;
  * Comparte con el estegosaurio las ordenes y el estado "caido" (ver PetOrders y PetEvents).
  */
 public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder {
-    public static final int SCARLET = 0, SHADOW = 1, JUNGLE = 2, VARIANTS = 3;
-    public static final String[] VARIANT_NAMES = {"Escarlata", "Sombra", "Selva"};
+    public static final int SCARLET = 0, MAGMA = 1, EMERALD = 2, VARIANTS = 3;
+    public static final String[] VARIANT_NAMES = {"Rojo", "Magma", "Esmeralda"};
     public static final int CHARGE_LEN = 24, BUTT_LEN = 14, ROAR_LEN = 40;
     /** Carnes crudas que necesita la cria para convertirse en adulto. */
     public static final int FEEDS_TO_GROW = 6;
@@ -191,11 +191,12 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
     public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, net.minecraft.world.DifficultyInstance difficulty, MobSpawnType reason,
             @Nullable SpawnGroupData previous, @Nullable CompoundTag tag) {
         SpawnGroupData result = super.finalizeSpawn(level, difficulty, reason, previous, tag);
-        int v = this.random.nextInt(100);
+        int roll = this.random.nextInt(100);
         var biome = level.getBiome(this.blockPosition());
-        if (biome.is(net.minecraft.tags.BiomeTags.IS_SAVANNA) || biome.is(net.minecraft.tags.BiomeTags.IS_BADLANDS)) v = this.random.nextInt(100) < 70 ? SCARLET : v % VARIANTS;
-        else if (biome.is(net.minecraft.tags.BiomeTags.IS_FOREST) || biome.is(net.minecraft.tags.BiomeTags.IS_JUNGLE)) v = this.random.nextInt(100) < 70 ? JUNGLE : v % VARIANTS;
-        else v = v % VARIANTS;
+        int magmaChance = 15, emeraldChance = 15;
+        if (biome.is(net.minecraft.tags.BiomeTags.IS_SAVANNA) || biome.is(net.minecraft.tags.BiomeTags.IS_BADLANDS)) magmaChance = 35;
+        if (biome.is(net.minecraft.tags.BiomeTags.IS_FOREST) || biome.is(net.minecraft.tags.BiomeTags.IS_JUNGLE)) emeraldChance = 35;
+        int v = roll < magmaChance ? MAGMA : roll < magmaChance + emeraldChance ? EMERALD : SCARLET;
         setVariant(v);
         if (reason == MobSpawnType.NATURAL || reason == MobSpawnType.CHUNK_GENERATION || reason == MobSpawnType.STRUCTURE) {
             this.entityData.set(ADULT, this.random.nextInt(100) < 35); // la mayoria de los silvestres son crias que se pueden domesticar
