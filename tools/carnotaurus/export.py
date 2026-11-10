@@ -1,4 +1,4 @@
-"""Exporta el carnotauro: CarnotaurusLayers.java + texturas (4 variantes, brillo, silla). Uso: python3 export.py <repo>"""
+"""Exporta el carnotauro: CarnotaurusLayers.java + texturas (4 colores x 3 mallas, brillo, silla). Uso: python3 export.py <repo>"""
 import sys, os, numpy as np
 HERE=os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0,HERE)
 import rig, paint
@@ -34,9 +34,9 @@ final class CarnotaurusLayers {
 %s}
 '''%(H,('%.3f'%hy['adult']),('%.3f'%hy['chibi']),('%.3f'%hy['brutus']),layer('adult'),layer('chibi'),layer('brutus'))
 open(os.path.join(repo,'src/main/java/com/prodigytown/creatures/client/CarnotaurusLayers.java'),'w').write(src)
-for var in ('scarlet','magma','steel','brutus'):
+for var in ('scarlet','magma','steel','arena'):
     a,g=paint.make_atlas(var)
     Image.fromarray(paint.dilate(a)).save(os.path.join(tex,'carnotaurus_%s.png'%var),optimize=True)
-    if var!='scarlet': Image.fromarray(g).save(os.path.join(tex,'carnotaurus_%s_glow.png'%var),optimize=True)
+    Image.fromarray(g).save(os.path.join(tex,'carnotaurus_%s_glow.png'%var),optimize=True)
 Image.fromarray(paint.make_saddle()).save(os.path.join(tex,'carnotaurus_saddle.png'),optimize=True)
 print('H',H,'hy',hy)

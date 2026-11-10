@@ -65,15 +65,15 @@ def region_geom(c,face,r):
     return (x0,y0,x1,y1),np.stack([x.ravel(),y.ravel(),z.ravel()],-1),np.array(n,float),ii.ravel(),jj.ravel(),fu.ravel(),fv.ravel()
 # ---------------------------------------------------------------- paletas
 PAL={
- 'scarlet':dict(dark=(176,48,34),mid=(222,86,46),stripe=(122,32,32),belly=(232,200,150),belly2=(206,166,118),horn_a=(236,224,186),horn_b=(112,90,66),spike_a=(100,72,58),spike_b=(54,40,38),claw_a=(44,36,36),claw_b=(176,160,130),tooth=(242,238,222),gum=(168,66,76),tongue=(196,78,94),eye=(255,196,40),pupil=(30,14,10)),
- 'magma':dict(dark=(30,26,30),mid=(70,54,54),stripe=(14,12,16),belly=(92,66,56),belly2=(66,48,42),horn_a=(40,32,36),horn_b=(16,12,16),spike_a=(36,30,34),spike_b=(14,12,16),claw_a=(26,22,24),claw_b=(90,70,60),tooth=(236,226,205),gum=(150,50,30),tongue=(255,110,30),eye=(255,150,30),pupil=(40,8,0)),
- 'steel':dict(dark=(86,95,108),mid=(152,163,178),stripe=(46,52,63),belly=(200,208,218),belly2=(158,166,178),horn_a=(150,160,174),horn_b=(238,244,252),spike_a=(84,92,106),spike_b=(216,224,234),claw_a=(30,34,42),claw_b=(204,212,222),tooth=(238,242,246),gum=(96,74,82),tongue=(150,92,102),eye=(120,214,255),pupil=(8,18,30)),
- 'brutus':dict(dark=(122,106,70),mid=(188,171,122),stripe=(90,40,84),belly=(216,202,162),belly2=(184,168,124),horn_a=(230,216,174),horn_b=(98,74,52),spike_a=(226,210,164),spike_b=(112,86,58),claw_a=(38,30,26),claw_b=(228,216,182),tooth=(240,230,198),gum=(112,26,40),tongue=(188,80,94),eye=(255,178,30),pupil=(34,12,4)),
+ 'scarlet':dict(dark=(176,48,34),mid=(222,86,46),stripe=(122,32,32),belly=(232,200,150),belly2=(206,166,118),horn_a=(236,224,186),horn_b=(112,90,66),spike_a=(100,72,58),spike_b=(54,40,38),claw_a=(44,36,36),claw_b=(176,160,130),tooth=(242,238,222),gum=(168,66,76),tongue=(196,78,94),eye=(255,196,40),pupil=(30,14,10),scar_a=(150,62,52),scar_b=(246,200,164)),
+ 'magma':dict(dark=(30,26,30),mid=(70,54,54),stripe=(14,12,16),belly=(92,66,56),belly2=(66,48,42),horn_a=(40,32,36),horn_b=(16,12,16),spike_a=(36,30,34),spike_b=(14,12,16),claw_a=(26,22,24),claw_b=(90,70,60),tooth=(236,226,205),gum=(150,50,30),tongue=(255,110,30),eye=(255,150,30),pupil=(40,8,0),scar_a=(255,96,20),scar_b=(255,214,110)),
+ 'steel':dict(dark=(86,95,108),mid=(152,163,178),stripe=(46,52,63),belly=(200,208,218),belly2=(158,166,178),horn_a=(150,160,174),horn_b=(238,244,252),spike_a=(84,92,106),spike_b=(216,224,234),claw_a=(30,34,42),claw_b=(204,212,222),tooth=(238,242,246),gum=(96,74,82),tongue=(150,92,102),eye=(120,214,255),pupil=(8,18,30),scar_a=(168,178,192),scar_b=(240,246,252)),
+ 'arena':dict(dark=(122,106,70),mid=(188,171,122),stripe=(90,40,84),belly=(216,202,162),belly2=(184,168,124),horn_a=(230,216,174),horn_b=(98,74,52),spike_a=(226,210,164),spike_b=(112,86,58),claw_a=(38,30,26),claw_b=(228,216,182),tooth=(240,230,198),gum=(112,26,40),tongue=(188,80,94),eye=(255,178,30),pupil=(34,12,4),scar_a=(136,58,54),scar_b=(226,178,152)),
 }
+SCALE_K={'arena':1.0,'scarlet':0.85,'magma':0.7,'steel':0.4}
 GLOWC={'magma':((190,40,8),(255,130,24),(255,228,120))}
-def tooth_tex(role,face,ii,jj,fu,fv,pal,var):
+def tooth_tex(role,face,ii,jj,fu,fv,pal,big):
     col=np.tile(np.array(pal['tooth'],float),(len(ii),1)); gl=np.zeros_like(col)
-    big=(var=='brutus')
     gum=(fv<(0.22 if big else 0.34)) if role=='tooth' and face in('xmin','xmax','north','south') else np.zeros(len(ii),bool)
     gap=(((ii%4)==3) if big else ((ii%3)==2))&(fv>0.3)&np.isin(np.full(len(ii),face),('xmin','xmax'))
     col[gum]=pal['gum']; col[gap]=np.array(pal['gum'],float)*0.55
@@ -112,6 +112,7 @@ def base_skin(var,P,N,ly,ctx,face):
         a_,bc,cc=GLOWC['magma']
         e=(lambda dd:(dd[1]-dd[0])*11.0)(voronoi(q/11.0,31)[:2])
         crack=ss(1.2,0.38,e)*ss(0.30,0.52,fbm(q*0.07+3,19,2))*(0.35+0.65*dw)
+        if ctx['stage']=='brutus': crack=np.clip(crack*1.35,0,1)
         core=ss(0.7,1.0,crack)
         gc=lerp(lerp(a_,bc,ss(0.0,0.6,crack)),cc,core)
         wgt=crack*(1-0.55*b)
@@ -121,12 +122,14 @@ def base_skin(var,P,N,ly,ctx,face):
         d1p,d2p,rp=voronoi(P/7.5,17)
         seam=ss(0.16,0.02,d2p-d1p); sheen=ss(0.55,0.0,d1p)
         col=col*(0.90+0.18*rp)[:,None]*(1-0.42*seam)[:,None]*(0.96+0.12*sheen)[:,None]
-    if var=='brutus':
-        # escamas grandes y arrugas como en la referencia; lomo carmesi que baja a morado por los flancos
-        d1p,d2p,rp=voronoi(P/5.2,53)
+    lg=ctx['stage']=='brutus'
+    if lg or var=='arena':
+        # escamas grandes y arrugas (referencia fotografica): fuertes en Arena, mas suaves en el resto
+        d1p,d2p,rp=voronoi(q/4.0,53)
         seam=ss(0.14,0.0,d2p-d1p)
         wr=np.abs(np.sin(q[:,2]*0.85+3.0*fbm(q*0.08,5,2)+q[:,1]*0.25))
-        col=col*(0.92+0.16*rp)[:,None]*(1-0.30*seam)[:,None]*(0.94+0.06*wr)[:,None]
+        scl=(0.92+0.16*rp)*(1-0.30*seam)*(0.94+0.06*wr)
+        col=col*(1.0+(scl-1.0)*SCALE_K[var])[:,None]
         part=ctx['part']
         pf=1.0
         if opt.get('head') or opt.get('brow') or opt.get('nostril'): pf=0.5
@@ -134,21 +137,33 @@ def base_skin(var,P,N,ly,ctx,face):
         if grp=='arm': pf=0.25
         top=np.where(face=='up',1.0,ly)*pf
         nz=fbm(q*0.045+5,41,3)-0.5
-        pur=ss(0.26,0.52,top+0.35*nz); cri=ss(0.52,0.80,top+0.35*nz)
-        blot=ss(0.56,0.74,fbm(q*0.05+11,9,3))*pf*ss(0.15,0.5,top)
         sk=(0.80+0.34*rp)*(1-0.38*seam)*cell*(0.92+0.16*n1)
-        col=lerp(col,np.array((112,46,96))*sk[:,None],pur*0.88)
-        col=lerp(col,lerp((132,28,46),(190,50,68),np.clip(n1*1.4-0.2,0,1))*sk[:,None],cri*0.94)
-        col=lerp(col,np.array((78,32,74))*sk[:,None],blot*0.5)
-        # cicatrices de batalla (coordenadas locales de cada pieza)
-        sc_=np.zeros(n)
-        for (pn,p0,p1,wd,sgn) in SCARS:
-            if part!=pn: continue
-            if (loc_sign(face)!=sgn): continue
-            sc_=np.maximum(sc_,seg_mask(ctx['loc'],p0,p1,wd))
-        if sc_.any():
-            col=lerp(col,np.array((136,58,54)),np.clip(sc_*1.6,0,1)*0.9)
-            col=lerp(col,np.array((226,178,152)),np.clip(sc_*2.2-1.0,0,1))
+        if var=='arena':
+            # lomo carmesi que baja a morado por los flancos
+            pur=ss(0.26,0.52,top+0.35*nz); cri=ss(0.52,0.80,top+0.35*nz)
+            blot=ss(0.56,0.74,fbm(q*0.05+11,9,3))*pf*ss(0.15,0.5,top)
+            col=lerp(col,np.array((112,46,96))*sk[:,None],pur*0.88)
+            col=lerp(col,lerp((132,28,46),(190,50,68),np.clip(n1*1.4-0.2,0,1))*sk[:,None],cri*0.94)
+            col=lerp(col,np.array((78,32,74))*sk[:,None],blot*0.5)
+        elif var=='scarlet':
+            dd=ss(0.42,0.80,top+0.30*nz)
+            col=lerp(col,np.array((118,24,30))*sk[:,None],dd*0.62)
+        elif var=='steel':
+            dd=ss(0.40,0.80,top+0.30*nz)
+            col=col*(1.0-0.30*dd)[:,None]
+        # cicatrices de batalla (solo en la malla legendaria; coordenadas locales de cada pieza)
+        if lg:
+            sc_=np.zeros(n)
+            for (pn,p0,p1,wd,sgn) in SCARS:
+                if part!=pn: continue
+                if (loc_sign(face)!=sgn): continue
+                sc_=np.maximum(sc_,seg_mask(ctx['loc'],p0,p1,wd))
+            if sc_.any():
+                col=lerp(col,np.array(pal['scar_a']),np.clip(sc_*1.6,0,1)*0.9)
+                col=lerp(col,np.array(pal['scar_b']),np.clip(sc_*2.2-1.0,0,1))
+                if var=='magma':
+                    sg=np.clip(sc_*1.8,0,1)
+                    gl=np.maximum(gl,np.array(pal['scar_a'])*sg[:,None]*0.9)
     # vientre con escudos transversales
     sc=((P[:,2]/3.8)%1.0<0.16)
     bcol=lerp(pal['belly'],pal['belly2'],np.where(sc,0.8,fbm(q*0.1+2,13,2)*0.5))*(0.97+0.06*rid)[:,None]
@@ -163,11 +178,13 @@ def horn_tex(var,ly,ctx,ii,jj):
     elif var=='magma':
         col=lerp(pal['horn_a'],pal['horn_b'],g)*ridge[:,None]
         t=ss(0.55,0.95,g); gc=lerp(GLOWC['magma'][0],GLOWC['magma'][2],ss(0.7,1.0,g)*0.9+0.1); col=lerp(col,gc,t); gl=gc*t[:,None]
-    elif var=='brutus':
+    elif var=='arena':
         col=lerp(pal['horn_a'],pal['horn_b'],g**1.25)*ridge[:,None]
-        t=ss(0.80,1.0,g)*0.6; gc=np.array((255,170,48)); col=lerp(col,gc,t*0.8); gl=gc*t[:,None]
     else:
         col=lerp(pal['horn_a'],pal['horn_b'],g**1.1)*ridge[:,None]
+    if ctx['stage']=='brutus' and var!='magma':
+        # legendario: puntas de los cuernos incandescentes en el color de sus ojos
+        t=ss(0.80,1.0,g)*0.6; gc=np.array(pal['eye'],float); col=lerp(col,gc,t*0.8); gl=gc*t[:,None]
     return col,gl
 def spike_tex(var,ly,ctx,ii,jj):
     pal=PAL[var]; col=lerp(pal['spike_a'],pal['spike_b'],ly**1.2); gl=np.zeros_like(col)
@@ -191,16 +208,13 @@ def eye_tex(var,loc,ctx,col,gl):
     out[pup]=pal['pupil']
     glint=iris&((dz-1.3)**2+(dy-1.4)**2<0.9)
     out[glint]=np.array(out[glint])*0.35+np.array([255,255,240])*0.65
-    if var!='scarlet':
+    if var!='scarlet' or ctx['stage']=='brutus':
         g[iris&~pup]=pal['eye']; g[glint]=(255,255,240)
     return out,g
 # ---------------------------------------------------------------- ensamblado
 def claw_axis(c):
     if c['part'].startswith('arm2'): return lambda loc:1-(loc[:,1]-c['y0'])/max(1e-6,c['h'])
     return lambda loc:(loc[:,2]-c['z0'])/max(1e-6,c['d'])
-def stages_for(var):
-    """etapas que usa cada variante: la legendaria usa su malla propia de adulto y la cria normal; las demas, adulto y cria normales."""
-    return ('chibi','brutus') if var=='brutus' else ('adult','chibi')
 def make_atlas(var):
     out,H=rig.get_all()
     fr={st:frames(out[st][0]) for st in out}
@@ -208,7 +222,6 @@ def make_atlas(var):
     pal=PAL[var]
     for st,(spec,cubes) in out.items():
         qs={'adult':1.0,'chibi':0.6,'brutus':1.3}[st]
-        if st not in stages_for(var): continue
         for c in cubes:
             R,T=fr[st][c['part']]
             for face,r in rig.regions(c).items():
@@ -221,7 +234,7 @@ def make_atlas(var):
                 elif role=='horn': col,gl=horn_tex(var,ly,ctx,ii,jj)
                 elif role=='spike': col,gl=spike_tex(var,ly,ctx,ii,jj)
                 elif role=='claw': col,gl=claw_tex(var,fu,fv,ctx,face,loc)
-                elif role=='tooth': col,gl=tooth_tex('tooth',face,ii,jj,fu,fv,pal,var)
+                elif role=='tooth': col,gl=tooth_tex('tooth',face,ii,jj,fu,fv,pal,st=='brutus')
                 else:
                     col=np.tile(np.array(pal['tongue'],float),(len(ii),1))*(0.9+0.1*np.cos(loc[:,0]*0.9))[:,None]; gl=np.zeros_like(col)
                     if var=='magma': gl=col*0.9

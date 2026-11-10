@@ -60,8 +60,9 @@ import java.util.Set;
  * Comparte con el estegosaurio las ordenes y el estado "caido" (ver PetOrders y PetEvents).
  */
 public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder {
-    public static final int SCARLET = 0, MAGMA = 1, STEEL = 2, BRUTUS = 3, VARIANTS = 4;
-    public static final String[] VARIANT_NAMES = {"Rojo", "Magma", "Acero", "Brutus"};
+    /** Colores: Rojo, Magma, Acero y Arena. Aparte, cualquier color puede ser LEGENDARIO ("Brutus": malla mas grande y robusta). */
+    public static final int SCARLET = 0, MAGMA = 1, STEEL = 2, ARENA = 3, VARIANTS = 4;
+    public static final String[] VARIANT_NAMES = {"Rojo", "Magma", "Acero", "Arena"};
     public static final int CHARGE_LEN = 24, BUTT_LEN = 14, ROAR_LEN = 40;
     /** Carnes crudas que necesita la cria para convertirse en adulto. */
     public static final int FEEDS_TO_GROW = 6;
@@ -72,6 +73,7 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
     private static final EntityDimensions BRUTUS_CHIBI_DIM = EntityDimensions.fixed(1.1F, 1.8F);
 
     private static final EntityDataAccessor<Integer> VARIANT = SynchedEntityData.defineId(CarnotaurusEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Boolean> LEGENDARY = SynchedEntityData.defineId(CarnotaurusEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> ADULT = SynchedEntityData.defineId(CarnotaurusEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> SADDLED = SynchedEntityData.defineId(CarnotaurusEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Integer> ORDER = SynchedEntityData.defineId(CarnotaurusEntity.class, EntityDataSerializers.INT);
@@ -108,6 +110,7 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
     @Override protected void defineSynchedData() {
         super.defineSynchedData();
         this.entityData.define(VARIANT, SCARLET);
+        this.entityData.define(LEGENDARY, Boolean.FALSE);
         this.entityData.define(ADULT, Boolean.TRUE);
         this.entityData.define(SADDLED, Boolean.FALSE);
         this.entityData.define(ORDER, PetOrders.FOLLOW);
@@ -119,6 +122,7 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
     @Override public void addAdditionalSaveData(CompoundTag tag) {
         super.addAdditionalSaveData(tag);
         tag.putInt("Variant", getVariant());
+        tag.putBoolean("Legendary", isBrutus());
         tag.putBoolean("Adult", isAdultStage());
         tag.putInt("Growth", growth);
         tag.putBoolean("Saddled", isSaddled());
@@ -130,6 +134,8 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
     @Override public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
         setVariant(tag.getInt("Variant"));
+        // v1.1.6 guardaba al Brutus como Variant 3 (hoy "Arena"): esos se conservan como legendarios
+        this.entityData.set(LEGENDARY, tag.contains("Legendary") ? tag.getBoolean("Legendary") : tag.getInt("Variant") == ARENA);
         this.entityData.set(ADULT, !tag.contains("Adult") || tag.getBoolean("Adult"));
         this.growth = tag.getInt("Growth");
         this.entityData.set(SADDLED, tag.getBoolean("Saddled"));
@@ -143,7 +149,12 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
     public int getVariant() { return this.entityData.get(VARIANT); }
     public void setVariant(int v) { this.entityData.set(VARIANT, Math.max(0, Math.min(VARIANTS - 1, v))); }
     public boolean isAdultStage() { return this.entityData.get(ADULT); }
-    public boolean isBrutus() { return getVariant() == BRUTUS; }
+    /** Forma legendaria "Brutus": mas grande, robusta y agresiva; existe en todos los colores. */
+    public boolean isBrutus() { return this.entityData.get(LEGENDARY); }
+    public void setLegendary(boolean legendary) {
+        this.entityData.set(LEGENDARY, legendary);
+        applyStageStats(true);
+    }
     /** Multiplicador de tono: el Brutus suena mas grave. */
     private float vp() { return isBrutus() ? 0.82F : 1.0F; }
     public boolean isSaddled() { return this.entityData.get(SADDLED); }
@@ -165,7 +176,7 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
 
     @Override public void onSyncedDataUpdated(EntityDataAccessor<?> key) {
         super.onSyncedDataUpdated(key);
-        if (ADULT.equals(key) || VARIANT.equals(key)) this.refreshDimensions();
+        if (ADULT.equals(key) || LEGENDARY.equals(key)) this.refreshDimensions();
     }
 
     @Override public EntityDimensions getDimensions(Pose pose) {
@@ -204,15 +215,18 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
         SpawnGroupData result = super.finalizeSpawn(level, difficulty, reason, previous, tag);
         int roll = this.random.nextInt(100);
         var biome = level.getBiome(this.blockPosition());
-        int magmaChance = 15, steelChance = 15;
-        if (biome.is(net.minecraft.tags.BiomeTags.IS_SAVANNA) || biome.is(net.minecraft.tags.BiomeTags.IS_BADLANDS)) magmaChance = 35;
+        int arenaChance = 8, magmaChance = 15, steelChance = 15;
+        if (biome.is(net.minecraft.tags.BiomeTags.IS_SAVANNA) || biome.is(net.minecraft.tags.BiomeTags.IS_BADLANDS)) { arenaChance = 18; magmaChance = 25; }
         if (biome.is(net.minecraft.tags.BiomeTags.IS_FOREST) || biome.is(net.minecraft.tags.BiomeTags.IS_JUNGLE)) steelChance = 35;
-        int v = roll < magmaChance ? MAGMA : roll < magmaChance + steelChance ? STEEL : SCARLET;
-        // legendario: ~3 % de los silvestres, solo si hay hueco alto para su tamaño
-        BlockPos bp = this.blockPosition();
-        if (this.random.nextInt(100) < 3 && roomFor(level, bp.above(2)) && roomFor(level, bp.above(3))) v = BRUTUS;
-        if (reason == MobSpawnType.SPAWN_EGG && tag != null && tag.contains("BrutusEgg")) v = BRUTUS;
+        int v = roll < arenaChance ? ARENA
+            : roll < arenaChance + magmaChance ? MAGMA
+            : roll < arenaChance + magmaChance + steelChance ? STEEL : SCARLET;
         setVariant(v);
+        // legendario ("Brutus"): ~3 % de los silvestres, en cualquier color, solo si hay hueco alto para su tamaño
+        BlockPos bp = this.blockPosition();
+        boolean legendary = this.random.nextInt(100) < 3 && roomFor(level, bp.above(2)) && roomFor(level, bp.above(3));
+        if (reason == MobSpawnType.SPAWN_EGG && tag != null && tag.contains("BrutusEgg")) legendary = true;
+        this.entityData.set(LEGENDARY, legendary);
         if (reason == MobSpawnType.NATURAL || reason == MobSpawnType.CHUNK_GENERATION || reason == MobSpawnType.STRUCTURE) {
             this.entityData.set(ADULT, this.random.nextInt(100) < 35); // la mayoria de los silvestres son crias que se pueden domesticar
         }

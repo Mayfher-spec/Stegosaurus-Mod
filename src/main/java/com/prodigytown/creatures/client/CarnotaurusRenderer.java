@@ -10,13 +10,13 @@ import net.minecraft.resources.ResourceLocation;
 
 /** Renderer del carnotauro: textura segun variante, escala segun etapa (cria / adulto). */
 public final class CarnotaurusRenderer extends MobRenderer<CarnotaurusEntity, CarnotaurusModel<CarnotaurusEntity>> {
-    private static final ResourceLocation[] SKINS = {tex("scarlet"), tex("magma"), tex("steel"), tex("brutus")};
+    private static final ResourceLocation[] SKINS = {tex("scarlet"), tex("magma"), tex("steel"), tex("arena")};
     private static ResourceLocation tex(String n) { return new ResourceLocation(ProdigyCreatures.MODID, "textures/entity/carnotaurus_" + n + ".png"); }
 
     /** El esqueleto esta dibujado a ~300 unidades de largo (1 texel por unidad): se reduce para que el adulto mida ~6 bloques de largo y ~2.9 de alto. */
     private static final float MODEL_SCALE = 0.34F;
 
-    /** El Brutus (legendario) es mas grande: su malla ya viene mayor y se dibuja un poco menos reducida. */
+    /** El Brutus (forma legendaria, en cualquier color) es mas grande: su malla ya viene mayor y se dibuja un poco menos reducida. */
     private static final float BRUTUS_SCALE = 0.36F, BRUTUS_CHIBI_SCALE = 0.38F;
 
     private final CarnotaurusModel<CarnotaurusEntity> adultModel, chibiModel, brutusModel;
