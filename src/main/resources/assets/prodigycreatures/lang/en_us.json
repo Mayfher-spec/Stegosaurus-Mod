@@ -47,5 +47,14 @@
   "key.prodigycreatures.ultimate": "Ultimate ability",
   "effect.prodigycreatures.spectral_burn": "Spectral Fire",
   "item.prodigycreatures.stegosaurus_taming_salad": "Stegosaurus Taming Salad",
-  "item.prodigycreatures.stegosaurus_feed": "Stegosaurus Feed"
+  "item.prodigycreatures.stegosaurus_feed": "Stegosaurus Feed",
+  "entity.prodigycreatures.carnotaurus": "Carnotaurus",
+  "item.prodigycreatures.carnotaurus_spawn_egg": "Carnotaurus Spawn Egg",
+  "item.prodigycreatures.carnotaurus_jerky": "Carnotaurus Jerky",
+  "subtitles.prodigycreatures.carnotaurus.hurt": "Carnotaurus hurt",
+  "subtitles.prodigycreatures.carnotaurus.hurt_baby": "Baby carnotaurus hurt",
+  "subtitles.prodigycreatures.carnotaurus.death": "Carnotaurus dies",
+  "subtitles.prodigycreatures.carnotaurus.roar": "Carnotaurus roars",
+  "subtitles.prodigycreatures.carnotaurus.bite": "Carnotaurus bites",
+  "subtitles.prodigycreatures.carnotaurus.step": "Carnotaurus walks"
 }

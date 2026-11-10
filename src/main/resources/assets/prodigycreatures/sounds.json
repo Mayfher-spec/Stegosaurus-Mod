@@ -274,5 +274,85 @@
         "volume": 1.0
       }
     ]
+  },
+  "carnotaurus.hurt": {
+    "subtitle": "subtitles.prodigycreatures.carnotaurus.hurt",
+    "sounds": [
+      {
+        "name": "prodigycreatures:stegosaurus/hurt1",
+        "stream": false,
+        "pitch": 0.7
+      },
+      {
+        "name": "prodigycreatures:stegosaurus/hurt2",
+        "stream": false,
+        "pitch": 0.7
+      }
+    ]
+  },
+  "carnotaurus.hurt_baby": {
+    "subtitle": "subtitles.prodigycreatures.carnotaurus.hurt_baby",
+    "sounds": [
+      {
+        "name": "prodigycreatures:stegosaurus/hurt1",
+        "stream": false,
+        "pitch": 1.5
+      },
+      {
+        "name": "prodigycreatures:stegosaurus/hurt2",
+        "stream": false,
+        "pitch": 1.5
+      }
+    ]
+  },
+  "carnotaurus.death": {
+    "subtitle": "subtitles.prodigycreatures.carnotaurus.death",
+    "sounds": [
+      {
+        "name": "prodigycreatures:stegosaurus/death",
+        "stream": false,
+        "pitch": 0.7
+      }
+    ]
+  },
+  "carnotaurus.roar": {
+    "subtitle": "subtitles.prodigycreatures.carnotaurus.roar",
+    "sounds": [
+      {
+        "name": "prodigycreatures:stegosaurus/roar",
+        "stream": false,
+        "pitch": 0.75
+      }
+    ]
+  },
+  "carnotaurus.bite": {
+    "subtitle": "subtitles.prodigycreatures.carnotaurus.bite",
+    "sounds": [
+      {
+        "name": "prodigycreatures:stegosaurus/bite",
+        "stream": false,
+        "pitch": 0.9
+      }
+    ]
+  },
+  "carnotaurus.step": {
+    "subtitle": "subtitles.prodigycreatures.carnotaurus.step",
+    "sounds": [
+      {
+        "name": "prodigycreatures:stegosaurus/step1",
+        "stream": false,
+        "pitch": 0.8
+      },
+      {
+        "name": "prodigycreatures:stegosaurus/step2",
+        "stream": false,
+        "pitch": 0.8
+      },
+      {
+        "name": "prodigycreatures:stegosaurus/step3",
+        "stream": false,
+        "pitch": 0.8
+      }
+    ]
   }
 }

@@ -45,7 +45,7 @@ public final class ClientKeys {
         /** Montado: clic izquierdo = mordida; clic derecho = coletazo (si la mano no lleva comida ni algo que se use, como un arco o un escudo). */
         @SubscribeEvent public static void rightClick(InputEvent.InteractionKeyMappingTriggered event) {
             LocalPlayer p = Minecraft.getInstance().player;
-            if (p == null || !(p.getVehicle() instanceof StegosaurusEntity)) return;
+            if (p == null || !(p.getVehicle() instanceof StegosaurusEntity || p.getVehicle() instanceof com.prodigytown.creatures.CarnotaurusEntity)) return;
             if (event.isAttack()) { // clic izquierdo montado: mordida
                 event.setCanceled(true);
                 event.setSwingHand(false);

@@ -56,6 +56,14 @@ public class ProdigyCreatures {
         EntityType.Builder.of(StegosaurusEntity::new, MobCategory.CREATURE)
             .sized(4.0f, 5.0f).clientTrackingRange(12).build(MODID + ":stegosaurus"));
 
+    public static final RegistryObject<EntityType<CarnotaurusEntity>> CARNOTAURUS = ENTITIES.register("carnotaurus", () ->
+        EntityType.Builder.of(CarnotaurusEntity::new, MobCategory.CREATURE)
+            .sized(2.3f, 3.0f).clientTrackingRange(10).build(MODID + ":carnotaurus"));
+    public static final RegistryObject<Item> CARNOTAURUS_EGG = ITEMS.register("carnotaurus_spawn_egg", () ->
+        new ForgeSpawnEggItem(() -> CARNOTAURUS.get(), 0x8E2F25, 0xE0C9A0, new Item.Properties()));
+    /** Carne curada: reanima al carnotauro caido y lo cura mucho. */
+    public static final RegistryObject<Item> CARNO_JERKY = ITEMS.register("carnotaurus_jerky", () -> new Item(new Item.Properties().stacksTo(64)));
+
     public static final RegistryObject<Item> STEGOSAURUS_EGG = ITEMS.register("stegosaurus_spawn_egg", () ->
         new ProdigyStegosaurusEgg(new Item.Properties()));
 
@@ -96,12 +104,14 @@ public class ProdigyCreatures {
         public static void registerCreativeTab(BuildCreativeModeTabContentsEvent event) {
             if (event.getTabKey() == CreativeModeTabs.SPAWN_EGGS) {
                 event.accept(STEGOSAURUS_EGG.get());
+                event.accept(CARNOTAURUS_EGG.get());
                 event.accept(NEST_ITEM.get());
                 for (RegistryObject<Item> egg : EGG_ITEMS) event.accept(egg.get());
             }
             if (event.getTabKey() == CreativeModeTabs.FOOD_AND_DRINKS) {
                 event.accept(TAMING_SALAD.get());
                 event.accept(FEED.get());
+                event.accept(CARNO_JERKY.get());
             }
             if (event.getTabKey() == CreativeModeTabs.COMBAT) {
                 for (RegistryObject<Item> armor : ARMOR_ITEMS) event.accept(armor.get());
@@ -129,8 +139,17 @@ public class ProdigyCreatures {
         }
 
         @SubscribeEvent
+        public static void registerCarnoSpawn(SpawnPlacementRegisterEvent event) {
+            event.register(CARNOTAURUS.get(), SpawnPlacements.Type.ON_GROUND, Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+                (type, level, reason, pos, random) -> level.getBlockState(pos.below()).isFaceSturdy(level, pos.below(), Direction.UP)
+                    && CarnotaurusEntity.roomFor(level, pos) && Mob.checkMobSpawnRules(type, level, reason, pos, random),
+                SpawnPlacementRegisterEvent.Operation.REPLACE);
+        }
+
+        @SubscribeEvent
         public static void registerAttributes(EntityAttributeCreationEvent event) {
             event.put(STEGOSAURUS.get(), StegosaurusEntity.createAttributes().build());
+            event.put(CARNOTAURUS.get(), CarnotaurusEntity.createAttributes().build());
             event.put(ChibiAlpha.STEGO.get(), ChibiStego.attributes().build());
         }
     }

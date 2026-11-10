@@ -14,6 +14,12 @@ public final class ModSounds {
         return SOUNDS.register(name, () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(ProdigyCreatures.MODID, name)));
     }
 
+    public static final RegistryObject<SoundEvent> CARNO_HURT = reg("carnotaurus.hurt");
+    public static final RegistryObject<SoundEvent> CARNO_HURT_BABY = reg("carnotaurus.hurt_baby");
+    public static final RegistryObject<SoundEvent> CARNO_DEATH = reg("carnotaurus.death");
+    public static final RegistryObject<SoundEvent> CARNO_ROAR = reg("carnotaurus.roar");
+    public static final RegistryObject<SoundEvent> CARNO_BITE = reg("carnotaurus.bite");
+    public static final RegistryObject<SoundEvent> CARNO_STEP = reg("carnotaurus.step");
     public static final RegistryObject<SoundEvent> STEGO_AMBIENT = reg("stegosaurus.ambient");
     public static final RegistryObject<SoundEvent> STEGO_HURT = reg("stegosaurus.hurt");
     public static final RegistryObject<SoundEvent> STEGO_DEATH = reg("stegosaurus.death");

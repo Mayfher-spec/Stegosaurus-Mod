@@ -1,0 +1,16 @@
+{
+  "type": "forge:add_spawns",
+  "biomes": [
+    "minecraft:plains",
+    "minecraft:sunflower_plains",
+    "minecraft:savanna",
+    "minecraft:forest",
+    "minecraft:jungle"
+  ],
+  "spawners": {
+    "type": "prodigycreatures:carnotaurus",
+    "weight": 1,
+    "minCount": 1,
+    "maxCount": 2
+  }
+}

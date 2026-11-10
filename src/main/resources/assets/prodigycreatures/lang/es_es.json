@@ -47,5 +47,14 @@
   "key.prodigycreatures.ultimate": "Habilidad definitiva",
   "effect.prodigycreatures.spectral_burn": "Fuego espectral",
   "item.prodigycreatures.stegosaurus_taming_salad": "Ensalada de domesticación",
-  "item.prodigycreatures.stegosaurus_feed": "Pienso para estegosaurio"
+  "item.prodigycreatures.stegosaurus_feed": "Pienso para estegosaurio",
+  "entity.prodigycreatures.carnotaurus": "Carnotauro",
+  "item.prodigycreatures.carnotaurus_spawn_egg": "Huevo generador de carnotauro",
+  "item.prodigycreatures.carnotaurus_jerky": "Carne curada de carnotauro",
+  "subtitles.prodigycreatures.carnotaurus.hurt": "Carnotauro herido",
+  "subtitles.prodigycreatures.carnotaurus.hurt_baby": "Carnotauro cria herido",
+  "subtitles.prodigycreatures.carnotaurus.death": "Carnotauro muere",
+  "subtitles.prodigycreatures.carnotaurus.roar": "Carnotauro ruge",
+  "subtitles.prodigycreatures.carnotaurus.bite": "Carnotauro muerde",
+  "subtitles.prodigycreatures.carnotaurus.step": "Carnotauro camina"
 }

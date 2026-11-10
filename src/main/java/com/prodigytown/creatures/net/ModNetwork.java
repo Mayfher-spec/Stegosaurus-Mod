@@ -1,5 +1,7 @@
 package com.prodigytown.creatures.net;
 
+import com.prodigytown.creatures.CarnotaurusEntity;
+
 import com.prodigytown.creatures.ProdigyCreatures;
 import com.prodigytown.creatures.StegosaurusEntity;
 import net.minecraft.network.FriendlyByteBuf;
@@ -115,7 +117,13 @@ public final class ModNetwork {
                 StegosaurusEntity best = null;
                 if (sp.getVehicle() instanceof StegosaurusEntity mount && mount.isOwnedBy(sp)) best = mount;
                 else for (StegosaurusEntity s : pets) if (best == null || s.distanceToSqr(sp) < best.distanceToSqr(sp)) best = s;
-                if (best != null) best.useAbility(sp, m.ability);
+                if (best != null) { best.useAbility(sp, m.ability); return; }
+                CarnotaurusEntity carno = null;
+                if (sp.getVehicle() instanceof CarnotaurusEntity mount && mount.isOwnedBy(sp)) carno = mount;
+                else for (CarnotaurusEntity c : sp.level().getEntitiesOfClass(CarnotaurusEntity.class, sp.getBoundingBox().inflate(24.0),
+                        c -> c.isTame() && c.isOwnedBy(sp) && c.isAdultStage()))
+                    if (carno == null || c.distanceToSqr(sp) < carno.distanceToSqr(sp)) carno = c;
+                if (carno != null) carno.useAbility(sp, m.ability);
             });
             ctx.get().setPacketHandled(true);
         }
