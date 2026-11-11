@@ -51,7 +51,64 @@ def build_spec(stage='adult'):
         part('foot_'+n,'meta_'+n,(0,-21,0),(0.10,0,0),[(-8.5,-7,-10,17,8,24,'skin',dict(leg=1,foot=1))],'leg')
         for k,(tx,yaw) in enumerate(((0,0),(6.3,-0.30),(-6.3,0.30))):
             part('toe%d_%s'%(k,n),'foot_'+n,(sgn*tx,-3,14),(0,sgn*yaw,0),[(-3.4,-3.5,0,6.8,7,14,'skin',dict(toe=1)),(-2.2,-2.6,14,4.4,5.2,8,'claw',dict())],'leg')
+    if B:   # montura 3D del Brutus (se pinta solo en carnotaurus_saddle.png: sin silla no se ve)
+        byn={p['name']:p for p in P}
+        byn['body']['cubes']+=_fin(saddle_body()); byn['chest']['cubes']+=_fin(saddle_chest())
     return P
+# ---------------------------------------------------------------- montura del Brutus
+SADDLE_ROLES=('cloth','leather','metal')
+def _fin(cs):
+    """cubos dados en unidades FINALES (ya escaladas) -> unidades de diseno de la parte (scaled() los vuelve a multiplicar)."""
+    sx,sy,sz=STAGES['adult']['body']
+    return [(c[0]/sx,c[1]/sy,c[2]/sz,c[3]/sx,c[4]/sy,c[5]/sz,c[6],c[7]) for c in cs]
+def _mir(x0,x1,y0,y1,z0,z1,role,opt=None):
+    """cubo a ambos lados del cuerpo (x0..x1 > 0)."""
+    o=opt or {}
+    return [(x0,y0,z0,x1-x0,y1-y0,z1-z0,role,dict(o,side=1)),(-x1,y0,z0,x1-x0,y1-y0,z1-z0,role,dict(o,side=-1))]
+def _box(x0,x1,y0,y1,z0,z1,role,opt=None): return [(x0,y0,z0,x1-x0,y1-y0,z1-z0,role,dict(opt or {}))]
+def saddle_body():
+    """marco del cuerpo, unidades finales. Lomo: placa dorsal y=29.3 (x +-18.5), hombrera y=24.4 (x +-25.1)."""
+    c=[]
+    # manta de tela: lomo, escalon de la hombrera y caida por el flanco
+    c+=_box(-20.7,20.7,28.9,31.4,-28.4,10.4,'cloth',dict(piece='top'))
+    c+=_mir(18.2,20.4,24.1,29.1,-28.0,10.0,'cloth',dict(piece='riser'))
+    c+=_mir(18.2,26.9,24.1,26.5,-28.4,10.4,'cloth',dict(piece='shelf'))
+    c+=_mir(25.0,27.3,11.0,26.0,-27.6,9.6,'cloth',dict(piece='drape'))
+    # cincha delantera por el flanco + hebilla
+    c+=_mir(20.9,28.6,26.4,27.8,-1.5,3.5,'leather',dict(strap=1))
+    c+=_mir(27.0,28.8,10.0,27.8,-1.5,3.5,'leather',dict(strap=1))
+    c+=_mir(27.0,29.2,13.5,18.0,-2.3,4.3,'metal',dict(buckle=1))
+    # estribos: pestana bajo el faldon, correa y marco de hierro
+    c+=_mir(21.4,29.2,26.7,28.5,-13.0,-5.0,'leather',dict(strap=1))
+    c+=_mir(27.5,29.1,22.5,28.5,-11.8,-6.2,'leather',dict(strap=1))
+    c+=_mir(28.0,31.4,20.8,22.8,-13.0,-5.0,'metal',dict(iron=1))
+    c+=_mir(28.0,31.4,14.3,20.8,-13.0,-11.0,'metal',dict(iron=1))
+    c+=_mir(28.0,31.4,14.3,20.8,-7.0,-5.0,'metal',dict(iron=1))
+    c+=_mir(28.0,31.4,12.5,14.3,-13.0,-5.0,'metal',dict(iron=1))
+    # faldones de cuero
+    c+=_mir(16.0,21.8,28.6,34.2,-19.0,7.5,'leather',dict(skirt=1))
+    # asiento: armazon, cojin, borrelete trasero (cantle), poste delantero (pomo) y tapa de laton
+    c+=_box(-16.0,16.0,30.4,34.0,-22.0,9.5,'leather',dict(tree=1))
+    c+=_box(-12.8,12.8,33.8,36.4,-16.0,7.0,'leather',dict(seat=1))
+    c+=_box(-15.5,15.5,33.8,43.8,-22.0,-16.0,'leather',dict(cantle=1))
+    c+=_box(-16.6,16.6,41.6,44.8,-22.9,-15.1,'leather',dict(roll=1))
+    c+=_box(-2.8,2.8,33.8,41.2,3.2,7.6,'leather',dict(pommel=1))
+    c+=_box(-3.7,3.7,41.0,43.4,2.5,8.3,'metal',dict(cap=1))
+    # petate enrollado detras del cantle, atado con dos correas
+    c+=_box(-15.0,15.0,31.0,36.2,-29.6,-22.2,'cloth',dict(piece='bedroll'))
+    c+=_mir(6.6,8.8,30.7,36.9,-30.2,-21.6,'leather',dict(strap=1))
+    # correas del lomo hacia el collar del pecho
+    c+=_mir(5.0,7.4,28.9,30.5,9.5,21.5,'leather',dict(strap=1))
+    return c
+def saddle_chest():
+    """marco del pecho (pivote del pecho). Pecho: x +-25.1, y -24.4..26.8, z -9.3..23.2."""
+    c=[]
+    c+=_box(-26.5,26.5,26.4,28.4,3.0,8.2,'leather',dict(strap=1))      # collar: arriba
+    c+=_mir(24.9,26.7,-26.2,28.4,3.0,8.2,'leather',dict(strap=1))      # lados
+    c+=_box(-26.5,26.5,-26.4,-24.1,3.0,8.2,'leather',dict(strap=1))    # bajo el pecho
+    c+=_mir(26.5,28.3,5.0,14.0,2.1,9.1,'metal',dict(medal=1))          # medallones de latón
+    c+=_mir(5.0,7.4,26.5,28.0,-8.0,6.0,'leather',dict(strap=1))        # correas del lomo
+    return c
 # ---------------------------------------------------------------- etapas
 STAGES={
  'chibi':dict(body=0.52,tail=0.46,neck=0.55,head=0.82,horn=0.80,arm=0.62,leg=0.52),

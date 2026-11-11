@@ -1,11 +1,11 @@
-Carnotauro (v1.1.8): esqueleto articulado PROPIO, generado por codigo.
+Carnotauro (v1.1.10): esqueleto articulado PROPIO, generado por codigo.
 
   python3 tools/carnotaurus/export.py .      (desde la raiz del repo; necesita numpy y pillow)
 
 Genera de una vez:
   - src/main/java/com/prodigytown/creatures/client/CarnotaurusLayers.java  (malla adulto "Brutus" + cria; NO editar a mano)
   - textures/entity/carnotaurus_{scarlet,magma,steel,arena}.png, carnotaurus_{scarlet,magma,steel,arena}_glow.png, carnotaurus_saddle.png
-    (un solo atlas 512x832 compartido por las dos mallas: adulto y cria)
+    (un solo atlas 512x1024 compartido por las dos mallas: adulto y cria)
 
 Archivos:
   rig.py    esqueleto (huesos, cubos, escalas adulto/cria) y empaquetado de UV
@@ -22,3 +22,10 @@ Cada textura de color (Rojo, Magma, Acero, Arena) contiene las dos mallas: adult
 con el color de cada paleta; "Arena" (variante 3) es el color tostado/carmesi de la foto de referencia.
 En el juego: variante en NBT "Variant" (0 Rojo, 1 Magma, 2 Acero, 3 Arena), p. ej.  /summon prodigycreatures:carnotaurus ~ ~ ~ {Variant:1,Adult:1b}
 Hitbox adulto 2.7 x 3.8 (tambien en ProdigyCreatures: sized) y cria 1.1 x 1.8; escala de dibujo 0.36 / 0.38 en CarnotaurusRenderer.
+
+MONTURA 3D del Brutus (v1.1.10): rig.py -> saddle_body() y saddle_chest() (cubos en unidades finales, marco del cuerpo/pecho; roles 'cloth', 'leather', 'metal').
+Son cubos del propio modelo adulto, pero su texel en la piel (carnotaurus_<color>.png) queda TRANSPARENTE (paint.saddle_mask) y solo se pintan en carnotaurus_saddle.png:
+sin silla no se ven; con silla, CarnotaurusSaddleLayer los dibuja. Piezas: manta con ribete y flecos, petate, faldones, asiento acolchado, cantle con emblema, pomo de laton,
+cinchas, estribos de hierro, correas del lomo y collar de pecho con medallones. La silla es del mismo marco que el cuerpo, asi que sigue su animacion.
+Altura: cojin a ~2.9 bloques; CarnotaurusEntity.getPassengersRidingOffset() = 2.60 deja los muslos del jugador sentado sobre el cojin (muslo = pos + 0.625 bloques, jugador -0.35).
+Si cambias el cuerpo/placa dorsal del adulto, repasa las coordenadas de saddle_body() y ese offset.

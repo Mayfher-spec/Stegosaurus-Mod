@@ -230,6 +230,7 @@ def make_atlas(var):
                 ly=np.clip((loc[:,1]-c['y0'])/max(1e-6,c['h']),0.0,1.0)
                 ctx=dict(qs=qs,opt=c['opt'],grp=c['grp'],part=c['part'],role=c['role'],s=c['s'],sv=c['sv'],stage=st,claw_t=claw_axis(c),loc=loc)
                 role=c['role']
+                if role in rig.SADDLE_ROLES: continue
                 if role in('skin','belly'): col,gl=base_skin(var,P,Nw,ly,ctx,face)
                 elif role=='horn': col,gl=horn_tex(var,ly,ctx,ii,jj)
                 elif role=='spike': col,gl=spike_tex(var,ly,ctx,ii,jj)
@@ -245,40 +246,123 @@ def make_atlas(var):
                     lit=gl.sum(axis=1)>6
                     glow[jj[lit],ii[lit],:3]=np.clip(gl[lit],0,255).astype(np.uint8); glow[jj[lit],ii[lit],3]=255
     return atlas,glow
+# ---------------------------------------------------------------- montura 3D del Brutus (solo se pinta en carnotaurus_saddle.png)
+C=lambda *v: np.array(v,float)
+LEA=C(126,78,46); LEA_L=C(156,102,60); LEA_D=C(86,52,32); PIPE=C(54,32,22); STITCH=C(220,190,134)
+CLOTH=C(46,58,126); CLOTH_D=C(30,38,94); CLOTH_L=C(74,88,166); TRIM=C(224,186,86); CREAM=C(238,224,190)
+BRASS=C(212,168,68); BRASS_L=C(250,222,128); BRASS_D=C(128,92,34)
+IRON=C(106,110,120); IRON_L=C(152,156,168); IRON_D=C(58,60,70); WINE=C(98,26,30)
+def face_dims(c,face):
+    w,h,d=c['w'],c['h'],c['d']
+    return {'xmin':(d,h),'xmax':(d,h),'north':(w,h),'south':(w,h),'up':(w,d),'down':(w,d)}[face]
+def _diam(a,b,period,rad):
+    da=np.abs(a%period-period/2.0); db=np.abs(b%period-period/2.0); return da+db<rad
+def saddle_tex(c,face,loc,ii,jj,fu,fv):
+    o=c['opt']; role=c['role']; n=len(ii)
+    fw,fh=face_dims(c,face)
+    eu=np.minimum(fu*fw,(1-fu)*fw); ev=np.minimum(fv*fh,(1-fv)*fh); edge=np.minimum(eu,ev)
+    x,y,z=loc[:,0],loc[:,1],loc[:,2]
+    nz=fbm(loc*0.9+3.0,41)
+    chk=((ii+jj)%2)==0
+    side=o.get('side',0)
+    outer=(face=='xmax' and side>0) or (face=='xmin' and side<0)
+    mask=np.ones(n,bool)
+    big=min(fw,fh)>=4.0
+    if role=='cloth':
+        col=np.tile(CLOTH,(n,1))*(0.93+0.07*(((ii%2)^(jj%2)))[:,None])*(0.94+0.12*nz)[:,None]
+        pc=o.get('piece')
+        if pc in('top','shelf') and face=='up':
+            lat=_diam(x,z,9.0,7.4); col[lat]=CLOTH_L*(0.94+0.1*nz[lat])[:,None]
+            col[_diam(x,z,9.0,3.4)]=CLOTH_D; col[_diam(x,z,9.0,1.3)]=TRIM
+            if pc=='top':
+                col[(edge>=0.9)&(edge<2.1)]=TRIM; col[(edge>=2.7)&(edge<3.3)]=CREAM
+            else:
+                col[(edge>=0.6)&(edge<1.5)]=TRIM
+        elif pc=='drape' and outer:
+            lat=_diam(z,y,9.0,7.4); col[lat]=CLOTH_L*(0.94+0.1*nz[lat])[:,None]
+            col[_diam(z,y,9.0,3.6)]=CLOTH_D; col[_diam(z,y,9.0,1.4)]=TRIM
+            fb=(1-fv)*fh                                         # distancia al borde inferior
+            col[(eu>=1.1)&(eu<2.1)]=TRIM
+            col[(fb>=2.4)&(fb<3.6)]=TRIM; col[(fb>=3.6)&(fb<4.2)]=CREAM; col[(fb>=4.2)&(fb<5.2)]=CLOTH_D
+            fr=fb<2.4; col[fr]=np.where(((ii[fr]%2)==0)[:,None],TRIM,CLOTH_D*0.8)
+            mask=~((fb<1.4)&((ii%2)==1))                         # flecos
+        elif pc=='riser': col*=0.78
+        elif pc=='bedroll':
+            col=np.tile(C(198,168,114),(n,1))*(0.93+0.07*(((ii%2)^(jj%2)))[:,None])*(0.92+0.16*nz)[:,None]
+            if face in('xmin','xmax'):
+                zc=c['z0']+c['d']/2; yc=c['y0']+c['h']/2; r=np.hypot((z-zc)/(c['d']/2),(y-yc)/(c['h']/2))
+                col[(np.floor(r*4.0)%2)==0]*=0.8
+            else: col[(np.floor((z if face=='up' or face=='down' else x)*0.5)%2)==0]*=0.94
+        else:
+            col*=0.9
+            if pc in('top','shelf','drape'): col[(ev>=0.7)&(ev<1.6)&(fh<5)]=TRIM
+        return col,mask
+    if role=='leather':
+        col=np.tile(LEA_L if o.get('seat') else LEA,(n,1))*(0.90+0.2*nz)[:,None]
+        if o.get('strap'):
+            col=np.tile(LEA_D,(n,1))*(0.90+0.2*nz)[:,None]
+            along_u=fw>=fh; cu=np.abs(fv-0.5)*fh if along_u else np.abs(fu-0.5)*fw
+            t=(fu*fw if along_u else fv*fh)
+            col[(cu<0.55)&chk]=STITCH
+            col[(((t%6.0)>2.4)&((t%6.0)<3.6))&(cu<1.2)]=BRASS
+            col[edge<0.5]=PIPE
+        elif o.get('seat') and face=='up':
+            u=(x+z)/4.4; v=(x-z)/4.4; fu_=u-np.floor(u); fv_=v-np.floor(v)
+            ln=(fu_<0.16)|(fv_<0.16); col[ln]=LEA_D*(0.95+0.1*nz[ln])[:,None]; col[(fu_<0.16)&(fv_<0.16)]=BRASS
+            col[edge<0.7]=PIPE
+        elif o.get('cantle') and face=='south':
+            col*=0.92
+            ym=38.6; R=3.1; r=np.hypot(x,y-ym)
+            col[r<R]=LEA_D; col[(r<R)&(r>=R-1.3)]=BRASS
+            dx=np.abs(x); dy=y-ym
+            hornm=(r<R-1.3)&(np.abs(dx*0.9-(dy+1.4)*0.75)<0.55)&(dy>-1.6)
+            col[hornm]=BRASS_L
+            stud=((ii%3)==0)&((jj%3)==0)&(edge>=1.3)&(edge<2.6)&(r>R+1.0); col[stud]=BRASS
+            col[(edge<0.7)]=PIPE
+        elif o.get('skirt') and outer:
+            col[(edge<0.8)]=PIPE; col[(edge>=1.3)&(edge<2.0)&chk]=STITCH
+            lat=_diam(z,y,7.0,4.6); col[lat&(edge>=2.4)]=col[lat&(edge>=2.4)]*0.78
+            rc=np.hypot(z-(c['z0']+c['d']/2),y-(c['y0']+c['h']/2)); col[rc<2.7]=BRASS_D; col[rc<2.0]=BRASS; col[rc<0.9]=BRASS_L
+        elif big:
+            col[edge<0.7]=PIPE; col[(edge>=1.2)&(edge<1.9)&chk]=STITCH
+        return col,mask
+    # metal
+    if o.get('iron'):
+        col=np.tile(IRON,(n,1))*(0.88+0.24*nz)[:,None]; col[edge<0.6]=IRON_D
+        if face=='up': col[edge>=0.6]=IRON_L*(0.92+0.1*nz[edge>=0.6])[:,None]
+        return col,mask
+    col=np.tile(BRASS,(n,1))*(0.90+0.2*nz)[:,None]
+    if face=='up': col=np.tile(BRASS_L,(n,1))*(0.92+0.1*nz)[:,None]
+    col[edge<0.6]=BRASS_D
+    if o.get('buckle') and outer:
+        col=np.tile(LEA_D,(n,1)); col[edge<1.3]=BRASS; col[edge<0.5]=BRASS_D; col[np.abs(fv-0.5)*fh<0.65]=BRASS_L
+    if o.get('medal') and outer:
+        zc=c['z0']+c['d']/2; yc=c['y0']+c['h']/2
+        u=(z-zc)/(c['d']/2.0); v=(y-yc)/(c['h']/2.0); r=np.hypot(u,v)
+        mask=r<1.12
+        col=np.tile(BRASS_D,(n,1)); col[r<0.86]=BRASS_L; col[r<0.7]=WINE
+        horn=(r<0.7)&(np.abs(np.abs(u)*1.5-(v+0.45)*0.9)<0.30)&(v<0.55)
+        col[horn]=BRASS_L; col[(r<0.7)&(np.abs(u)<0.16)&(v<0.1)]=BRASS
+    return col,mask
 def make_saddle():
     out,H=rig.get_all(); sad=np.zeros((H,W,4),np.uint8)
-    for st in ('adult',):
-        spec,cubes=out[st]
-        k=dict((p['name'],p['sv']) for p in spec)['body'][2]      # escala en z del cuerpo
-        Z0,Z1=-25.0*k,9.0*k
-        B0,B1=-9.0*k,-3.5*k
-        for c in cubes:
-            if c['part']!='body' or c['i'] not in(0,1,2): continue
-            for face,r in rig.regions(c).items():
-                rect,loc,nl,ii,jj,fu,fv=region_geom(c,face,r)
-                z=loc[:,2]; ly=(loc[:,1]-c['y0'])/max(1e-6,c['h'])
-                inz=(z>=Z0)&(z<=Z1)
-                col=np.zeros((len(ii),3)); m=np.zeros(len(ii),bool)
-                if c['i'] in(0,1):
-                    lo=0.0 if c['i']==1 else 0.52
-                    if face=='up': m=inz
-                    elif face in('xmin','xmax'): m=inz&(ly>lo)
-                    elif face in('north','south'): m=(np.abs(z-(Z1 if face=='north' else Z0))<0.6)&(ly>lo)
-                    edge=(np.minimum(z-Z0,Z1-z)<1.6)
-                    if c['i']==0 and face in('xmin','xmax'): edge=edge|(ly<0.58)
-                    col[:]=(118,74,44); col[edge]=(70,42,28)
-                    col[((ii+jj)%3==0)&edge]=(176,132,84)
-                    if c['i']==0 and face in('xmin','xmax'): col[~edge]=(150,108,70)
-                    band=(z>B0)&(z<B1)
-                    if c['i']==0 and face in('xmin','xmax'):
-                        m=m|(band&(ly>0.12)); col[band]=(78,48,32)
-                        buck=band&(ly>0.40)&(ly<0.52)&(z>B0+1.5*k)&(z<B1-1.5*k); col[buck]=(214,190,96); m=m|buck
-                    if face=='up': col[band]=(78,48,32)
-                else:
-                    band=(z>B0)&(z<B1); m=band; col[:]=(78,48,32)
-                if m.any():
-                    sad[jj[m],ii[m],:3]=np.clip(col[m],0,255).astype(np.uint8); sad[jj[m],ii[m],3]=255
+    spec,cubes=out['adult']
+    for c in cubes:
+        if c['role'] not in rig.SADDLE_ROLES: continue
+        for face,r in rig.regions(c).items():
+            rect,loc,nl,ii,jj,fu,fv=region_geom(c,face,r)
+            col,m=saddle_tex(c,face,loc,ii,jj,fu,fv)
+            if m.any():
+                sad[jj[m],ii[m],:3]=np.clip(col[m],0,255).astype(np.uint8); sad[jj[m],ii[m],3]=255
     return sad
+def saddle_mask():
+    """texels de la malla ocupados por cubos de la montura (en la piel deben quedar transparentes)."""
+    out,H=rig.get_all(); m=np.zeros((H,W),bool)
+    for c in out['adult'][1]:
+        if c['role'] in rig.SADDLE_ROLES:
+            for face,r in rig.regions(c).items():
+                x0,y0,x1,y1=rig.prect(r); m[y0:y1,x0:x1]=True
+    return m
 def fit_hy(stage):
     """altura del pivote del cuerpo para que el punto mas bajo de la pose de reposo toque el suelo."""
     out,H=rig.get_all(); spec,cubes=out[stage]; fr=frames(spec); lo=1e9

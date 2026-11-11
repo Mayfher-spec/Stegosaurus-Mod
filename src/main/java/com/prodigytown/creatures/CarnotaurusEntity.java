@@ -561,7 +561,8 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
         Entity first = this.getFirstPassenger();
         return first instanceof Player p && this.isOwnedBy(p) ? p : null;
     }
-    @Override public double getPassengersRidingOffset() { return 2.9; }
+    /** Altura de la silla 3D del Brutus (cojin a ~2.9 bloques) menos el desfase del jugador sentado: los muslos quedan sobre el asiento. */
+    @Override public double getPassengersRidingOffset() { return 2.60; }
     @Override public void positionRider(Entity passenger, Entity.MoveFunction callback) {
         if (!this.hasPassenger(passenger)) return;
         Vec3 off = new Vec3(0.0, 0.0, -0.2).yRot(-this.yBodyRot * ((float) Math.PI / 180.0F));

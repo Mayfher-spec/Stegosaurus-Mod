@@ -34,7 +34,8 @@ final class CarnotaurusLayers {
 open(os.path.join(repo,'src/main/java/com/prodigytown/creatures/client/CarnotaurusLayers.java'),'w').write(src)
 for var in ('scarlet','magma','steel','arena'):
     a,g=paint.make_atlas(var)
-    Image.fromarray(paint.dilate(a)).save(os.path.join(tex,'carnotaurus_%s.png'%var),optimize=True)
+    a=paint.dilate(a); a[paint.saddle_mask()]=0      # los cubos de la montura quedan invisibles sin silla
+    Image.fromarray(a).save(os.path.join(tex,'carnotaurus_%s.png'%var),optimize=True)
     Image.fromarray(g).save(os.path.join(tex,'carnotaurus_%s_glow.png'%var),optimize=True)
 Image.fromarray(paint.make_saddle()).save(os.path.join(tex,'carnotaurus_saddle.png'),optimize=True)
 print('H',H,'hy',hy)
