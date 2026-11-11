@@ -10,11 +10,13 @@ import net.minecraft.world.entity.ai.control.MoveControl;
  * avanza mas despacio: el resultado es un arco, como un animal grande que gira caminando.
  */
 public class SmoothMoveControl extends MoveControl {
-    private final float maxTurn;
+    private float maxTurn;
     public SmoothMoveControl(Mob mob, float maxTurn) {
         super(mob);
         this.maxTurn = maxTurn;
     }
+    /** Cambia el giro maximo por tick (una bestia en plena caza gira mas deprisa que paseando). */
+    public void setMaxTurn(float maxTurn) { this.maxTurn = maxTurn; }
     @Override public void tick() {
         float before = this.mob.getYRot();
         super.tick();

@@ -1,4 +1,4 @@
-Carnotauro (v1.1.11): esqueleto articulado PROPIO, generado por codigo.
+Carnotauro (v1.1.12): esqueleto articulado PROPIO, generado por codigo.
 
   python3 tools/carnotaurus/export.py .      (desde la raiz del repo; necesita numpy y pillow)
 
@@ -33,3 +33,17 @@ Si cambias el cuerpo/placa dorsal del adulto, repasa las coordenadas de saddle_b
 v1.1.11: el color "Magma" (variante 1) pasa a ser "Verde" (verde dinosaurio natural: lomo verde bosque con rayas oscuras y moteado claro, vientre amarillento, ojos y puntas de cuerno ambar).
 Ya no hay lava ni brillo de grietas; el brillo del Verde es solo ojos y puntas de cuerno, como los demas colores. Ids renombrados: carnotaurus_green(.png/_glow), carnotaurus_egg_green(_0..3), item carnotaurus_egg_green.
 Los huevos se generan con tools/carnotaurus/eggs.py (python3 tools/carnotaurus/eggs.py).
+
+v1.1.12: movimientos fluidos y Brutus sumamente agresivo.
+ANIMACION (client/CarnotaurusModel.setupAnim): ya no usa limbSwing de vanilla (satura a 1 por tick y hacia resbalar las patas). La entidad mantiene en el cliente
+(CarnotaurusEntity.clientAnimTick) valores suavizados con su version del tick anterior: gait (fase de zancada, avanza con la distancia recorrida y la cadencia que clava el pie
+al suelo, limitada a ~0.58-0.70 rad/tick), speedAnim, runAnim, aggroAnim (flag "agresivo" de Mob, sincronizado), turnAnim, sitAnim/sleepAnim. El modelo los interpola con
+pt = age - e.tickCount, asi no hay saltos a 20 Hz. El cuerpo sube/baja por cinematica de piernas (legDepth/smax) para que el pie mas bajo pise el suelo (antes se hundia ~5 unidades).
+Mordida (getAttackAnim interpolado): preparar -> golpear -> cerrar y sacudir. Cabezazo y rugido: curvas con anticipacion (encogerse e inspirar, lanzar la cabeza, sostener temblando, soltar).
+Tambien: inclinacion hacia dentro de las curvas, cola que se queda atras, torso hacia delante y cabeza nivelada al correr, jadeo/gruñido al acechar y sacudida al recibir un golpe.
+Poses de prueba: preview de scratchpad (anim_sim.py/anim_view.py) con la misma matematica; si cambias los huesos de la pierna, legDepth se recalcula solo (lee las poses de reposo).
+IA (CarnotaurusEntity): solo el adulto. Silvestre: PreyGoal ataca TODO lo que ve en 64 bloques (jugadores, aldeanos, golems, monstruos, ganado) salvo su especie, mascotas domadas,
+agua/aire y soportes de armadura. Domado: caza monstruos (y animales con la orden Deambular), nunca jugadores, aldeanos, golems ni mascotas.
+BrutusMeleeGoal (mordida cada 0.6 s, 0.45 s en furia, velocidad x1.35, olvida 10 s a lo inalcanzable), BattleRoarGoal (ruge una vez por presa lejana y al entrar en furia),
+BrutalChargeGoal (embestida a ~20 bloques/s a presas de frente entre 10 y 26 bloques, termina al chocar), furia por debajo del 40 % de vida (+15 % velocidad, +25 % dano),
+velocidad base 0.34, giro 13 grados/tick cazando (SmoothMoveControl.setMaxTurn), gruñidos periodicos. Ajustes rapidos: ENRAGE_BELOW, PreyGoal/isPrey, cooldowns cdAiRoar/cdAiCharge.

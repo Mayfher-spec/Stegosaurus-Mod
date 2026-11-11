@@ -20,17 +20,18 @@ import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.FlyingMob;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.entity.TamableAnimal;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
-import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
 import net.minecraft.world.entity.ai.goal.MoveTowardsRestrictionGoal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.goal.RandomStrollGoal;
@@ -39,7 +40,14 @@ import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.OwnerHurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.OwnerHurtTargetGoal;
+import net.minecraft.world.entity.ambient.Bat;
 import net.minecraft.world.entity.animal.Animal;
+import net.minecraft.world.entity.animal.FlyingAnimal;
+import net.minecraft.world.entity.animal.IronGolem;
+import net.minecraft.world.entity.animal.WaterAnimal;
+import net.minecraft.world.entity.decoration.ArmorStand;
+import net.minecraft.world.entity.monster.Enemy;
+import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -52,6 +60,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * Carnotauro: segundo dinosaurio del mod. Carnivoro de ataque (mas rapido y mas agil que el estegosaurio, con menos vida).
@@ -64,6 +73,10 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
     public static final int SCARLET = 0, GREEN = 1, STEEL = 2, ARENA = 3, VARIANTS = 4;
     public static final String[] VARIANT_NAMES = {"Rojo", "Verde", "Acero", "Arena"};
     public static final int CHARGE_LEN = 24, BUTT_LEN = 14, ROAR_LEN = 40;
+    /** Furia: por debajo de este porcentaje de vida el adulto corre y muerde mas fuerte. */
+    private static final float ENRAGE_BELOW = 0.40F;
+    private static final UUID ENRAGE_SPEED_ID = UUID.fromString("5c1d0f5e-3d7a-4b8e-9a52-7c1e2b0a9d11");
+    private static final UUID ENRAGE_DAMAGE_ID = UUID.fromString("a8e3c6b1-52f4-4d0b-8c6e-1f9b7d2e4a22");
     /** Carnes crudas que necesita la cria para convertirse en adulto. */
     public static final int FEEDS_TO_GROW = 6;
     /** El adulto mide lo mismo que el tipo registrado (ProdigyCreatures.CARNOTAURUS: sized 2.7 x 3.8), asi la comprobacion de espacio al aparecer ya lo cuenta. */
@@ -81,17 +94,28 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
     private static final EntityDataAccessor<Integer> ABILITY_KIND = SynchedEntityData.defineId(CarnotaurusEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> ABILITY_LEFT = SynchedEntityData.defineId(CarnotaurusEntity.class, EntityDataSerializers.INT);
 
-    /** Solo cliente: suavizado de las poses de sentado y dormido. */
-    public float sitAnim, sleepAnim;
+    /**
+     * Solo cliente: estado de animacion suavizado. Cada valor guarda su version del tick anterior (...O) para interpolar con el tiempo parcial.
+     * gait = fase de la zancada (avanza con la distancia recorrida, asi los pies no resbalan); speedAnim = velocidad horizontal suavizada (bloques/tick);
+     * runAnim = 0 andando .. 1 corriendo/embistiendo; aggroAnim = postura de caza; turnAnim = giro (grados/tick).
+     */
+    public float sitAnim, sleepAnim, sitAnimO, sleepAnimO;
+    public float gait, gaitO, speedAnim, speedAnimO, runAnim, runAnimO, aggroAnim, aggroAnimO, turnAnim, turnAnimO;
     private int growth;
     @Nullable private BlockPos orderHome;
     private int cdCharge, cdButt, cdRoar, cdBite;
+    /** IA: pausa entre rugidos de guerra y entre embestidas, objetivo del ultimo rugido, furia y objetivo inalcanzable (se ignora un rato). */
+    private int cdAiRoar, cdAiCharge, growlTimer, unreachableId = -1, unreachableUntil;
+    private int lastRoarTargetId = -1;
+    private boolean enraged, enrageRoarDone;
+    private final SmoothMoveControl smoothMove;
     private final Set<Integer> chargeHit = new HashSet<>();
 
     public CarnotaurusEntity(EntityType<? extends CarnotaurusEntity> type, Level level) {
         super(type, level);
         this.setMaxUpStep(1.0F);
-        this.moveControl = new SmoothMoveControl(this, 6.0F);
+        this.smoothMove = new SmoothMoveControl(this, 6.0F);
+        this.moveControl = this.smoothMove;
         this.lookControl = new PetOrders.PetLookControl(this);
     }
 
@@ -102,7 +126,7 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
             .add(Attributes.ATTACK_DAMAGE, 16.0)
             .add(Attributes.ARMOR, 4.0)
             .add(Attributes.KNOCKBACK_RESISTANCE, 0.5)
-            .add(Attributes.FOLLOW_RANGE, 48.0);
+            .add(Attributes.FOLLOW_RANGE, 64.0);
     }
 
     // ------------------------------------------------------------------ datos
@@ -189,10 +213,10 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
     private void applyStageStats(boolean keepFraction) {
         boolean adult = isAdultStage();
         float frac = this.getMaxHealth() <= 0 ? 1.0F : this.getHealth() / this.getMaxHealth();
-        // el Brutus: mucha vida, daño y armadura; algo mas lento por su peso
+        // el Brutus: mucha vida, daño y armadura, y muy veloz (cazador de persecucion)
         setBase(Attributes.MAX_HEALTH, adult ? 220.0 : 50.0);
         setBase(Attributes.ATTACK_DAMAGE, adult ? 26.0 : 7.0);
-        setBase(Attributes.MOVEMENT_SPEED, adult ? 0.31 : 0.30);
+        setBase(Attributes.MOVEMENT_SPEED, adult ? 0.34 : 0.30);
         setBase(Attributes.ARMOR, adult ? 10.0 : 2.0);
         setBase(Attributes.KNOCKBACK_RESISTANCE, 0.85);
         if (keepFraction) this.setHealth(Math.max(1.0F, this.getMaxHealth() * frac));
@@ -251,32 +275,190 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
     @Override protected void registerGoals() {
         this.goalSelector.addGoal(0, new FloatGoal(this));
         this.goalSelector.addGoal(1, new SitWhenOrderedToGoal(this));
-        this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.25, true) {
-            @Override public boolean canUse() { return !isFallen() && stayOk() && super.canUse(); }
-            @Override public boolean canContinueToUse() { return !isFallen() && stayOk() && super.canContinueToUse(); }
-        });
+        this.goalSelector.addGoal(1, new BattleRoarGoal());   // ruge al ver una presa lejana y al entrar en furia
+        this.goalSelector.addGoal(1, new BrutalChargeGoal()); // embestida a la carrera contra la presa
+        this.goalSelector.addGoal(2, new BrutusMeleeGoal());  // persecucion y mordidas rapidas
         this.goalSelector.addGoal(3, new FollowGoal());
         this.goalSelector.addGoal(4, new MoveTowardsRestrictionGoal(this, 0.9));
         this.goalSelector.addGoal(5, new PetOrders.PatrolGoal(this));
-        this.goalSelector.addGoal(5, new RandomStrollGoal(this, 0.9) {
+        this.goalSelector.addGoal(5, new RandomStrollGoal(this, 0.5, 60) { // ronda inquieta pero sin trotar: el galope se reserva para la caza
             @Override public boolean canUse() { return !isTame() || (getOrder() != PetOrders.STAY && getOrder() != PetOrders.PATROL && getOrder() != PetOrders.FOLLOW && !isFallen() && super.canUse()); }
         });
         this.goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 10.0f));
         this.goalSelector.addGoal(7, new RandomLookAroundGoal(this));
         this.targetSelector.addGoal(1, new OwnerHurtByTargetGoal(this));
         this.targetSelector.addGoal(2, new OwnerHurtTargetGoal(this));
-        this.targetSelector.addGoal(3, new HurtByTargetGoal(this));
-        this.targetSelector.addGoal(4, PetOrders.patrolTargeting(this));
-        // el adulto silvestre caza ganado (vacas, ovejas, cerdos...), no mascotas domadas
-        this.targetSelector.addGoal(5, new NearestAttackableTargetGoal<>(this, Animal.class, 40, true, false, e -> !(e instanceof TamableAnimal)) {
-            @Override public boolean canUse() { return !isTame() && isAdultStage() && super.canUse(); }
-        });
+        this.targetSelector.addGoal(3, new HurtByTargetGoal(this, CarnotaurusEntity.class).setAlertOthers());
+        this.targetSelector.addGoal(4, new PreyGoal(this));
+    }
+
+    /**
+     * Presas del adulto. Silvestre: ataca TODO lo que ve (jugadores, aldeanos, golems, monstruos, ganado...) salvo los de su especie, las mascotas domadas,
+     * los bichos que no puede alcanzar (agua, aire) y los soportes de armadura. Domado: caza monstruos (y animales si su orden es Deambular),
+     * pero nunca a jugadores, aldeanos, golems ni mascotas.
+     */
+    private static boolean isPrey(CarnotaurusEntity self, LivingEntity e) {
+        if (e == self || e instanceof CarnotaurusEntity || !e.isAlive()) return false;
+        if (e instanceof ArmorStand || e instanceof Bat || e instanceof WaterAnimal || e instanceof FlyingMob || e instanceof FlyingAnimal) return false;
+        if (e.getY() - self.getY() > 5.0) return false;
+        if (e.getId() == self.unreachableId && self.tickCount < self.unreachableUntil) return false;
+        if (self.isAlly(e)) return false;
+        if (e instanceof TamableAnimal t && t.isTame()) return false;
+        if (self.isTame()) {
+            if (e instanceof Player || e instanceof AbstractVillager || e instanceof IronGolem) return false;
+            LivingEntity owner = self.getOwner();
+            if (owner != null && e.distanceToSqr(owner) > 28.0 * 28.0) return false; // no se aleja a perseguir lo que esta lejos de su dueno
+            return e instanceof Enemy || (self.getOrder() == PetOrders.WANDER && e instanceof Animal);
+        }
+        return true;
+    }
+
+    /** Busca presa cada pocos ticks en todo su rango de vision (64 bloques); solo el adulto, y no sentado, dormido ni caido. */
+    private static final class PreyGoal extends NearestAttackableTargetGoal<LivingEntity> {
+        private final CarnotaurusEntity self;
+        PreyGoal(CarnotaurusEntity self) {
+            super(self, LivingEntity.class, 4, true, false, e -> isPrey(self, e));
+            this.self = self;
+        }
+        private boolean active() {
+            return self.isAdultStage() && !self.isFallen() && !(self.isTame() && PetOrders.isSittingOrder(self.getOrder())) && self.stayOk();
+        }
+        @Override public boolean canUse() { return active() && super.canUse(); }
+        @Override public boolean canContinueToUse() { return active() && super.canContinueToUse(); }
     }
 
     private boolean stayOk() {
         if (!isTame() || getOrder() != PetOrders.STAY) return true;
         LivingEntity t = getTarget();
         return t != null && this.distanceToSqr(t) < 36.0;
+    }
+
+    /** Giro suave de un angulo hacia otro, como mucho step grados. */
+    private static float turnToward(float cur, float want, float step) {
+        return cur + Mth.clamp(Mth.wrapDegrees(want - cur), -step, step);
+    }
+
+    /** Rumbo (grados de entidad) desde la posicion de la bestia hacia un objetivo. */
+    private float yawTo(LivingEntity t) {
+        return (float) (Mth.atan2(t.getZ() - this.getZ(), t.getX() - this.getX()) * 57.29577951308232) - 90.0F;
+    }
+
+    /** Persecucion: corre hacia la presa y muerde sin parar (el adulto cada 0,6 s). Si no hay camino hasta ella, la olvida un rato. */
+    private final class BrutusMeleeGoal extends Goal {
+        private int repath, cooldown, noPath;
+        BrutusMeleeGoal() { this.setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK)); }
+        private boolean valid(@Nullable LivingEntity t) {
+            return t != null && t.isAlive() && !isAlly(t) && !isFallen() && stayOk() && !isOrderedToSit()
+                && !(t instanceof Player p && (p.isCreative() || p.isSpectator()));
+        }
+        @Override public boolean canUse() { return valid(CarnotaurusEntity.this.getTarget()); }
+        @Override public boolean canContinueToUse() { return valid(CarnotaurusEntity.this.getTarget()); }
+        @Override public boolean requiresUpdateEveryTick() { return true; }
+        @Override public void start() { repath = 0; noPath = 0; cooldown = 6; }
+        @Override public void stop() { CarnotaurusEntity.this.getNavigation().stop(); }
+        @Override public void tick() {
+            CarnotaurusEntity me = CarnotaurusEntity.this;
+            LivingEntity t = me.getTarget();
+            if (t == null) return;
+            me.getLookControl().setLookAt(t, 40.0F, 40.0F);
+            boolean adult = isAdultStage();
+            double d2 = me.distanceToSqr(t.getX(), t.getY(), t.getZ());
+            double reach2 = (double) (me.getBbWidth() * 2.0F * me.getBbWidth() * 2.0F) + t.getBbWidth();
+            if (--repath <= 0) {
+                repath = 3 + me.random.nextInt(4);
+                if (d2 > reach2 * 0.6) {
+                    double sp = adult ? (d2 > 100.0 ? 1.35 : 1.2) : 1.15;
+                    if (me.getNavigation().moveTo(t, sp)) noPath = 0;
+                    else if (++noPath >= 6 && d2 > reach2) { // sin camino: la olvida unos segundos
+                        me.unreachableId = t.getId();
+                        me.unreachableUntil = me.tickCount + 200;
+                        me.setTarget(null);
+                        return;
+                    }
+                } else me.getNavigation().stop();
+            }
+            if (cooldown > 0) cooldown--;
+            if (cooldown <= 0 && d2 <= reach2 && me.getSensing().hasLineOfSight(t)) {
+                cooldown = adult ? (enraged ? 9 : 12) : 20;
+                me.swing(InteractionHand.MAIN_HAND);
+                me.doHurtTarget(t);
+            }
+        }
+    }
+
+    /** Rugido de guerra: al ver una presa lejana (una vez por presa) y al entrar en furia. Se queda quieto y ruge; en furia es casi invulnerable mientras ruge. */
+    private final class BattleRoarGoal extends Goal {
+        BattleRoarGoal() { this.setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK)); }
+        @Override public boolean canUse() {
+            CarnotaurusEntity me = CarnotaurusEntity.this;
+            LivingEntity t = me.getTarget();
+            if (t == null || !t.isAlive() || !isAdultStage() || isFallen() || me.isVehicle() || isOrderedToSit() || !stayOk()) return false;
+            if (getAbilityLeft() > 0 || isAlly(t)) return false;
+            if (enraged && !enrageRoarDone) return true; // la furia ruge aunque acabe de rugir
+            if (cdAiRoar > 0) return false;
+            double d2 = me.distanceToSqr(t);
+            return t.getId() != lastRoarTargetId && d2 > 49.0 && d2 < 48.0 * 48.0 && me.getSensing().hasLineOfSight(t);
+        }
+        @Override public boolean canContinueToUse() { return getAbilityKind() == 3 && getAbilityLeft() > 0 && CarnotaurusEntity.this.getTarget() != null; }
+        @Override public void start() {
+            CarnotaurusEntity me = CarnotaurusEntity.this;
+            LivingEntity t = me.getTarget();
+            me.getNavigation().stop();
+            if (t != null) lastRoarTargetId = t.getId();
+            if (enraged && !enrageRoarDone) {
+                enrageRoarDone = true;
+                me.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, ROAR_LEN + 10, 1));
+            }
+            cdAiRoar = 400;
+            startAbility(3, ROAR_LEN);
+            if (me.level() instanceof ServerLevel server) roar(server, !me.isTame());
+        }
+        @Override public void tick() {
+            CarnotaurusEntity me = CarnotaurusEntity.this;
+            me.getNavigation().stop();
+            LivingEntity t = me.getTarget();
+            if (t != null) {
+                me.getLookControl().setLookAt(t, 40.0F, 40.0F);
+                me.setYRot(turnToward(me.getYRot(), me.yawTo(t), 6.0F));
+            }
+        }
+    }
+
+    /** Embestida a la carrera: si la presa esta de frente entre 10 y 26 bloques, baja la cabeza y arrolla en linea recta (golpea mas fuerte que una mordida). */
+    private final class BrutalChargeGoal extends Goal {
+        BrutalChargeGoal() { this.setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK)); }
+        @Override public boolean canUse() {
+            CarnotaurusEntity me = CarnotaurusEntity.this;
+            LivingEntity t = me.getTarget();
+            if (t == null || !t.isAlive() || !isAdultStage() || isFallen() || me.isVehicle() || isOrderedToSit() || !stayOk() || isAlly(t)) return false;
+            if (cdAiCharge > 0 || cdCharge > 0 || getAbilityLeft() > 0 || !me.onGround()) return false;
+            double d2 = me.distanceToSqr(t);
+            if (d2 < 100.0 || d2 > 26.0 * 26.0 || Math.abs(t.getY() - me.getY()) > 3.0) return false;
+            if (Math.abs(Mth.wrapDegrees(me.yawTo(t) - me.getYRot())) > 40.0F || !me.getSensing().hasLineOfSight(t)) return false;
+            return me.random.nextInt(5) == 0;
+        }
+        @Override public boolean canContinueToUse() {
+            LivingEntity t = CarnotaurusEntity.this.getTarget();
+            return isCharging() && t != null && t.isAlive() && !CarnotaurusEntity.this.isVehicle();
+        }
+        @Override public void start() {
+            CarnotaurusEntity me = CarnotaurusEntity.this;
+            me.getNavigation().stop();
+            chargeHit.clear();
+            cdAiCharge = 120 + me.random.nextInt(80);
+            cdCharge = 100;
+            startAbility(1, CHARGE_LEN);
+            me.playSound(ModSounds.CARNO_ROAR.get(), 2.2F, 1.25F * vp());
+        }
+        @Override public void tick() {
+            CarnotaurusEntity me = CarnotaurusEntity.this;
+            LivingEntity t = me.getTarget();
+            if (t == null) return;
+            me.getLookControl().setLookAt(t, 60.0F, 60.0F);
+            me.setYRot(turnToward(me.getYRot(), me.yawTo(t), 5.0F)); // la embestida se corrige un poco hacia la presa
+            me.yRotO = me.getYRot();
+            me.yBodyRot = me.getYRot();
+        }
     }
 
     /** Seguir al dueno: camina, corre si esta lejos, guarda distancia y solo se teletransporta muy lejos (96 bloques). */
@@ -310,7 +492,7 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
                 CarnotaurusEntity.this.getNavigation().stop();
                 return;
             }
-            double sp = dist > 24.0 ? 1.55 : 1.0;
+            double sp = dist > 24.0 ? 1.4 : 0.85;
             if (dist > 56.0) {
                 double k = 48.0 / dist;
                 CarnotaurusEntity.this.getNavigation().moveTo(getX() + (o.getX() - getX()) * k, o.getY(), getZ() + (o.getZ() - getZ()) * k, sp);
@@ -323,17 +505,89 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
     @Override public void tick() {
         super.tick();
         if (this.level().isClientSide) {
-            sitAnim += ((getOrder() == PetOrders.SIT ? 1.0F : 0.0F) - sitAnim) * 0.12F;
-            sleepAnim += (((getOrder() == PetOrders.SLEEP || isFallen()) ? 1.0F : 0.0F) - sleepAnim) * 0.08F;
+            clientAnimTick();
         } else {
             if (!sexAssigned) assignSex();
             if (cdCharge > 0) cdCharge--;
             if (cdButt > 0) cdButt--;
             if (cdRoar > 0) cdRoar--;
             if (cdBite > 0) cdBite--;
+            if (cdAiRoar > 0) cdAiRoar--;
+            if (cdAiCharge > 0) cdAiCharge--;
             abilityTick();
+            huntTick();
             PetOrders.serverTick(this);
         }
+    }
+
+    /**
+     * Cliente: actualiza el estado de animacion suavizado. La fase de la zancada avanza con la distancia realmente recorrida
+     * (con la longitud de zancada que crece con la velocidad), asi las patas siguen al suelo y no patinan ni van a otro ritmo que el cuerpo.
+     */
+    private void clientAnimTick() {
+        sitAnimO = sitAnim; sleepAnimO = sleepAnim;
+        gaitO = gait; speedAnimO = speedAnim; runAnimO = runAnim; aggroAnimO = aggroAnim; turnAnimO = turnAnim;
+        sitAnim += ((getOrder() == PetOrders.SIT ? 1.0F : 0.0F) - sitAnim) * 0.12F;
+        sleepAnim += (((getOrder() == PetOrders.SLEEP || isFallen()) ? 1.0F : 0.0F) - sleepAnim) * 0.08F;
+
+        double dx = this.getX() - this.xo, dz = this.getZ() - this.zo;
+        float v = (float) Math.sqrt(dx * dx + dz * dz);
+        if (v > 1.6F) v = 0.0F; // salto de posicion (teletransporte): no cuenta como carrera
+        speedAnim += (v - speedAnim) * 0.30F;
+        boolean adult = isAdultStage();
+        // cadencia que hace que el pie apoyado vaya a la velocidad del suelo: avance medio de la fase de apoyo = (2/pi) * amplitud * largo de pierna * cadencia.
+        // Al correr muy rapido la cadencia se limita (no puede girar mas deprisa que un trote vivo) y las patas "ganan" terreno con zancadas mas amplias.
+        float sp01 = Mth.clamp(speedAnim / 0.9F, 0.0F, 1.0F);
+        float legLen = adult ? 1.8F : 0.95F; // largo de la pierna en bloques (cadera -> suelo)
+        float natural = speedAnim > 0.004F ? 1.5707964F * speedAnim / (strideAmp(speedAnim, adult) * legLen) : 0.0F;
+        gait += Math.min(natural, adult ? 0.58F + 0.12F * sp01 : 0.90F);
+        if (gait > 628.3F) { gait -= 628.31854F; gaitO -= 628.31854F; }
+
+        float runTarget = isCharging() ? 1.0F : Mth.clamp((speedAnim - 0.32F) / 0.45F, 0.0F, 1.0F);
+        runAnim += (runTarget - runAnim) * 0.22F;
+        aggroAnim += ((isAggressive() ? 1.0F : 0.0F) - aggroAnim) * 0.12F;
+        turnAnim += (Mth.wrapDegrees(this.yBodyRot - this.yBodyRotO) - turnAnim) * 0.25F;
+    }
+
+    /** Amplitud (radianes) del vaiven del muslo segun la velocidad (bloques/tick): paso corto al pasear, zancada larga al correr. La usan la entidad (cadencia) y el modelo (pose). */
+    public static float strideAmp(float speed, boolean adult) {
+        float t = Mth.clamp(speed / 0.9F, 0.0F, 1.0F);
+        return adult ? Mth.lerp(t, 0.38F, 0.75F) : Mth.lerp(t, 0.40F, 0.62F);
+    }
+
+    /** Servidor: postura de caza sincronizada (flag "agresivo" de Mob), giro mas rapido persiguiendo, furia con poca vida y gruñidos. */
+    private void huntTick() {
+        LivingEntity t = this.getTarget();
+        boolean hunting = t != null && t.isAlive();
+        this.setAggressive(hunting);
+        this.smoothMove.setMaxTurn(isCharging() ? 3.0F : hunting && isAdultStage() ? 13.0F : 6.0F);
+        if (this.tickCount % 10 == 0) updateEnrage(hunting);
+        if (hunting && isAdultStage() && !isFallen() && getAbilityLeft() == 0 && this.distanceToSqr(t) < 28.0 * 28.0 && --growlTimer <= 0) {
+            growlTimer = 70 + this.random.nextInt(70);
+            this.playSound(ModSounds.CARNO_ROAR.get(), 1.1F, 1.55F * vp() + this.random.nextFloat() * 0.12F);
+        }
+        if (enraged && this.tickCount % 20 == 0 && this.level() instanceof ServerLevel sl) {
+            sl.sendParticles(ParticleTypes.ANGRY_VILLAGER, getX(), getY() + getBbHeight() * 0.9, getZ(), 2, 0.5, 0.2, 0.5, 0.0);
+        }
+    }
+
+    /** Furia: por debajo del 40 % de vida y con presa, +15 % de velocidad y +25 % de dano hasta que se calme o se cure. */
+    private void updateEnrage(boolean hunting) {
+        boolean should = hunting && isAdultStage() && !isFallen() && this.getHealth() < this.getMaxHealth() * ENRAGE_BELOW;
+        var speed = this.getAttribute(Attributes.MOVEMENT_SPEED);
+        var damage = this.getAttribute(Attributes.ATTACK_DAMAGE);
+        if (should && !enraged) {
+            enraged = true;
+            if (speed != null && speed.getModifier(ENRAGE_SPEED_ID) == null)
+                speed.addTransientModifier(new AttributeModifier(ENRAGE_SPEED_ID, "Furia", 0.15, AttributeModifier.Operation.MULTIPLY_BASE));
+            if (damage != null && damage.getModifier(ENRAGE_DAMAGE_ID) == null)
+                damage.addTransientModifier(new AttributeModifier(ENRAGE_DAMAGE_ID, "Furia", 0.25, AttributeModifier.Operation.MULTIPLY_BASE));
+        } else if (!should && enraged) {
+            enraged = false;
+            if (speed != null) speed.removeModifier(ENRAGE_SPEED_ID);
+            if (damage != null) damage.removeModifier(ENRAGE_DAMAGE_ID);
+        }
+        if (!enraged && this.getHealth() > this.getMaxHealth() * 0.7F) enrageRoarDone = false; // podra volver a rugir de furia
     }
 
     private void abilityTick() {
@@ -343,7 +597,11 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
             return;
         }
         this.entityData.set(ABILITY_LEFT, left - 1);
-        if (getAbilityKind() == 1) chargeHits();
+        if (getAbilityKind() == 1) {
+            chargeHits();
+            // embestida de la IA (sin jinete): termina enseguida al chocar con algo o contra un muro
+            if (this.getControllingPassenger() == null && left > 3 && (!chargeHit.isEmpty() || this.horizontalCollision)) this.entityData.set(ABILITY_LEFT, 2);
+        }
         if (left - 1 <= 0) { this.entityData.set(ABILITY_KIND, 0); chargeHit.clear(); }
     }
 
@@ -362,7 +620,8 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
         Vec3 dir = Vec3.directionFromRotation(0.0F, this.getYRot());
         AABB box = this.getBoundingBox().inflate(0.7, 0.2, 0.7).move(dir.scale(1.4));
         float dmg = (float) this.getAttributeValue(Attributes.ATTACK_DAMAGE) * 1.4F;
-        for (LivingEntity e : this.level().getEntitiesOfClass(LivingEntity.class, box, x -> !isAlly(x))) {
+        boolean ridden = this.getControllingPassenger() != null;
+        for (LivingEntity e : this.level().getEntitiesOfClass(LivingEntity.class, box, x -> !isAlly(x) && (ridden || !isTame() || x instanceof Enemy || x == getTarget()))) {
             if (!chargeHit.add(e.getId())) continue;
             e.hurt(this.damageSources().mobAttack(this), dmg);
             e.knockback(1.6, -dir.x, -dir.z);
@@ -423,21 +682,29 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
                 if (cdRoar > 0 || getAbilityLeft() > 0) return;
                 cdRoar = 500;
                 startAbility(3, ROAR_LEN);
-                this.playSound(ModSounds.CARNO_ROAR.get(), 4.0F, vp());
-                for (LivingEntity e : server.getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(12.0), x -> x != this)) {
-                    if (isAlly(e)) e.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 160, 0));
-                    else if (e.isAlive()) {
-                        e.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 120, 0));
-                        e.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 100, 0));
-                    }
-                }
-                for (int k = 0; k < 40; k++) {
-                    double a = k * Math.PI * 2.0 / 40.0;
-                    server.sendParticles(ParticleTypes.SMOKE, getX() + Math.cos(a) * 3.0, getY() + 0.3, getZ() + Math.sin(a) * 3.0, 3, 0.2, 0.1, 0.2, 0.05);
-                    server.sendParticles(ParticleTypes.ANGRY_VILLAGER, getX() + Math.cos(a) * 1.5, getY() + 2.8, getZ() + Math.sin(a) * 1.5, 0, 0, 0, 0, 0);
-                }
+                roar(server, false);
             }
             default -> {}
+        }
+    }
+
+    /**
+     * Rugido: aliados cerca reciben Fuerza; los demas, Lentitud (y Debilidad si el rugido es completo). El rugido "suave" lo usa el silvestre
+     * al ver una presa: asusta (lentitud breve) pero no deja a nadie indefenso.
+     */
+    private void roar(ServerLevel server, boolean mild) {
+        this.playSound(ModSounds.CARNO_ROAR.get(), 4.0F, vp());
+        for (LivingEntity e : server.getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(12.0), x -> x != this)) {
+            if (isAlly(e)) e.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 160, 0));
+            else if (e.isAlive() && !(e instanceof CarnotaurusEntity && !this.isTame())) {
+                if (!mild) e.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 120, 0));
+                e.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, mild ? 50 : 100, 0));
+            }
+        }
+        for (int k = 0; k < 40; k++) {
+            double a = k * Math.PI * 2.0 / 40.0;
+            server.sendParticles(ParticleTypes.SMOKE, getX() + Math.cos(a) * 3.0, getY() + 0.3, getZ() + Math.sin(a) * 3.0, 3, 0.2, 0.1, 0.2, 0.05);
+            server.sendParticles(ParticleTypes.ANGRY_VILLAGER, getX() + Math.cos(a) * 1.5, getY() + 2.8, getZ() + Math.sin(a) * 1.5, 0, 0, 0, 0, 0);
         }
     }
 
@@ -598,7 +865,8 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
             this.calculateEntityAnimation(false);
         } else if (isCharging() && !this.isVehicle()) { // embestida sin jinete: recta hacia donde mira
             Vec3 d = Vec3.directionFromRotation(0.0F, this.getYRot()), mv = this.getDeltaMovement();
-            this.setDeltaMovement(d.x * 0.8, mv.y, d.z * 0.8);
+            double sp = enraged ? 1.15 : 1.0; // ~20 bloques/s: mas que un caballo
+            this.setDeltaMovement(d.x * sp, mv.y, d.z * sp);
             super.travel(Vec3.ZERO.add(0.0, travelVector.y, 0.0));
         } else super.travel(travelVector);
     }
