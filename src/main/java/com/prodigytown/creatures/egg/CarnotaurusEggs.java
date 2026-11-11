@@ -6,11 +6,11 @@ import net.minecraft.util.RandomSource;
 public final class CarnotaurusEggs {
     private CarnotaurusEggs() {}
 
-    /** Indice = color (CarnotaurusEntity.SCARLET, MAGMA, STEEL, ARENA). */
-    public static final String[] NAMES = {"scarlet", "magma", "steel", "arena"};
+    /** Indice = color (CarnotaurusEntity.SCARLET, GREEN, STEEL, ARENA). */
+    public static final String[] NAMES = {"scarlet", "green", "steel", "arena"};
     /** Estados del nido: 1..5 huevos de estegosaurio (variante + 1); 6..9 huevos de carnotauro (6 + color). */
     public static final int NEST_BASE = 6;
-    /** Rareza (%) de cada color: rojo 50, acero 22, magma 18, arena 10 (el mas raro). */
+    /** Rareza (%) de cada color: rojo 50, acero 22, verde 18, arena 10 (el mas raro). */
     private static final int[] BASE = {50, 18, 22, 10};
     /** Puntos de bonus que suma el color de la madre. */
     private static final int HERITAGE = 15;

@@ -60,9 +60,9 @@ import java.util.Set;
  * Comparte con el estegosaurio las ordenes y el estado "caido" (ver PetOrders y PetEvents).
  */
 public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder {
-    /** Colores: Rojo, Magma, Acero y Arena. El adulto es siempre el "Brutus": grande, robusto y agresivo. */
-    public static final int SCARLET = 0, MAGMA = 1, STEEL = 2, ARENA = 3, VARIANTS = 4;
-    public static final String[] VARIANT_NAMES = {"Rojo", "Magma", "Acero", "Arena"};
+    /** Colores: Rojo, Verde, Acero y Arena. El adulto es siempre el "Brutus": grande, robusto y agresivo. */
+    public static final int SCARLET = 0, GREEN = 1, STEEL = 2, ARENA = 3, VARIANTS = 4;
+    public static final String[] VARIANT_NAMES = {"Rojo", "Verde", "Acero", "Arena"};
     public static final int CHARGE_LEN = 24, BUTT_LEN = 14, ROAR_LEN = 40;
     /** Carnes crudas que necesita la cria para convertirse en adulto. */
     public static final int FEEDS_TO_GROW = 6;
@@ -229,12 +229,12 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
         SpawnGroupData result = super.finalizeSpawn(level, difficulty, reason, previous, tag);
         int roll = this.random.nextInt(100);
         var biome = level.getBiome(this.blockPosition());
-        int arenaChance = 8, magmaChance = 15, steelChance = 15;
-        if (biome.is(net.minecraft.tags.BiomeTags.IS_SAVANNA) || biome.is(net.minecraft.tags.BiomeTags.IS_BADLANDS)) { arenaChance = 18; magmaChance = 25; }
+        int arenaChance = 8, greenChance = 15, steelChance = 15;
+        if (biome.is(net.minecraft.tags.BiomeTags.IS_SAVANNA) || biome.is(net.minecraft.tags.BiomeTags.IS_BADLANDS)) { arenaChance = 18; greenChance = 25; }
         if (biome.is(net.minecraft.tags.BiomeTags.IS_FOREST) || biome.is(net.minecraft.tags.BiomeTags.IS_JUNGLE)) steelChance = 35;
         int v = roll < arenaChance ? ARENA
-            : roll < arenaChance + magmaChance ? MAGMA
-            : roll < arenaChance + magmaChance + steelChance ? STEEL : SCARLET;
+            : roll < arenaChance + greenChance ? GREEN
+            : roll < arenaChance + greenChance + steelChance ? STEEL : SCARLET;
         setVariant(v);
         if (!sexAssigned) assignSex(); // 50 % machos, 50 % hembras (los carnotauros viejos sin sexo lo reciben al aparecer o al cargarse)
         // en estado salvaje solo aparecen adultos: las crias vienen de los huevos que dejan las hembras

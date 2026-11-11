@@ -52,7 +52,7 @@ public class ProdigyCreatures {
         }
     }
 
-    /** CARNO_EGG_ITEMS.get(c) es el huevo del color c del carnotauro (0 rojo, 1 magma, 2 acero, 3 arena). */
+    /** CARNO_EGG_ITEMS.get(c) es el huevo del color c del carnotauro (0 rojo, 1 verde, 2 acero, 3 arena). */
     public static final java.util.List<RegistryObject<Item>> CARNO_EGG_ITEMS = new java.util.ArrayList<>();
     static {
         for (int i = 0; i < com.prodigytown.creatures.egg.CarnotaurusEggs.NAMES.length; i++) {

@@ -10,7 +10,7 @@ import net.minecraft.resources.ResourceLocation;
 
 /** Renderer del carnotauro: textura segun variante, escala segun etapa (cria / adulto). */
 public final class CarnotaurusRenderer extends MobRenderer<CarnotaurusEntity, CarnotaurusModel<CarnotaurusEntity>> {
-    private static final ResourceLocation[] SKINS = {tex("scarlet"), tex("magma"), tex("steel"), tex("arena")};
+    private static final ResourceLocation[] SKINS = {tex("scarlet"), tex("green"), tex("steel"), tex("arena")};
     private static ResourceLocation tex(String n) { return new ResourceLocation(ProdigyCreatures.MODID, "textures/entity/carnotaurus_" + n + ".png"); }
 
     /** El esqueleto esta dibujado a ~300 unidades de largo (1 texel por unidad): se reduce para que el adulto (Brutus) encaje en su hitbox de 2.7 x 3.8 bloques. */
