@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import com.prodigytown.creatures.ProdigyCreatures;
+import com.prodigytown.creatures.egg.CarnotaurusEggs;
 import com.prodigytown.creatures.egg.StegosaurusEggs;
 import com.prodigytown.creatures.egg.StegosaurusNestBlock;
 import com.prodigytown.creatures.egg.StegosaurusNestBlockEntity;
@@ -24,10 +25,13 @@ import org.joml.Matrix4f;
  * se agrieta por etapas y en los ultimos 12 s se balancea cada vez mas fuerte antes de eclosionar. Encima muestra el tiempo restante.
  */
 public final class StegosaurusNestRenderer implements BlockEntityRenderer<StegosaurusNestBlockEntity> {
-    private static final ResourceLocation[][] TEX = new ResourceLocation[5][4];
+    /** 0..4 huevos de estegosaurio, 5..8 huevos de carnotauro (estado del nido - 1). */
+    private static final ResourceLocation[][] TEX = new ResourceLocation[9][4];
     static {
-        for (int v = 0; v < 5; v++) for (int s = 0; s < 4; s++)
-            TEX[v][s] = new ResourceLocation(ProdigyCreatures.MODID, "textures/entity/stegosaurus_egg_" + StegosaurusEggs.NAMES[v] + "_" + s + ".png");
+        for (int v = 0; v < 9; v++) for (int s = 0; s < 4; s++) {
+            String name = v < 5 ? "stegosaurus_egg_" + StegosaurusEggs.NAMES[v] : "carnotaurus_egg_" + CarnotaurusEggs.NAMES[v - 5];
+            TEX[v][s] = new ResourceLocation(ProdigyCreatures.MODID, "textures/entity/" + name + "_" + s + ".png");
+        }
     }
     /** Suelo interior del nido (3/16) donde se apoya el huevo. */
     private static final double FLOOR = 0.1875;
@@ -46,7 +50,7 @@ public final class StegosaurusNestRenderer implements BlockEntityRenderer<Stegos
         if (!st.hasProperty(StegosaurusNestBlock.EGG)) return;
         int egg = st.getValue(StegosaurusNestBlock.EGG);
         if (egg <= 0) return;
-        int v = Math.max(0, Math.min(4, egg - 1));
+        int v = Math.max(0, Math.min(8, egg - 1));
         float prog = Math.min(be.total, be.shown + pt);
         float left = be.total > 0 ? Math.max(0.0F, be.total - prog) : 1.0E9F;
         float frac = be.total > 0 ? Mth.clamp(prog / be.total, 0.0F, 1.0F) : 0.0F;
@@ -84,7 +88,7 @@ public final class StegosaurusNestRenderer implements BlockEntityRenderer<Stegos
         model.root.render(pose, vc, light, OverlayTexture.NO_OVERLAY);
         pose.popPose();
 
-        if (st.getValue(StegosaurusNestBlock.WILD)) renderWildLabel(be, v, pose, buffers);
+        if (st.getValue(StegosaurusNestBlock.WILD) && v < LABEL.length) renderWildLabel(be, v, pose, buffers);
         else if (be.total > 0) renderTimer(be, left, frac, pose, buffers);
     }
 

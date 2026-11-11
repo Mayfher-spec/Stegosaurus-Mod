@@ -2,6 +2,7 @@ package com.prodigytown.creatures.egg;
 
 import com.prodigytown.chibi.ChibiAlpha;
 import com.prodigytown.chibi.ChibiStego;
+import com.prodigytown.creatures.CarnotaurusEntity;
 import com.prodigytown.creatures.ProdigyCreatures;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.BlockParticleOption;
@@ -81,6 +82,7 @@ public class StegosaurusNestBlockEntity extends BlockEntity {
         level.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, Blocks.SNIFFER_EGG.defaultBlockState()), x, y + 0.3, z, 40, 0.25, 0.3, 0.25, 0.12);
         level.sendParticles(ParticleTypes.POOF, x, y + 0.3, z, 14, 0.25, 0.25, 0.25, 0.04);
         level.sendParticles(ParticleTypes.END_ROD, x, y + 0.4, z, 12, 0.3, 0.35, 0.3, 0.05);
+        if (variant >= CarnotaurusEggs.NEST_BASE - 1) { hatchCarnotaurus(level, pos, x, y, z, variant - (CarnotaurusEggs.NEST_BASE - 1), who); return; }
         ChibiStego chibi = ChibiAlpha.STEGO.get().create(level);
         if (chibi == null) return;
         chibi.moveTo(x, y, z, level.random.nextFloat() * 360.0F, 0.0F);
@@ -90,6 +92,19 @@ public class StegosaurusNestBlockEntity extends BlockEntity {
         level.addFreshEntity(chibi);
         if (who != null && level.getPlayerByUUID(who) != null) {
             level.getPlayerByUUID(who).displayClientMessage(net.minecraft.network.chat.Component.literal("Tu huevo de estegosaurio ha eclosionado!"), true);
+        }
+    }
+
+    /** Nace un carnotauro chibi del color del huevo; si hay dueno, ya viene domado. */
+    private void hatchCarnotaurus(ServerLevel level, BlockPos pos, double x, double y, double z, int color, @Nullable UUID who) {
+        CarnotaurusEntity baby = ProdigyCreatures.CARNOTAURUS.get().create(level);
+        if (baby == null) return;
+        baby.moveTo(x, y, z, level.random.nextFloat() * 360.0F, 0.0F);
+        baby.finalizeSpawn(level, level.getCurrentDifficultyAt(pos), MobSpawnType.EVENT, null, null);
+        baby.initFromEgg(color, who);
+        level.addFreshEntity(baby);
+        if (who != null && level.getPlayerByUUID(who) != null) {
+            level.getPlayerByUUID(who).displayClientMessage(net.minecraft.network.chat.Component.literal("Tu huevo de carnotauro ha eclosionado!"), true);
         }
     }
 

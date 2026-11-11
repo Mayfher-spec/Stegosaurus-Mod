@@ -52,6 +52,21 @@ public class ProdigyCreatures {
         }
     }
 
+    /** CARNO_EGG_ITEMS.get(c) es el huevo del color c del carnotauro (0 rojo, 1 magma, 2 acero, 3 arena). */
+    public static final java.util.List<RegistryObject<Item>> CARNO_EGG_ITEMS = new java.util.ArrayList<>();
+    static {
+        for (int i = 0; i < com.prodigytown.creatures.egg.CarnotaurusEggs.NAMES.length; i++) {
+            final int c = i;
+            CARNO_EGG_ITEMS.add(ITEMS.register("carnotaurus_egg_" + com.prodigytown.creatures.egg.CarnotaurusEggs.NAMES[i], () ->
+                new com.prodigytown.creatures.egg.CarnotaurusEggItem(c, new Item.Properties().stacksTo(16))));
+        }
+    }
+    /** Item del huevo que corresponde a un estado del nido (1..5 estegosaurio, 6..9 carnotauro). */
+    public static Item eggItemForState(int state) {
+        int base = com.prodigytown.creatures.egg.CarnotaurusEggs.NEST_BASE;
+        return state >= base ? CARNO_EGG_ITEMS.get(state - base).get() : EGG_ITEMS.get(state - 1).get();
+    }
+
     public static final RegistryObject<EntityType<StegosaurusEntity>> STEGOSAURUS = ENTITIES.register("stegosaurus", () ->
         EntityType.Builder.of(StegosaurusEntity::new, MobCategory.CREATURE)
             .sized(4.0f, 5.0f).clientTrackingRange(12).build(MODID + ":stegosaurus"));
@@ -107,6 +122,7 @@ public class ProdigyCreatures {
                 event.accept(CARNOTAURUS_EGG.get());
                 event.accept(NEST_ITEM.get());
                 for (RegistryObject<Item> egg : EGG_ITEMS) event.accept(egg.get());
+                for (RegistryObject<Item> egg : CARNO_EGG_ITEMS) event.accept(egg.get());
             }
             if (event.getTabKey() == CreativeModeTabs.FOOD_AND_DRINKS) {
                 event.accept(TAMING_SALAD.get());
@@ -142,7 +158,9 @@ public class ProdigyCreatures {
         public static void registerCarnoSpawn(SpawnPlacementRegisterEvent event) {
             event.register(CARNOTAURUS.get(), SpawnPlacements.Type.ON_GROUND, Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
                 (type, level, reason, pos, random) -> level.getBlockState(pos.below()).isFaceSturdy(level, pos.below(), Direction.UP)
-                    && CarnotaurusEntity.roomFor(level, pos) && Mob.checkMobSpawnRules(type, level, reason, pos, random),
+                    && CarnotaurusEntity.roomFor(level, pos) && Mob.checkMobSpawnRules(type, level, reason, pos, random)
+                    // muy raro en estado salvaje: solo 1 de cada 3 intentos de aparicion natural prospera
+                    && (reason != net.minecraft.world.entity.MobSpawnType.NATURAL && reason != net.minecraft.world.entity.MobSpawnType.CHUNK_GENERATION || random.nextInt(3) == 0),
                 SpawnPlacementRegisterEvent.Operation.REPLACE);
         }
 

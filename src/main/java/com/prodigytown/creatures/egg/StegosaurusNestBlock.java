@@ -36,10 +36,10 @@ import java.util.List;
 /**
  * Nido de estegosaurio (crafteable). Clic derecho con un huevo lo coloca dentro y empieza la incubacion (5-10 min);
  * el huevo se dibuja con un BlockEntityRenderer, con temporizador encima. Agachado + mano vacia lo saca.
- * Estado EGG: 0 = vacio, 1..5 = huevo de la variante adulta (EGG-1).
+ * Estado EGG: 0 = vacio, 1..5 = huevo de estegosaurio de la variante adulta (EGG-1), 6..9 = huevo de carnotauro del color (EGG-6).
  */
 public final class StegosaurusNestBlock extends BaseEntityBlock {
-    public static final IntegerProperty EGG = IntegerProperty.create("egg", 0, 5);
+    public static final IntegerProperty EGG = IntegerProperty.create("egg", 0, 9);
     /** Huevo silvestre dormido (generado en un nido natural): no incuba hasta que se reclame y se ponga en un nido propio. */
     public static final BooleanProperty WILD = BooleanProperty.create("wild");
     private static final VoxelShape SHAPE = Block.box(0.0, 0.0, 0.0, 16.0, 6.0, 16.0);
@@ -62,7 +62,7 @@ public final class StegosaurusNestBlock extends BaseEntityBlock {
         List<ItemStack> out = new ArrayList<>();
         out.add(new ItemStack(ProdigyCreatures.NEST_ITEM.get()));
         int e = state.getValue(EGG);
-        if (e > 0 && !state.getValue(WILD)) out.add(new ItemStack(ProdigyCreatures.EGG_ITEMS.get(e - 1).get()));
+        if (e > 0 && !state.getValue(WILD)) out.add(new ItemStack(ProdigyCreatures.eggItemForState(e)));
         return out;
     }
 
@@ -85,16 +85,18 @@ public final class StegosaurusNestBlock extends BaseEntityBlock {
                 }
                 level.setBlock(pos, state.setValue(EGG, 0).setValue(WILD, false), 3);
                 be.clearIncubation();
-                ItemStack got = new ItemStack(ProdigyCreatures.EGG_ITEMS.get(egg - 1).get());
+                ItemStack got = new ItemStack(ProdigyCreatures.eggItemForState(egg));
                 if (!player.getInventory().add(got)) level.addFreshEntity(new ItemEntity(level, pos.getX() + 0.5, pos.getY() + 0.8, pos.getZ() + 0.5, got));
                 level.playSound(null, pos, SoundEvents.TURTLE_EGG_CRACK, SoundSource.BLOCKS, 1.0F, 0.7F);
                 player.displayClientMessage(Component.literal("Has reclamado el huevo. Ponlo en tu propio nido para que eclosione."), true);
             }
             return InteractionResult.sidedSuccess(level.isClientSide);
         }
-        if (egg == 0 && held.getItem() instanceof StegosaurusEggItem ei) { // meter el huevo en el nido
+        int put = held.getItem() instanceof StegosaurusEggItem ei ? ei.variant() + 1
+            : held.getItem() instanceof CarnotaurusEggItem ci ? CarnotaurusEggs.NEST_BASE + ci.variant() : 0;
+        if (egg == 0 && put > 0) { // meter el huevo en el nido (de estegosaurio o de carnotauro)
             if (!level.isClientSide) {
-                level.setBlock(pos, state.setValue(EGG, ei.variant() + 1), 3);
+                level.setBlock(pos, state.setValue(EGG, put), 3);
                 be.startIncubation(player.getUUID());
                 if (!player.getAbilities().instabuild) held.shrink(1);
                 level.playSound(null, pos, SoundEvents.TURTLE_LAY_EGG, SoundSource.BLOCKS, 1.0F, 0.9F);
@@ -106,7 +108,7 @@ public final class StegosaurusNestBlock extends BaseEntityBlock {
             if (!level.isClientSide) {
                 level.setBlock(pos, state.setValue(EGG, 0), 3);
                 be.clearIncubation();
-                ItemStack back = new ItemStack(ProdigyCreatures.EGG_ITEMS.get(egg - 1).get());
+                ItemStack back = new ItemStack(ProdigyCreatures.eggItemForState(egg));
                 if (!player.getInventory().add(back)) level.addFreshEntity(new ItemEntity(level, pos.getX() + 0.5, pos.getY() + 0.8, pos.getZ() + 0.5, back));
             }
             return InteractionResult.sidedSuccess(level.isClientSide);

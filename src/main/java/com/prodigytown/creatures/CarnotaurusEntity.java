@@ -71,6 +71,9 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
     private static final EntityDimensions CHIBI_DIM = EntityDimensions.fixed(1.1F, 1.8F);
 
     private static final EntityDataAccessor<Integer> VARIANT = SynchedEntityData.defineId(CarnotaurusEntity.class, EntityDataSerializers.INT);
+    /** Sexo: 50 % machos, 50 % hembras. Solo las hembras silvestres pueden dejar un huevo al caer. */
+    private static final EntityDataAccessor<Boolean> FEMALE = SynchedEntityData.defineId(CarnotaurusEntity.class, EntityDataSerializers.BOOLEAN);
+    private boolean sexAssigned = false;
     private static final EntityDataAccessor<Boolean> ADULT = SynchedEntityData.defineId(CarnotaurusEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> SADDLED = SynchedEntityData.defineId(CarnotaurusEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Integer> ORDER = SynchedEntityData.defineId(CarnotaurusEntity.class, EntityDataSerializers.INT);
@@ -107,6 +110,7 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
     @Override protected void defineSynchedData() {
         super.defineSynchedData();
         this.entityData.define(VARIANT, SCARLET);
+        this.entityData.define(FEMALE, Boolean.FALSE);
         this.entityData.define(ADULT, Boolean.TRUE);
         this.entityData.define(SADDLED, Boolean.FALSE);
         this.entityData.define(ORDER, PetOrders.FOLLOW);
@@ -119,6 +123,8 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
         super.addAdditionalSaveData(tag);
         tag.putInt("Variant", getVariant());
         tag.putBoolean("Adult", isAdultStage());
+        tag.putBoolean("Female", isFemale());
+        tag.putBoolean("SexAssigned", sexAssigned);
         tag.putInt("Growth", growth);
         tag.putBoolean("Saddled", isSaddled());
         tag.putInt("PetOrder", getOrder());
@@ -130,6 +136,8 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
         super.readAdditionalSaveData(tag);
         setVariant(tag.getInt("Variant"));
         this.entityData.set(ADULT, !tag.contains("Adult") || tag.getBoolean("Adult"));
+        this.entityData.set(FEMALE, tag.getBoolean("Female"));
+        this.sexAssigned = tag.getBoolean("SexAssigned");
         this.growth = tag.getInt("Growth");
         this.entityData.set(SADDLED, tag.getBoolean("Saddled"));
         this.entityData.set(ORDER, PetOrders.clamp(tag.getInt("PetOrder")));
@@ -137,6 +145,12 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
         this.orderHome = tag.contains("OrderHome") ? BlockPos.of(tag.getLong("OrderHome")) : null;
         applyStageStats(false);
         if (isTame()) this.setPersistenceRequired();
+    }
+
+    public boolean isFemale() { return this.entityData.get(FEMALE); }
+    private void assignSex() {
+        this.entityData.set(FEMALE, this.random.nextBoolean());
+        this.sexAssigned = true;
     }
 
     public int getVariant() { return this.entityData.get(VARIANT); }
@@ -190,6 +204,20 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
         if (inst != null) inst.setBaseValue(v);
     }
 
+    /** Recien nacido de un huevo: chibi del color del huevo, domado y a tu lado si hay dueno. */
+    public void initFromEgg(int color, @Nullable java.util.UUID owner) {
+        setVariant(color);
+        setAdultStage(false);
+        this.growth = 0;
+        if (owner != null) {
+            this.setOwnerUUID(owner);
+            this.setTame(true);
+            PetOrders.setOrder(this, PetOrders.FOLLOW);
+            this.setPersistenceRequired();
+        }
+        this.setHealth(this.getMaxHealth());
+    }
+
     public void setAdultStage(boolean adult) {
         this.entityData.set(ADULT, adult);
         applyStageStats(true);
@@ -208,8 +236,10 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
             : roll < arenaChance + magmaChance ? MAGMA
             : roll < arenaChance + magmaChance + steelChance ? STEEL : SCARLET;
         setVariant(v);
+        if (!sexAssigned) assignSex(); // 50 % machos, 50 % hembras (los carnotauros viejos sin sexo lo reciben al aparecer o al cargarse)
+        // en estado salvaje solo aparecen adultos: las crias vienen de los huevos que dejan las hembras
         if (reason == MobSpawnType.NATURAL || reason == MobSpawnType.CHUNK_GENERATION || reason == MobSpawnType.STRUCTURE) {
-            this.entityData.set(ADULT, this.random.nextInt(100) < 35); // la mayoria de los silvestres son crias que se pueden domesticar
+            this.entityData.set(ADULT, true);
         }
         applyStageStats(false);
         this.setHealth(this.getMaxHealth());
@@ -296,6 +326,7 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
             sitAnim += ((getOrder() == PetOrders.SIT ? 1.0F : 0.0F) - sitAnim) * 0.12F;
             sleepAnim += (((getOrder() == PetOrders.SLEEP || isFallen()) ? 1.0F : 0.0F) - sleepAnim) * 0.08F;
         } else {
+            if (!sexAssigned) assignSex();
             if (cdCharge > 0) cdCharge--;
             if (cdButt > 0) cdButt--;
             if (cdRoar > 0) cdRoar--;
@@ -573,6 +604,11 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
 
     @Override protected void dropCustomDeathLoot(DamageSource source, int looting, boolean recentlyHit) {
         super.dropCustomDeathLoot(source, looting, recentlyHit);
+        // hembra silvestre adulta derrotada: 50 % de dejar un huevo; su color sale por rareza (con sesgo hacia el suyo)
+        if (!this.isTame() && isFemale() && isAdultStage() && recentlyHit && this.random.nextBoolean()) {
+            this.spawnAtLocation(new net.minecraft.world.item.ItemStack(ProdigyCreatures.CARNO_EGG_ITEMS.get(
+                com.prodigytown.creatures.egg.CarnotaurusEggs.rollVariant(this.random, getVariant())).get()));
+        }
         if (isSaddled()) this.spawnAtLocation(Items.SADDLE);
     }
 

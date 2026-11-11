@@ -35,6 +35,30 @@
     },
     "egg=5,wild=true": {
       "model": "prodigycreatures:block/stegosaurus_nest"
+    },
+    "egg=6,wild=false": {
+      "model": "prodigycreatures:block/stegosaurus_nest"
+    },
+    "egg=6,wild=true": {
+      "model": "prodigycreatures:block/stegosaurus_nest"
+    },
+    "egg=7,wild=false": {
+      "model": "prodigycreatures:block/stegosaurus_nest"
+    },
+    "egg=7,wild=true": {
+      "model": "prodigycreatures:block/stegosaurus_nest"
+    },
+    "egg=8,wild=false": {
+      "model": "prodigycreatures:block/stegosaurus_nest"
+    },
+    "egg=8,wild=true": {
+      "model": "prodigycreatures:block/stegosaurus_nest"
+    },
+    "egg=9,wild=false": {
+      "model": "prodigycreatures:block/stegosaurus_nest"
+    },
+    "egg=9,wild=true": {
+      "model": "prodigycreatures:block/stegosaurus_nest"
     }
   }
 }

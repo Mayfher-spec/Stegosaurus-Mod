@@ -1,0 +1,6 @@
+{
+  "parent": "item/generated",
+  "textures": {
+    "layer0": "prodigycreatures:item/carnotaurus_egg_steel"
+  }
+}
