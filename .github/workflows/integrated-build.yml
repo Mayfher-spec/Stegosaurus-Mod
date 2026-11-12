@@ -20,6 +20,9 @@ jobs:
         with:
           gradle-version: '8.8'
 
+      - name: Read mod version from gradle.properties
+        run: echo "MOD_VERSION=$(grep '^mod_version=' gradle.properties | cut -d= -f2 | tr -d '\r ')" >> "$GITHUB_ENV"
+
       - name: Compile native adults AND source chibis in a single Forge mod
         run: gradle --no-daemon build
 
@@ -39,16 +42,16 @@ jobs:
           mkdir -p dist
           ADULT_JAR="$(find build/libs -maxdepth 1 -name 'The-Stegosaurus-Mod-*.jar' | head -n 1)"
           test -n "$ADULT_JAR"
-          python3 scripts/merge_mods.py "$ADULT_JAR" /tmp/prodigy_chibi_054.jar dist/The_Stegosaurus_Mod_v1.1.21_Forge_1.20.1.jar
+          python3 scripts/merge_mods.py "$ADULT_JAR" /tmp/prodigy_chibi_054.jar dist/The_Stegosaurus_Mod_v${MOD_VERSION}_Forge_1.20.1.jar
 
       - name: Verify single mod descriptor, legacy baby entity, new spawn egg and textures
         run: |
-          unzip -p dist/The_Stegosaurus_Mod_v1.1.21_Forge_1.20.1.jar META-INF/mods.toml
-          jar tf dist/The_Stegosaurus_Mod_v1.1.21_Forge_1.20.1.jar | grep 'com/prodigytown/chibi/ChibiStego.class'
-          jar tf dist/The_Stegosaurus_Mod_v1.1.21_Forge_1.20.1.jar | grep 'com/prodigytown/creatures/ProdigyStegosaurusEgg.class'
+          unzip -p dist/The_Stegosaurus_Mod_v${MOD_VERSION}_Forge_1.20.1.jar META-INF/mods.toml
+          jar tf dist/The_Stegosaurus_Mod_v${MOD_VERSION}_Forge_1.20.1.jar | grep 'com/prodigytown/chibi/ChibiStego.class'
+          jar tf dist/The_Stegosaurus_Mod_v${MOD_VERSION}_Forge_1.20.1.jar | grep 'com/prodigytown/creatures/ProdigyStegosaurusEgg.class'
 
       - uses: actions/upload-artifact@v4
         with:
-          name: The-Stegosaurus-Mod-1.1.21
-          path: dist/The_Stegosaurus_Mod_v1.1.21_Forge_1.20.1.jar
+          name: The-Stegosaurus-Mod-${{ env.MOD_VERSION }}
+          path: dist/The_Stegosaurus_Mod_v${{ env.MOD_VERSION }}_Forge_1.20.1.jar
           if-no-files-found: error

@@ -10,6 +10,17 @@ from zipfile import ZipFile, ZIP_DEFLATED
 import hashlib
 import sys
 
+
+def _mod_version():
+    """Version del mod segun gradle.properties (no se escribe a mano)."""
+    try:
+        for line in (Path(__file__).resolve().parent.parent / "gradle.properties").read_text().splitlines():
+            if line.startswith("mod_version="):
+                return line.split("=", 1)[1].strip()
+    except OSError:
+        pass
+    return "unknown"
+
 def bundle(compiled_path, chibi_path, output_path):
     with ZipFile(compiled_path) as compiled, ZipFile(chibi_path) as legacy:
         assert compiled.testzip() is None and legacy.testzip() is None
@@ -28,7 +39,7 @@ def bundle(compiled_path, chibi_path, output_path):
                 out.writestr(name, legacy.read(name))
                 names.add(name)
             out.writestr("PRODIGY_UNIFIED_BUILD.txt",
-                "The Stegosaurus Mod v1.1.21 - ONE Forge mod id\n"
+                "The Stegosaurus Mod v%s - ONE Forge mod id\n" % _mod_version() +
                 "Forge mod id: prodigycreatures\n"
                 "Legacy chibi entity id: prodigychibi:stegosaurus_chibi\n"
                 "Legacy chibi egg id: prodigychibi:stegosaurus_chibi_spawn_egg (hidden from creative)\n"
