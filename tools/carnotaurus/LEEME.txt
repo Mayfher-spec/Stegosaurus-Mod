@@ -111,3 +111,7 @@ v1.1.20 - Carnotauro: volver a cria, comida y reanimacion
    suelta silla y armadura y baja al jinete. Conserva dueno, nombre, color, nivel y orden.
  - Curar / crecer (domado): solo carne de vaca, cerdo o cordero (cruda 8 PV, cocinada 14 PV). La cria crece con las crudas.
  - Reanimar al caido: Carne de cordero dorada (golden_mutton): 8 lingotes de oro alrededor de 1 cordero cocinado. Reemplaza a la carne curada.
+
+v1.1.21 - Interior de la boca del carnotauro
+ - Paladar con crestas, suelo de la boca y lengua con surco pintados en las 4 texturas (antes era un bloque plano color diente); se oscurece hacia la garganta.
+ - La lengua sube sobre el suelo de la boca (antes quedaba enterrada dentro del bloque de dientes). Malla regenerada con tools/carnotaurus/export.py.

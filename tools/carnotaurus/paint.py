@@ -78,6 +78,29 @@ def tooth_tex(role,face,ii,jj,fu,fv,pal,big):
     col[gum]=pal['gum']; col[gap]=np.array(pal['gum'],float)*0.55
     shade=0.92+0.08*np.cos(ii*2.1); col*=shade[:,None]
     return col,gl
+
+def mouth_tex(kind,loc,c,pal,ctx):
+    """Interior de la boca: paladar con crestas, suelo con encia y lengua con surco; se oscurece hacia la garganta."""
+    gum=np.array(pal['gum'],float); tg=np.array(pal['tongue'],float)
+    z=loc[:,2]; xr=(loc[:,0]-(c['x0']+c['w']/2.0))/max(1e-6,c['w']/2.0)
+    t=np.clip((z+4.0)/50.0,0,1)                      # 0 = garganta, 1 = punta del hocico
+    n=fbm(loc/max(0.3,ctx['qs']*0.9),23,2)
+    base=tg if kind=='tongue' else gum
+    deep=0.30+0.70*ss(0.02,0.60,t)                   # garganta oscura
+    edge=1.0-0.30*ss(0.55,1.0,np.abs(xr))            # bordes en sombra
+    col=np.tile(base,(len(z),1))*(deep*edge)[:,None]
+    if kind=='palate':
+        rug=0.5+0.5*np.sin(z*1.15)                   # crestas transversales
+        col*=(0.86+0.20*rug*ss(0.1,0.5,t))[:,None]
+        col*=(1.0+0.10*np.exp(-(xr/0.10)**2))[:,None] # rafe central
+    elif kind=='floor':
+        col*=(0.80+0.10*np.sin(z*0.9+1.0))[:,None]
+    elif kind=='tongue':
+        col*=(1.0-0.22*np.exp(-(xr/0.12)**2))[:,None]  # surco central
+        col*=(1.04+0.16*ss(0.45,1.0,t))[:,None]        # punta mas clara
+        col*=(0.94+0.12*np.sin(z*2.3)*np.cos(loc[:,0]*2.1))[:,None]  # papilas
+    col*=(0.93+0.14*n)[:,None]
+    return np.clip(col,0,255)
 SCARS=[('body',(25,14,10),(25,-12,-18),1.1,1),('body',(25,16,4),(25,-9,-24),1.0,1),('body',(25,18,-2),(25,-6,-28),0.9,1),
        ('head',(19,9,6),(19,-6,24),1.1,1),('head',(19,11,10),(19,-4,28),0.9,1),('head',(-19,2,22),(-19,-9,34),1.0,-1),('neck1',(18,10,4),(18,-6,16),0.9,1)]
 def loc_sign(face): return 1 if face=='xmax' else (-1 if face=='xmin' else 0)
@@ -225,6 +248,11 @@ def make_atlas(var):
                 elif role=='tooth': col,gl=tooth_tex('tooth',face,ii,jj,fu,fv,pal,st=='adult')
                 else:
                     col=np.tile(np.array(pal['tongue'],float),(len(ii),1))*(0.9+0.1*np.cos(loc[:,0]*0.9))[:,None]; gl=np.zeros_like(col)
+                op=c['opt']
+                if role=='tooth' and op.get('upper') and face=='down': col=mouth_tex('palate',loc,c,pal,ctx)
+                elif role=='tooth' and op.get('lower') and face=='up': col=mouth_tex('floor',loc,c,pal,ctx)
+                elif role=='mouth': col=mouth_tex('tongue',loc,c,pal,ctx)
+                elif role in('skin','belly') and ((op.get('head') and face=='down') or (op.get('jaw') and face=='up')): col=mouth_tex('palate' if op.get('head') else 'floor',loc,c,pal,ctx)
                 if c['part']=='head' and c['i']==0 and face in('xmin','xmax'): col,gl=eye_tex(var,loc,ctx,col,gl)
                 x0,y0,x1,y1=rect
                 atlas[jj,ii,:3]=np.clip(col,0,255).astype(np.uint8); atlas[jj,ii,3]=255

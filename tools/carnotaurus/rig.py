@@ -35,7 +35,7 @@ def build_spec(stage='adult'):
     part('jaw','head',(0,-9,2),(0.0,0,0),[
       (-8.8,-7,-4,17.6,7,46,'belly',dict(jaw=1)),
       (-8.1,0,4,16.2,4 if B else 2,38,'tooth',dict(lower=1)),
-      (-5.8,0.3,4,11.6,1.6,30,'mouth',dict())],'head')
+      (-5.8,3.3 if B else 1.3,4,11.6,1.6,30,'mouth',dict())],'head')   # lengua: sobresale del suelo de la boca
     for sgn,n in ((1,'l'),(-1,'r')):
         # cuernos sobre los ojos (3 tramos, cortos, hacia fuera y atras)
         part('horn_'+n,'head',(sgn*10,13,14),(-0.40,0,sgn*0.62),[(-4.2,0,-4.2,8.4,8,8.4,'horn',dict(k=0))],'horn')
