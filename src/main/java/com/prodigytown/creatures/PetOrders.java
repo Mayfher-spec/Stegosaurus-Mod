@@ -58,10 +58,11 @@ public final class PetOrders {
         order = clamp(order);
         int prev = h.getOrder();
         h.setOrderRaw(order);
-        if (mob instanceof StegosaurusEntity && prev != order) { // sonidos del adulto (el chibi no se toca)
-            if (order == SIT) mob.playSound(ModSounds.STEGO_ADULT_SIT.get(), 1.6F, 1.0F);
-            else if (order == SLEEP) mob.playSound(ModSounds.STEGO_ADULT_SLEEP.get(), 1.6F, 1.0F);
-            else if (prev == SLEEP) mob.playSound(ModSounds.STEGO_ADULT_WAKE.get(), 1.8F, 1.0F);
+        boolean carno = mob instanceof CarnotaurusEntity cn && cn.isAdultStage();
+        if ((mob instanceof StegosaurusEntity || carno) && prev != order) { // sonidos del adulto (el chibi no se toca)
+            if (order == SIT) mob.playSound((carno ? ModSounds.CARNO_SIT : ModSounds.STEGO_ADULT_SIT).get(), 1.6F, 1.0F);
+            else if (order == SLEEP) mob.playSound((carno ? ModSounds.CARNO_SLEEP : ModSounds.STEGO_ADULT_SLEEP).get(), 1.6F, 1.0F);
+            else if (prev == SLEEP) mob.playSound((carno ? ModSounds.CARNO_WAKE : ModSounds.STEGO_ADULT_WAKE).get(), 1.8F, 1.0F);
         }
         boolean sit = isSittingOrder(order);
         mob.setOrderedToSit(sit);
@@ -111,6 +112,7 @@ public final class PetOrders {
         }
         if (order == SLEEP) {
             if (mob instanceof StegosaurusEntity && mob.tickCount % 110 == 0) mob.playSound(ModSounds.STEGO_ADULT_BREATHE.get(), 1.0F, 1.0F);
+            else if (mob instanceof CarnotaurusEntity cn && cn.isAdultStage() && mob.tickCount % 110 == 55) mob.playSound(ModSounds.CARNO_BREATHE.get(), 1.0F, 1.0F);
             if (mob.tickCount % 20 == 0 && mob.getHealth() < mob.getMaxHealth()) mob.heal(Math.max(1.0F, mob.getMaxHealth() * 0.02F));
             if (mob.tickCount % 30 == 0) {
                 zzz(level, mob, fx, fz);

@@ -26,7 +26,7 @@ public final class CarnotaurusGlowLayer extends RenderLayer<CarnotaurusEntity, C
                                 float limbSwing, float limbSwingAmount, float partialTick, float ageInTicks,
                                 float netHeadYaw, float headPitch) {
         int v = entity.getVariant();
-        if ((v == CarnotaurusEntity.SCARLET && !entity.isAdultStage()) || entity.isInvisible()) return;
+        if ((v == CarnotaurusEntity.SCARLET && !entity.isAdultStage()) || entity.isInvisible() || entity.getMorph() > 0) return;
         float k = 0.82F + 0.18F * Mth.sin(ageInTicks * 0.12F);
         if (entity.isFallen()) k *= 0.3F;
         VertexConsumer vc = buffers.getBuffer(RenderType.eyes(v == CarnotaurusEntity.GREEN ? GREEN : v == CarnotaurusEntity.ARENA ? ARENA : v == CarnotaurusEntity.STEEL ? STEEL : SCARLET));

@@ -279,14 +279,12 @@
     "subtitle": "subtitles.prodigycreatures.carnotaurus.hurt",
     "sounds": [
       {
-        "name": "prodigycreatures:stegosaurus/hurt1",
-        "stream": false,
-        "pitch": 0.7
+        "name": "prodigycreatures:carnotaurus/hurt1",
+        "stream": false
       },
       {
-        "name": "prodigycreatures:stegosaurus/hurt2",
-        "stream": false,
-        "pitch": 0.7
+        "name": "prodigycreatures:carnotaurus/hurt2",
+        "stream": false
       }
     ]
   },
@@ -294,14 +292,8 @@
     "subtitle": "subtitles.prodigycreatures.carnotaurus.hurt_baby",
     "sounds": [
       {
-        "name": "prodigycreatures:stegosaurus/hurt1",
-        "stream": false,
-        "pitch": 1.5
-      },
-      {
-        "name": "prodigycreatures:stegosaurus/hurt2",
-        "stream": false,
-        "pitch": 1.5
+        "name": "prodigycreatures:carnotaurus/hurt_baby",
+        "stream": false
       }
     ]
   },
@@ -309,9 +301,8 @@
     "subtitle": "subtitles.prodigycreatures.carnotaurus.death",
     "sounds": [
       {
-        "name": "prodigycreatures:stegosaurus/death",
-        "stream": false,
-        "pitch": 0.7
+        "name": "prodigycreatures:carnotaurus/death",
+        "stream": false
       }
     ]
   },
@@ -319,9 +310,8 @@
     "subtitle": "subtitles.prodigycreatures.carnotaurus.roar",
     "sounds": [
       {
-        "name": "prodigycreatures:stegosaurus/roar",
-        "stream": false,
-        "pitch": 0.75
+        "name": "prodigycreatures:carnotaurus/roar",
+        "stream": false
       }
     ]
   },
@@ -329,9 +319,8 @@
     "subtitle": "subtitles.prodigycreatures.carnotaurus.bite",
     "sounds": [
       {
-        "name": "prodigycreatures:stegosaurus/bite",
-        "stream": false,
-        "pitch": 0.9
+        "name": "prodigycreatures:carnotaurus/bite",
+        "stream": false
       }
     ]
   },
@@ -339,19 +328,140 @@
     "subtitle": "subtitles.prodigycreatures.carnotaurus.step",
     "sounds": [
       {
-        "name": "prodigycreatures:stegosaurus/step1",
-        "stream": false,
-        "pitch": 0.8
+        "name": "prodigycreatures:carnotaurus/step1",
+        "stream": false
       },
       {
-        "name": "prodigycreatures:stegosaurus/step2",
-        "stream": false,
-        "pitch": 0.8
+        "name": "prodigycreatures:carnotaurus/step2",
+        "stream": false
       },
       {
-        "name": "prodigycreatures:stegosaurus/step3",
-        "stream": false,
-        "pitch": 0.8
+        "name": "prodigycreatures:carnotaurus/step3",
+        "stream": false
+      }
+    ]
+  },
+  "carnotaurus.ambient": {
+    "subtitle": "subtitles.prodigycreatures.carnotaurus.ambient",
+    "sounds": [
+      {
+        "name": "prodigycreatures:carnotaurus/ambient1",
+        "stream": false
+      },
+      {
+        "name": "prodigycreatures:carnotaurus/ambient2",
+        "stream": false
+      },
+      {
+        "name": "prodigycreatures:carnotaurus/ambient3",
+        "stream": false
+      }
+    ]
+  },
+  "carnotaurus.ambient_baby": {
+    "subtitle": "subtitles.prodigycreatures.carnotaurus.ambient_baby",
+    "sounds": [
+      {
+        "name": "prodigycreatures:carnotaurus/baby_ambient1",
+        "stream": false
+      },
+      {
+        "name": "prodigycreatures:carnotaurus/baby_ambient2",
+        "stream": false
+      },
+      {
+        "name": "prodigycreatures:carnotaurus/baby_ambient3",
+        "stream": false
+      }
+    ]
+  },
+  "carnotaurus.breathe": {
+    "subtitle": "subtitles.prodigycreatures.carnotaurus.breathe",
+    "sounds": [
+      {
+        "name": "prodigycreatures:carnotaurus/breathe",
+        "stream": false
+      }
+    ]
+  },
+  "carnotaurus.sit": {
+    "subtitle": "subtitles.prodigycreatures.carnotaurus.sit",
+    "sounds": [
+      {
+        "name": "prodigycreatures:carnotaurus/sit",
+        "stream": false
+      }
+    ]
+  },
+  "carnotaurus.sleep": {
+    "subtitle": "subtitles.prodigycreatures.carnotaurus.sleep",
+    "sounds": [
+      {
+        "name": "prodigycreatures:carnotaurus/sleep",
+        "stream": false
+      }
+    ]
+  },
+  "carnotaurus.wake": {
+    "subtitle": "subtitles.prodigycreatures.carnotaurus.wake",
+    "sounds": [
+      {
+        "name": "prodigycreatures:carnotaurus/wake",
+        "stream": false
+      }
+    ]
+  },
+  "carnotaurus.happy": {
+    "subtitle": "subtitles.prodigycreatures.carnotaurus.happy",
+    "sounds": [
+      {
+        "name": "prodigycreatures:carnotaurus/happy",
+        "stream": false
+      }
+    ]
+  },
+  "carnotaurus.eat": {
+    "subtitle": "subtitles.prodigycreatures.carnotaurus.eat",
+    "sounds": [
+      {
+        "name": "prodigycreatures:carnotaurus/eat",
+        "stream": false
+      }
+    ]
+  },
+  "carnotaurus.charge_hit": {
+    "subtitle": "subtitles.prodigycreatures.carnotaurus.charge_hit",
+    "sounds": [
+      {
+        "name": "prodigycreatures:carnotaurus/charge_hit",
+        "stream": false
+      }
+    ]
+  },
+  "carnotaurus.ult_roar": {
+    "subtitle": "subtitles.prodigycreatures.carnotaurus.ult_roar",
+    "sounds": [
+      {
+        "name": "prodigycreatures:carnotaurus/roar_ult",
+        "stream": false
+      }
+    ]
+  },
+  "carnotaurus.evolution": {
+    "subtitle": "subtitles.prodigycreatures.carnotaurus.evolution",
+    "sounds": [
+      {
+        "name": "prodigycreatures:carnotaurus/evolution",
+        "stream": false
+      }
+    ]
+  },
+  "carnotaurus.revert": {
+    "subtitle": "subtitles.prodigycreatures.carnotaurus.revert",
+    "sounds": [
+      {
+        "name": "prodigycreatures:carnotaurus/revert",
+        "stream": false
       }
     ]
   }

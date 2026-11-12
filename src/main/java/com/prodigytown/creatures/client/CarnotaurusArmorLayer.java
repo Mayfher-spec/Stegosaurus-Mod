@@ -33,7 +33,7 @@ public final class CarnotaurusArmorLayer extends RenderLayer<CarnotaurusEntity, 
                                 float limbSwing, float limbSwingAmount, float partialTick, float ageInTicks,
                                 float netHeadYaw, float headPitch) {
         int tier = entity.getArmorTier();
-        if (tier <= 0 || !entity.isAdultStage() || entity.isInvisible()) return;
+        if (tier <= 0 || !entity.isAdultStage() || entity.isInvisible() || entity.getMorph() > 0) return;
         VertexConsumer vc = buffers.getBuffer(RenderType.entityCutoutNoCull(texture(tier)));
         this.getParentModel().renderToBuffer(stack, vc, packedLight, LivingEntityRenderer.getOverlayCoords(entity, 0.0F), 1.0F, 1.0F, 1.0F, 1.0F);
         float[] g = GEM[tier - 1];

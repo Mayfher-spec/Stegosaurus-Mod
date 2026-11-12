@@ -64,5 +64,17 @@
   "subtitles.prodigycreatures.carnotaurus.death": "Carnotauro muere",
   "subtitles.prodigycreatures.carnotaurus.roar": "Carnotauro ruge",
   "subtitles.prodigycreatures.carnotaurus.bite": "Carnotauro muerde",
-  "subtitles.prodigycreatures.carnotaurus.step": "Carnotauro camina"
+  "subtitles.prodigycreatures.carnotaurus.step": "Carnotauro camina",
+  "subtitles.prodigycreatures.carnotaurus.ambient": "Carnotauro gruñe",
+  "subtitles.prodigycreatures.carnotaurus.ambient_baby": "Carnotauro cria chilla",
+  "subtitles.prodigycreatures.carnotaurus.breathe": "Carnotauro respira",
+  "subtitles.prodigycreatures.carnotaurus.sit": "Carnotauro se sienta",
+  "subtitles.prodigycreatures.carnotaurus.sleep": "Carnotauro ronca",
+  "subtitles.prodigycreatures.carnotaurus.wake": "Carnotauro despierta",
+  "subtitles.prodigycreatures.carnotaurus.happy": "Carnotauro ronronea",
+  "subtitles.prodigycreatures.carnotaurus.eat": "Carnotauro come",
+  "subtitles.prodigycreatures.carnotaurus.charge_hit": "Carnotauro embiste",
+  "subtitles.prodigycreatures.carnotaurus.ult_roar": "Carnotauro lanza un rugido ancestral",
+  "subtitles.prodigycreatures.carnotaurus.evolution": "Carnotauro evoluciona",
+  "subtitles.prodigycreatures.carnotaurus.revert": "Carnotauro vuelve a ser cria"
 }

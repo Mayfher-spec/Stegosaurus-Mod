@@ -117,6 +117,10 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
     private static final EntityDataAccessor<Integer> ABILITY_LEFT = SynchedEntityData.defineId(CarnotaurusEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<CompoundTag> PROGRESS = SynchedEntityData.defineId(CarnotaurusEntity.class, EntityDataSerializers.COMPOUND_TAG);
     /** Recargas para el HUD: (tick de fin << 12) | duracion. 0 embestida, 1 cabezazo, 2 mordida, 3 rugido. */
+    /** Transformacion (cinematica): ticks que faltan y tipo (1 = crece a adulto, 2 = vuelve a cria). */
+    private static final EntityDataAccessor<Integer> MORPH = SynchedEntityData.defineId(CarnotaurusEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Integer> MORPH_KIND = SynchedEntityData.defineId(CarnotaurusEntity.class, EntityDataSerializers.INT);
+    public static final int GROW_LEN = 56, SHRINK_LEN = 36;
     private static final EntityDataAccessor<Long> CD_CHARGE = SynchedEntityData.defineId(CarnotaurusEntity.class, EntityDataSerializers.LONG);
     private static final EntityDataAccessor<Long> CD_BUTT = SynchedEntityData.defineId(CarnotaurusEntity.class, EntityDataSerializers.LONG);
     private static final EntityDataAccessor<Long> CD_BITE = SynchedEntityData.defineId(CarnotaurusEntity.class, EntityDataSerializers.LONG);
@@ -128,6 +132,8 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
      * runAnim = 0 andando .. 1 corriendo/embistiendo; aggroAnim = postura de caza; turnAnim = giro (grados/tick).
      */
     public float sitAnim, sleepAnim, sitAnimO, sleepAnimO;
+    /** Solo cliente: ticks restantes del destello tras transformarse (0 = sin destello) y su tipo (0 = crecer, 1 = encoger). */
+    public int flashFade, flashKind;
     /** Mordida visual (cliente): ticks desde que empezo el golpe (-1 = sin golpe). Dura BITE_LEN ticks, mucho mas que el vaiven de 6 ticks de vanilla, para abrir bien la boca. */
     public static final int BITE_LEN = 16;
     public int biteT = -1, biteTO = -1;
@@ -176,6 +182,8 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
         this.entityData.define(ABILITY_KIND, 0);
         this.entityData.define(ABILITY_LEFT, 0);
         this.entityData.define(PROGRESS, ProdigyProgress.atLevel(ProdigyProgress.ADULT_START_LEVEL, Talents.CARNO).save());
+        this.entityData.define(MORPH, 0);
+        this.entityData.define(MORPH_KIND, 0);
         this.entityData.define(CD_CHARGE, 0L);
         this.entityData.define(CD_BUTT, 0L);
         this.entityData.define(CD_BITE, 0L);
@@ -185,6 +193,8 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
     @Override public void addAdditionalSaveData(CompoundTag tag) {
         super.addAdditionalSaveData(tag);
         tag.putInt("Variant", getVariant());
+        tag.putInt("Morph", getMorph());
+        tag.putInt("MorphKind", getMorphKind());
         tag.putBoolean("Adult", isAdultStage());
         tag.putBoolean("Female", isFemale());
         tag.putBoolean("SexAssigned", sexAssigned);
@@ -204,6 +214,8 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
         this.entityData.set(FEMALE, tag.getBoolean("Female"));
         this.sexAssigned = tag.getBoolean("SexAssigned");
         this.growth = tag.getInt("Growth");
+        this.entityData.set(MORPH, tag.getInt("Morph"));
+        this.entityData.set(MORPH_KIND, tag.getInt("MorphKind"));
         // sin progreso guardado: los adultos de antes cargan en el nivel 30 y las crias en el 1
         this.progress = ProdigyProgress.load(tag.getCompound("Progress"), isAdultStage() ? ProdigyProgress.ADULT_START_LEVEL : 1, Talents.CARNO);
         this.entityData.set(PROGRESS, progress.save());
@@ -225,8 +237,15 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
     public int getVariant() { return this.entityData.get(VARIANT); }
     public void setVariant(int v) { this.entityData.set(VARIANT, Math.max(0, Math.min(VARIANTS - 1, v))); }
     public boolean isAdultStage() { return this.entityData.get(ADULT); }
+    public int getMorph() { return this.entityData.get(MORPH); }
+    public int getMorphKind() { return this.entityData.get(MORPH_KIND); }
+    @Override protected boolean isImmobile() { return super.isImmobile() || getMorph() > 0; }
+    @Override public void handleEntityEvent(byte id) {
+        if (id == 64 || id == 65) { this.flashFade = 24; this.flashKind = id == 64 ? 0 : 1; }
+        else super.handleEntityEvent(id);
+    }
     /** Multiplicador de tono: el Brutus suena mas grave. */
-    private static float vp() { return 0.82F; }
+    private static float vp() { return 1.0F; }
     public boolean isSaddled() { return this.entityData.get(SADDLED); }
     public int getAbilityKind() { return this.entityData.get(ABILITY_KIND); }
     public int getAbilityLeft() { return this.entityData.get(ABILITY_LEFT); }
@@ -583,6 +602,7 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
             if (cdBite > 0) cdBite--;
             if (cdAiRoar > 0) cdAiRoar--;
             if (cdAiCharge > 0) cdAiCharge--;
+            morphTick();
             abilityTick();
             huntTick();
             serverProgressTick();
@@ -596,6 +616,7 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
      */
     private void clientAnimTick() {
         sitAnimO = sitAnim; sleepAnimO = sleepAnim;
+        if (flashFade > 0) flashFade--;
         biteTO = biteT;
         if (this.swinging && this.swingTime <= 0) { biteT = 0; biteTO = 0; }
         else if (biteT >= 0) biteT = biteT + 1 >= BITE_LEN ? -1 : biteT + 1;
@@ -699,7 +720,7 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
             e.hurt(this.damageSources().mobAttack(this), dmg);
             e.knockback(1.6, -dir.x, -dir.z);
             if (progress.rank("C3") >= 2) e.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 40, 3)); // Embestida de caceria: lo deja lento 2 s
-            this.playSound(ModSounds.STEGO_CHARGE_HIT.get(), 2.4F, 0.85F + this.random.nextFloat() * 0.2F);
+            this.playSound(ModSounds.CARNO_CHARGE_HIT.get(), 2.4F, 0.85F + this.random.nextFloat() * 0.2F);
             if (this.level() instanceof ServerLevel sl) sl.sendParticles(ParticleTypes.CRIT, e.getX(), e.getY() + e.getBbHeight() * 0.6, e.getZ(), 12, 0.4, 0.4, 0.4, 0.3);
         }
     }
@@ -719,7 +740,7 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
                 chargeHit.clear();
                 if (this.getControllingPassenger() instanceof Player r) this.setYRot(r.getYRot());
                 startAbility(1, CHARGE_LEN);
-                this.playSound(ModSounds.STEGO_CHARGE_HIT.get(), 2.0F, 0.6F);
+                this.playSound(ModSounds.CARNO_CHARGE_HIT.get(), 2.0F, 0.6F);
             }
             case 1 -> {
                 if (cdButt > 0 || getAbilityLeft() > 0) return;
@@ -735,7 +756,7 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
                     e.hurtMarked = true;
                     server.sendParticles(ParticleTypes.CRIT, e.getX(), e.getY() + e.getBbHeight() * 0.6, e.getZ(), 14, 0.4, 0.4, 0.4, 0.35);
                 }
-                this.playSound(ModSounds.STEGO_CHARGE_HIT.get(), 2.2F, 1.15F);
+                this.playSound(ModSounds.CARNO_CHARGE_HIT.get(), 2.2F, 1.15F);
             }
             case 2 -> {
                 if (cdBite > 0) return;
@@ -893,19 +914,15 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
      * nombre, color, nivel y orden. Para volver a crecer hacen falta de nuevo las carnes crudas. Solo servidor.
      */
     public void revertToChibi() {
-        if (this.level().isClientSide || !isAlive() || isFallen() || !isAdultStage()) return;
+        if (this.level().isClientSide || !isAlive() || isFallen() || !isAdultStage() || getMorph() > 0) return;
         this.ejectPassengers();
         removeSaddle();
         removeArmor();
         this.getNavigation().stop();
         this.growth = 0;
-        setAdultStage(false);
-        this.playSound(ModSounds.CHIBI_EVOLVE.get(), 2.0F, 1.6F);
-        if (this.level() instanceof ServerLevel sl) {
-            sl.sendParticles(ParticleTypes.POOF, getX(), getY() + 0.8, getZ(), 24, 0.6, 0.5, 0.6, 0.05);
-            sl.sendParticles(ParticleTypes.END_ROD, getX(), getY() + 1.0, getZ(), 14, 0.5, 0.5, 0.5, 0.06);
-        }
-        if (this.getOwner() instanceof Player p) p.displayClientMessage(Component.literal("Tu carnotauro volvio a ser una cria"), true);
+        this.entityData.set(MORPH_KIND, 2);
+        this.entityData.set(MORPH, SHRINK_LEN);
+        this.playSound(ModSounds.CARNO_REVERT.get(), 2.5F, 1.0F);
     }
 
     public void rename(String name) {
@@ -990,8 +1007,8 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
     private void ancestralRoar(ServerLevel server, int ul, float atk) {
         float dmg = atk * new float[]{1.0F, 1.5F, 2.0F, 2.5F}[ul] * (1.0F + new float[]{0F, 0.15F, 0.30F, 0.50F}[progress.rank("U1")]);
         double reach = 8.0 + 2.0 * ul + 1.5 * progress.rank("U2");
-        this.playSound(ModSounds.CARNO_ROAR.get(), 5.0F, 0.7F * vp());
-        this.playSound(ModSounds.STEGO_CHARGE_HIT.get(), 3.0F, 0.6F);
+        this.playSound(ModSounds.CARNO_ULT_ROAR.get(), 5.0F, 1.0F);
+        this.playSound(ModSounds.CARNO_CHARGE_HIT.get(), 3.0F, 0.6F);
         int v = getVariant();
         for (LivingEntity e : server.getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(reach), x -> x != this)) {
             if (isAlly(e)) {
@@ -1068,7 +1085,7 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
     }
 
     @Override public boolean isInvulnerableTo(DamageSource source) {
-        if (isFallen() && !source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) return true;
+        if ((isFallen() || getMorph() > 0) && !source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) return true;
         return super.isInvulnerableTo(source);
     }
 
@@ -1093,12 +1110,13 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
     @Override public InteractionResult mobInteract(Player player, InteractionHand hand) {
         ItemStack held = player.getItemInHand(hand);
         boolean client = this.level().isClientSide;
+        if (getMorph() > 0) return InteractionResult.sidedSuccess(client);
         if (isFallen()) {
             if (this.isTame() && this.isOwnedBy(player) && held.is(ProdigyCreatures.GOLDEN_MUTTON.get())) {
                 if (!client) {
                     if (!player.getAbilities().instabuild) held.shrink(1);
                     PetOrders.revive(this);
-                    this.playSound(ModSounds.STEGO_ADULT_HAPPY.get(), 1.4F, 1.2F);
+                    this.playSound(ModSounds.CARNO_HAPPY.get(), 1.4F, 1.0F);
                 }
             } else if (!client && this.isOwnedBy(player)) {
                 player.displayClientMessage(Component.literal("Esta fuera de combate: reanimalo con carne de cordero dorada"), true);
@@ -1128,7 +1146,7 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
                 if (!client) {
                     if (!player.getAbilities().instabuild) held.shrink(1);
                     this.heal(isRawHealMeat(held) ? 8.0F : 14.0F);
-                    this.playSound(ModSounds.STEGO_ADULT_EAT.get(), 1.0F, isAdultStage() ? 0.9F : 1.4F);
+                    this.playSound(ModSounds.CARNO_EAT.get(), 1.0F, isAdultStage() ? 1.0F : 1.45F);
                     if (this.level() instanceof ServerLevel sl) sl.sendParticles(ParticleTypes.HEART, getX(), getY() + getBbHeight(), getZ(), 4, 0.4, 0.3, 0.4, 0.02);
                     if (grows && ++growth >= FEEDS_TO_GROW) grow();
                     else if (grows) player.displayClientMessage(Component.literal("Crece: " + growth + "/" + FEEDS_TO_GROW + " carnes crudas"), true);
@@ -1174,15 +1192,61 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
         return InteractionResult.PASS;
     }
 
+    /** Empieza la evolucion: silueta blanca que crece (cinematica); el cambio a adulto ocurre al final, en finishGrow(). */
     private void grow() {
+        growth = 0;
+        if (getMorph() > 0) return;
+        this.ejectPassengers();
+        this.getNavigation().stop();
+        this.entityData.set(MORPH_KIND, 1);
+        this.entityData.set(MORPH, GROW_LEN);
+        this.playSound(ModSounds.CARNO_EVOLUTION.get(), 3.0F, 1.0F);
+    }
+
+    private void finishGrow() {
         growth = 0;
         int guard = 0;
         while (progress.level() < ProdigyProgress.ADULT_START_LEVEL && guard++ < 100) progress.addXp(Math.max(1, progress.xpToNext() - progress.xp())); // el adulto empieza como minimo en el nivel 30
         this.entityData.set(PROGRESS, progress.save());
         setAdultStage(true);
-        this.playSound(ModSounds.CARNO_ROAR.get(), 2.5F, 1.1F);
+        this.level().broadcastEntityEvent(this, (byte) 64); // destello sobre la textura final
         if (this.level() instanceof ServerLevel sl) sl.sendParticles(ParticleTypes.TOTEM_OF_UNDYING, getX(), getY() + 1.2, getZ(), 40, 0.8, 1.0, 0.8, 0.3);
         if (this.getOwner() instanceof Player p) p.displayClientMessage(Component.literal("Tu carnotauro es ahora un adulto"), true);
+    }
+
+    private void finishRevert() {
+        this.growth = 0;
+        setAdultStage(false);
+        this.level().broadcastEntityEvent(this, (byte) 65);
+        if (this.level() instanceof ServerLevel sl) {
+            sl.sendParticles(ParticleTypes.POOF, getX(), getY() + 0.8, getZ(), 24, 0.6, 0.5, 0.6, 0.05);
+            sl.sendParticles(ParticleTypes.END_ROD, getX(), getY() + 1.0, getZ(), 14, 0.5, 0.5, 0.5, 0.06);
+        }
+        if (this.getOwner() instanceof Player p) p.displayClientMessage(Component.literal("Tu carnotauro volvio a ser una cria"), true);
+    }
+
+    /** Cuenta atras de la transformacion (solo servidor): remolino de luz y chispas; al llegar a 0 cambia de etapa y destella. */
+    private void morphTick() {
+        int left = getMorph();
+        if (left <= 0 || !(this.level() instanceof ServerLevel sl)) return;
+        boolean up = getMorphKind() == 1;
+        int len = up ? GROW_LEN : SHRINK_LEN, e = len - left;
+        double p = e / (double) len, cx = getX(), cy = getY(), cz = getZ();
+        this.getNavigation().stop();
+        Vec3 mv = this.getDeltaMovement();
+        this.setDeltaMovement(0.0, Math.min(0.0, mv.y), 0.0);
+        if (e == 0) sl.sendParticles(ParticleTypes.END_ROD, cx, cy + 1.0, cz, 30, 0.5, 0.5, 0.5, 0.15);
+        if (e % 2 == 0) {
+            for (int k = 0; k < 3; k++) {
+                double a = e * 0.35 + k * 2.094, r = up ? 2.6 * (1.0 - p) + 0.7 : 0.7 + 1.9 * p;
+                double h = up ? 0.3 + 3.2 * p : 2.4 - 2.0 * p;
+                sl.sendParticles(ParticleTypes.END_ROD, cx + Math.cos(a) * r, cy + h, cz + Math.sin(a) * r, 1, 0, 0.03, 0, 0.0);
+            }
+        }
+        if (up && e % 6 == 0) sl.sendParticles(ParticleTypes.ELECTRIC_SPARK, cx + (this.random.nextDouble() - 0.5) * 3.0, cy + this.random.nextDouble() * 3.4, cz + (this.random.nextDouble() - 0.5) * 3.0, 3, 0.1, 0.1, 0.1, 0.05);
+        if (up && left == 5) sl.sendParticles(ParticleTypes.FIREWORK, cx, cy + 1.8, cz, 60, 1.4, 1.4, 1.4, 0.12);
+        this.entityData.set(MORPH, left - 1);
+        if (left == 1) { if (up) finishGrow(); else finishRevert(); }
     }
 
     // ------------------------------------------------------------------ montura
@@ -1256,7 +1320,10 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
         this.playSound(ModSounds.CARNO_STEP.get(), isAdultStage() ? 0.8F : 0.35F, (0.9F + this.random.nextFloat() * 0.2F) * vp());
     }
     @Override protected float getSoundVolume() { return isAdultStage() ? 1.4F : 1.0F; }
-    @Nullable @Override protected SoundEvent getAmbientSound() { return null; }
+    @Nullable @Override protected SoundEvent getAmbientSound() {
+        if (isFallen() || getMorph() > 0 || getOrder() == PetOrders.SLEEP) return null;
+        return isAdultStage() ? ModSounds.CARNO_AMBIENT.get() : ModSounds.CARNO_AMBIENT_BABY.get();
+    }
 
     @Override public boolean isFood(ItemStack stack) { return false; }
     @Nullable @Override public AgeableMob getBreedOffspring(ServerLevel level, AgeableMob partner) { return null; }

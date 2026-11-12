@@ -120,3 +120,11 @@ v1.1.22 - Dormir de costado, hecho una rueda
   CarnotaurusModel.setupAnim: al dormir el cuerpo rueda 1.5 rad sobre su eje largo (body.zRot), baja hasta apoyar el costado,
   la cola se enrosca hacia la barriga (rotX -0.50 por segmento) y el cuello/cabeza se curvan hacia el mismo lado.
   Sentado no cambia. Valores medidos con una vista previa 3D propia (adulto sleepDrop 41.94, cria 17.93).
+
+v1.1.23 - Destello, cinematicas y sonidos propios
+  Sonidos: tools/carnotaurus/sounds.py sintetiza 25 .ogg (rugido grave y raspado estilo T-Rex, gruñidos, pasos pesados, ronquido,
+  bostezo, ronroneo, masticar, golpe, rugido ancestral, evolucion, volver a cria, chillidos de cria). Salida: assets/prodigycreatures/sounds/carnotaurus/.
+  Uso: python3 sounds.py <carpeta>   (numpy + scipy + ffmpeg; determinista). Ya no se reutilizan los sonidos del estegosaurio.
+  Entidad: datos MORPH / MORPH_KIND (1 crece, 2 encoge); GROW_LEN 56, SHRINK_LEN 36. Inmovil e invulnerable mientras dura; el cambio de etapa ocurre al final.
+  Cliente: CarnotaurusFlashLayer (blanco -> color de la variante; al encoger blanco azulado). Silueta blanca que crece/encoge en CarnotaurusRenderer.
+  Entity events 64 (destello al crecer) y 65 (al encoger).
