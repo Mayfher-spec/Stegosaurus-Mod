@@ -1,6 +1,6 @@
 """Pintor de texturas del carnotauro (3 variantes) + brillo + silla. Patrones en 3D en pose de reposo => sin costuras entre caras/partes."""
 import numpy as np, math, sys
-import os
+import os, zlib
 sys.path.insert(0,os.path.dirname(os.path.abspath(__file__)))
 import rig
 from PIL import Image
@@ -217,7 +217,7 @@ def make_atlas(var):
                 ly=np.clip((loc[:,1]-c['y0'])/max(1e-6,c['h']),0.0,1.0)
                 ctx=dict(qs=qs,opt=c['opt'],grp=c['grp'],part=c['part'],role=c['role'],s=c['s'],sv=c['sv'],stage=st,claw_t=claw_axis(c),loc=loc)
                 role=c['role']
-                if role in rig.SADDLE_ROLES: continue
+                if role in rig.SADDLE_ROLES or role in rig.ARMOR_ROLES: continue
                 if role in('skin','belly'): col,gl=base_skin(var,P,Nw,ly,ctx,face)
                 elif role=='horn': col,gl=horn_tex(var,ly,ctx,ii,jj)
                 elif role=='spike': col,gl=spike_tex(var,ly,ctx,ii,jj)
@@ -349,10 +349,113 @@ def saddle_mask():
             for face,r in rig.regions(c).items():
                 x0,y0,x1,y1=rig.prect(r); m[y0:y1,x0:x1]=True
     return m
+
+# ---------------------------------------------------------------- armadura 3D del Brutus (se pinta solo en carnotaurus_armor_<nivel>.png)
+ARMOR_TIERS=('iron','gold','diamond','netherite')
+APAL={
+ 'iron':     dict(base=C(150,155,166),light=C(204,209,220),dark=C(78,82,94),trim=C(98,102,116),rivet=C(222,226,234),gem=C(232,52,52),gem_d=C(120,16,24),tint=(1.0,0.28,0.26)),
+ 'gold':     dict(base=C(228,182,54),light=C(255,232,126),dark=C(142,98,22),trim=C(176,122,30),rivet=C(255,240,170),gem=C(64,222,124),gem_d=C(14,100,56),tint=(0.26,1.0,0.50)),
+ 'diamond':  dict(base=C(74,198,198),light=C(176,252,244),dark=C(26,104,118),trim=C(38,138,152),rivet=C(220,255,252),gem=C(84,226,255),gem_d=C(16,96,140),tint=(0.34,0.90,1.0)),
+ 'netherite':dict(base=C(70,60,76),light=C(122,110,132),dark=C(32,26,38),trim=C(176,132,72),rivet=C(222,184,110),gem=C(196,84,255),gem_d=C(74,20,112),tint=(0.78,0.34,1.0)),
+}
+def _axis_t(c,loc):
+    """posicion 0..1 a lo largo del eje del pincho (0 = base, 1 = punta)."""
+    ax=c['opt'].get('ax','y'); x,y,z=loc[:,0],loc[:,1],loc[:,2]
+    pos={'x':(x-c['x0'])/c['w'],'y':(y-c['y0'])/c['h'],'z':(z-c['z0'])/c['d']}[ax[0]]
+    pos=np.clip(pos,0,1)
+    return 1-pos if ax.endswith('n') else pos
+def armor_tex(tier,c,face,loc,ii,jj,fu,fv):
+    """devuelve (color, brillo 0..1, mascara) de los texels de una cara de un cubo de armadura."""
+    pal=APAL[tier]; o=c['opt']; n=len(ii); kind=o.get('kind','plate'); r2=o.get('role2','')
+    fw,fh=face_dims(c,face)
+    eu=np.minimum(fu*fw,(1-fu)*fw); ev=np.minimum(fv*fh,(1-fv)*fh); edge=np.minimum(eu,ev)
+    u=fu*fw; v=fv*fh
+    x,y,z=loc[:,0],loc[:,1],loc[:,2]
+    seed=zlib.crc32(('%s:%d'%(c['part'],c['i'])).encode())%1000
+    nz=fbm(loc*0.55+seed*0.37,31+seed%7)
+    glow=np.zeros(n); mask=np.ones(n,bool)
+    if kind=='gem':
+        d1,d2,rid=voronoi(loc/1.5+seed,77)
+        facet=0.55+0.45*rid
+        col=lerp(pal['gem_d'],pal['gem'],np.clip(facet*1.1,0,1)); col=np.asarray(col)
+        col=np.where((ss(0.0,0.35,d2-d1)<0.5)[:,None],col*1.25,col)
+        ring=edge<0.75
+        col[ring]=pal['trim']*0.8
+        glow=np.where(ring,0.0,0.55+0.45*facet)
+        return np.clip(col,0,255),glow,mask
+    if kind=='spike':
+        t=_axis_t(c,loc)
+        col=np.asarray(lerp(pal['dark'],pal['light'],t**1.25))*(0.92+0.16*nz)[:,None]
+        col[edge<0.5]*=0.7
+        return np.clip(col,0,255),glow,mask
+    base=pal['trim'] if kind=='band' else pal['base']
+    col=np.tile(np.asarray(base,float),(n,1))*(0.90+0.20*nz)[:,None]
+    # patron propio de cada material
+    if tier=='iron':
+        streak=0.94+0.07*hsh(jj*0+0,jj,jj*0,seed)           # vetas horizontales de acero cepillado
+        col*=streak[:,None]
+    elif tier=='gold':
+        lat=_diam(x+0.5*z,y+0.5*z,6.0,3.2); col[lat]=np.asarray(pal['light'])*(0.88+0.1*nz[lat])[:,None]*0.96
+        col[_diam(x+0.5*z,y+0.5*z,6.0,1.1)]=pal['dark']
+    elif tier=='diamond':
+        d1,d2,rid=voronoi(loc/3.6+seed,91)
+        col*=(0.86+0.28*rid)[:,None]
+        seam=ss(0.14,0.0,d2-d1); col=np.asarray(lerp(col,pal['light'],(seam*0.75)[:,None]*np.ones((n,3))))
+    else:
+        flk=ss(0.66,0.78,fbm(loc*0.9+seed,13,2)); col=np.asarray(lerp(col,pal['trim']*0.7,(flk*0.55)[:,None]*np.ones((n,3))))
+    # laminas transversales en las placas largas (cuello, flancos, cola, vientre, grupa, muslo)
+    if kind=='plate' and r2 in ('ntop','nside','lame','tail','tailside','belly','rump','thigh','neck') and face in('up','down','xmin','xmax'):
+        along=(z-c['z0'])
+        seam=((along%6.4)<0.9)&(along>1.0)
+        col[seam]*=0.62
+    if kind=='plate' and r2 in ('breast',) and face=='north':
+        col[((v%5.0)<0.9)&(v>1.5)]*=0.66
+    mn=min(fw,fh)
+    # bisel y contorno
+    if kind in('plate','band'):
+        col[edge<0.7]=pal['dark']
+        lit=(face=='up')|((face in('north','xmin') ) & (fu<0.5))
+        col[(edge>=0.7)&(edge<1.5)]=np.asarray(pal['light'])*(0.94+0.1*nz[(edge>=0.7)&(edge<1.5)])[:,None] if face=='up' else col[(edge>=0.7)&(edge<1.5)]*1.12
+        if mn>=7.0:
+            col[(edge>=2.1)&(edge<2.9)]=pal['trim']*(0.9+0.2*nz[(edge>=2.1)&(edge<2.9)])[:,None]
+        # remaches en las esquinas y cada ~7 unidades
+        if mn>=5.0:
+            for cx in (2.2,fw-2.2):
+                for cy in (2.2,fh-2.2):
+                    rv=(np.abs(u-cx)<0.95)&(np.abs(v-cy)<0.95); col[rv]=pal['rivet']; col[rv&(u<cx)&(v<cy)]=pal['rivet']*1.0
+        if fw>=14 and fh>=5.0:
+            for k in range(1,int(fw//7.0)):
+                cx=k*fw/int(fw//7.0); rv=(np.abs(u-cx)<0.8)&(np.abs(v-fh/2)<0.8); col[rv]=pal['rivet']
+    if kind=='band':
+        col[(edge>=0.7)&(edge<1.4)]=pal['rivet']*0.85
+    return np.clip(col,0,255),glow,mask
+def make_armor(tier):
+    """atlas (RGBA) de una armadura y su brillo (gemas, en blanco: se tine por nivel al dibujar)."""
+    out,H=rig.get_all(); atlas=np.zeros((H,W,4),np.uint8); glow=np.zeros((H,W,4),np.uint8)
+    for c in out['adult'][1]:
+        if c['role'] not in rig.ARMOR_ROLES: continue
+        for face,r in rig.regions(c).items():
+            rect,loc,nl,ii,jj,fu,fv=region_geom(c,face,r)
+            col,g,m=armor_tex(tier,c,face,loc,ii,jj,fu,fv)
+            atlas[jj[m],ii[m],:3]=np.clip(col[m],0,255).astype(np.uint8); atlas[jj[m],ii[m],3]=255
+            lit=m&(g>0.02)
+            if lit.any():
+                gv=np.clip(g[lit]*255,0,255).astype(np.uint8)
+                glow[jj[lit],ii[lit],0]=gv; glow[jj[lit],ii[lit],1]=gv; glow[jj[lit],ii[lit],2]=gv; glow[jj[lit],ii[lit],3]=255
+    return atlas,glow
+def armor_mask():
+    """texels de la malla ocupados por cubos de armadura (en la piel deben quedar transparentes)."""
+    out,H=rig.get_all(); m=np.zeros((H,W),bool)
+    for c in out['adult'][1]:
+        if c['role'] in rig.ARMOR_ROLES:
+            for face,r in rig.regions(c).items():
+                x0,y0,x1,y1=rig.prect(r); m[y0:y1,x0:x1]=True
+    return m
 def fit_hy(stage):
     """altura del pivote del cuerpo para que el punto mas bajo de la pose de reposo toque el suelo."""
     out,H=rig.get_all(); spec,cubes=out[stage]; fr=frames(spec); lo=1e9
     for c in cubes:
+        if c['role'] in rig.ARMOR_ROLES: continue
         R,T=fr[c['part']]
         for x in (c['x0'],c['x0']+c['w']):
             for y in (c['y0'],c['y0']+c['h']):

@@ -56,4 +56,17 @@ ProdigyProgress ahora recibe la tabla de talentos de la especie.
 DEFINITIVA: el rugido (R) pasa a ser "Rugido ancestral" desde el nivel 50 (II a 75, III a 100; recarga 60 s): onda de choque con dano y efecto por color (rojo arde, verde envenena y cura aliados, acero aturde y protege, arena ciega y acelera).
 Antes del 50 el rugido es el de siempre (recarga 25 s). La IA salvaje no usa talentos.
 INTERFAZ: tecla K abre CarnoScreen (talentos, resumen con nombre/sentar/quitar silla, ordenes); CarnoMountHud (vida, nivel, XP y 4 recargas sincronizadas; oculta los corazones de montura de vanilla); MountCamera tambien para el carnotauro.
-Pendiente / no incluido: armaduras del carnotauro (necesitan malla y texturas propias), animacion de evolucion y guardia de nido.
+
+v1.1.14: armaduras del Brutus (hierro, oro, diamante, netherita) y carnotauros SIN nidos.
+ARMADURA 3D: igual que la montura. rig.py -> armor_parts() define ~90 cubos (rol 'armor', cubos en unidades de DISENO de cada hueso: yelmo con cresta de sierra, sienes, mejillas, visera con gema, hocico,
+mandibula, anillos de cuerno, gola de cuello, peto con gema y placas de pecho, laminas de flanco delante y detras de la silla, bandas de vientre, grupa, laminas de cola con maza de pinchos, muslera, greba,
+rodillera con pincho, bandas de metatarso, pie, brazales y hombreras). Son cubos del propio modelo adulto: su texel en la piel queda TRANSPARENTE (paint.armor_mask) y solo se pintan en
+carnotaurus_armor_<iron|gold|diamond|netherite>.png (paint.make_armor); las gemas brillan con una unica textura blanca carnotaurus_armor_glow.png que CarnotaurusArmorLayer tine por nivel.
+Como los cubos son del mismo esqueleto, siguen toda la animacion (mordida, carrera, rugido, sentado). El atlas pasa de 512x1024 a 512x1408 (todas las texturas del carnotauro tienen esa altura; TEX_H se genera solo).
+paint.fit_hy ignora la armadura, asi la altura de pie del adulto no cambia. Si cambias el cuerpo del adulto, repasa armor_parts() (las laminas de flanco dejan libre la zona de la silla, z 9..-29).
+JUEGO: CarnotaurusArmorItem (4 items carnotaurus_armor_<nivel>); clic derecho con ella sobre tu carnotauro ADULTO la equipa (la anterior cae al suelo; la cria avisa de que no puede); K > Resumen > "Quitar armadura"
+(TalentAction accion 4); al morir suelta la armadura. Mismos valores que el estegosaurio (armadura +6/+7/+12/+16, dureza 0/0/2/3) como modificador permanente M_ARM_GEAR / M_TGH_GEAR.
+Recetas: 3 bloques en U de hierro/oro/diamante con cuero en el centro; netherita = mejora de herreria sobre la de diamante. Iconos 32x32 generados desde el render 3D de la cabeza.
+Vista previa (solo desarrollo): scratchpad/armor/ap.py <color> <nivel> [vistas] (renderer propio, sin Minecraft).
+NIDOS: los carnotauros no generan nidos ni estructuras: son errantes puros (aparecen solos en Badlands; hembras silvestres adultas sueltan un huevo al caer). No hay guardia de nido ni vuelta a cria.
+Pendiente / no incluido: armadura para la cria (la cria no lleva silla ni armadura) y animacion de evolucion.

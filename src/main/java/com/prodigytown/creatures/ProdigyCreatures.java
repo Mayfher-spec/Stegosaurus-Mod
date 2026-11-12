@@ -97,6 +97,16 @@ public class ProdigyCreatures {
         }
     }
 
+    /** Armaduras del carnotauro adulto: CARNO_ARMOR_ITEMS.get(tier - 1) (1 hierro .. 4 netherita). */
+    public static final java.util.List<RegistryObject<Item>> CARNO_ARMOR_ITEMS = new java.util.ArrayList<>();
+    static {
+        for (int i = 0; i < ARMOR_NAMES.length; i++) {
+            final int tier = i + 1;
+            CARNO_ARMOR_ITEMS.add(ITEMS.register("carnotaurus_armor_" + ARMOR_NAMES[i],
+                () -> new CarnotaurusArmorItem(tier, new Item.Properties().stacksTo(1))));
+        }
+    }
+
     public ProdigyCreatures() {
         var bus = FMLJavaModLoadingContext.get().getModEventBus();
         GeckoLib.initialize();
@@ -131,6 +141,7 @@ public class ProdigyCreatures {
             }
             if (event.getTabKey() == CreativeModeTabs.COMBAT) {
                 for (RegistryObject<Item> armor : ARMOR_ITEMS) event.accept(armor.get());
+                for (RegistryObject<Item> armor : CARNO_ARMOR_ITEMS) event.accept(armor.get());
             }
         }
 

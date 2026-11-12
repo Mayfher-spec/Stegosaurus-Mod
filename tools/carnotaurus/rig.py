@@ -54,6 +54,7 @@ def build_spec(stage='adult'):
     if B:   # montura 3D del Brutus (se pinta solo en carnotaurus_saddle.png: sin silla no se ve)
         byn={p['name']:p for p in P}
         byn['body']['cubes']+=_fin(saddle_body()); byn['chest']['cubes']+=_fin(saddle_chest())
+        for nm,cs in armor_parts().items(): byn[nm]['cubes']+=cs   # armadura 3D (se pinta solo en carnotaurus_armor_<nivel>.png)
     return P
 # ---------------------------------------------------------------- montura del Brutus
 SADDLE_ROLES=('cloth','leather','metal')
@@ -109,6 +110,88 @@ def saddle_chest():
     c+=_mir(26.5,28.3,5.0,14.0,2.1,9.1,'metal',dict(medal=1))          # medallones de latón
     c+=_mir(5.0,7.4,26.5,28.0,-8.0,6.0,'leather',dict(strap=1))        # correas del lomo
     return c
+# ---------------------------------------------------------------- armadura del Brutus (v1.1.14)
+ARMOR_ROLES=('armor',)
+def _a(x0,y0,z0,w,h,d,**o):
+    """cubo de armadura en unidades de DISENO de su pieza (scaled() lo multiplica por la escala de su grupo)."""
+    return (x0,y0,z0,w,h,d,'armor',o)
+def armor_parts():
+    """cubos de armadura por hueso (unidades de diseno de cada hueso). Pieza -> lista. Roles 'armor'; opt.kind: plate|spike|gem|band; opt.ax: eje del pincho."""
+    A={}
+    def add(part,*cs): A.setdefault(part,[]).extend(cs)
+    # ---- cabeza: yelmo con cresta de sierra, sienes, mejillas, visera con gema, hocico, mandibula
+    add('head',
+        _a(-14.6,14.0,-9.0,29.2,2.6,33.4,kind='plate',role2='helm'),
+        _a(-15.6,7.4,1.2,31.2,6.8,17.6,kind='plate',role2='brow'),
+        _a(-2.4,16.6,19.4,4.8,2.4,4.8,kind='gem'),
+        _a(-1.6,16.6,-8.5,3.2,4.5,4.1,kind='spike',ax='y'),
+        _a(-3.0,16.6,-4.2,6.0,7.0,5.6,kind='spike',ax='y'),
+        _a(-1.6,16.6,1.8,3.2,4.5,3.6,kind='spike',ax='y'),
+        _a(-2.8,16.6,5.8,5.6,6.0,4.6,kind='spike',ax='y'),
+        _a(-1.6,16.6,10.8,3.2,4.2,3.8,kind='spike',ax='y'),
+        _a(-1.6,16.6,15.0,3.2,3.2,4.0,kind='spike',ax='y'),
+        _a(-11.4,10.0,24.0,22.8,1.6,13.6,kind='plate',role2='nose'),
+        _a(-9.6,-5.0,37.2,19.2,14.4,1.8,kind='band'))
+    for sgn in (1,-1):
+        def m(x0,w): return x0 if sgn>0 else -(x0+w)
+        add('head',
+            _a(m(13.6,1.4),-3.0,-7.5,1.4,16.6,19.9,kind='plate',role2='temple',side=sgn),
+            _a(m(13.6,1.4),-11.5,13.0,1.4,10.1,11.2,kind='plate',role2='cheek',side=sgn),
+            _a(m(14.9,3.6),-9.0,7.0,3.6,3.4,5.4,kind='spike',ax='x',side=sgn),
+            _a(m(10.6,1.3),-3.0,25.0,1.3,12.8,11.2,kind='plate',role2='snoutside',side=sgn))
+        add('jaw', _a(m(8.9,1.1),-7.0,6.0,1.1,6.4,31.0,kind='plate',role2='jawside',side=sgn))
+    add('jaw', _a(-9.8,-8.4,-3.0,19.6,1.4,44.0,kind='plate',role2='chin'))
+    for n,sgn in (('l',1),('r',-1)):
+        add('horn_'+n,_a(-5.4,0.4,-5.4,10.8,2.2,10.8,kind='band',side=sgn),_a(-5.0,5.0,-5.0,10.0,1.6,10.0,kind='band',side=sgn))
+        add('horn2_'+n,_a(-4.2,1.0,-4.2,8.4,1.8,8.4,kind='band',side=sgn))
+    # ---- cuello: gola de placas con laminas
+    add('neck1',_a(-14.8,15.0,1.0,29.6,1.5,24.0,kind='plate',role2='ntop'))
+    add('neck2',_a(-12.8,13.0,1.0,25.6,1.4,22.0,kind='plate',role2='ntop'))
+    for sgn in (1,-1):
+        def m(x0,w): return x0 if sgn>0 else -(x0+w)
+        add('neck1',_a(m(14.1,1.4),-10.0,2.0,1.4,22.0,22.0,kind='plate',role2='nside',side=sgn))
+        add('neck2',_a(m(12.1,1.3),-10.0,2.0,1.3,21.0,20.0,kind='plate',role2='nside',side=sgn))
+    # ---- pecho: peto con gema + placas altas de los costados
+    add('chest',_a(-19.8,-20.5,19.2,39.6,26.5,1.6,kind='plate',role2='breast'),
+                _a(-3.0,-10.0,20.8,6.0,6.0,1.2,kind='gem'))
+    for sgn in (1,-1):
+        def m(x0,w): return x0 if sgn>0 else -(x0+w)
+        add('chest',_a(m(19.1,1.4),1.0,8.0,1.4,15.0,11.6,kind='plate',role2='cside',side=sgn))
+    # ---- cuerpo: laminas de flanco delante y detras de la silla, bandas de vientre, grupa
+    for sgn in (1,-1):
+        def m(x0,w): return x0 if sgn>0 else -(x0+w)
+        for z0,d in ((9.5,5.5),(16.0,5.5),(22.5,5.7)):
+            add('body',_a(m(19.1,1.5),-16.0,z0,1.5,30.0,d,kind='plate',role2='lame',side=sgn))
+        add('body',_a(m(18.1,1.4),-15.0,-51.0,1.4,31.0,14.5,kind='plate',role2='lame',side=sgn))
+    for z0,d in ((-29.0,13.0),(-14.5,13.0),(0.0,13.0),(14.5,7.0)):
+        add('body',_a(-15.8,-28.6,z0,31.6,1.6,d,kind='plate',role2='belly'))
+    add('body',_a(-18.8,18.0,-51.5,37.6,1.6,15.0,kind='plate',role2='rump'))
+    # ---- cola: laminas superior y laterales por tramo, y maza con pinchos
+    for nm,hw,top,z0,d,sidey in (('tail1',14.0,14.0,-29.0,30.0,11.0),('tail2',10.0,10.0,-27.0,28.0,8.0),('tail3',7.0,7.0,-25.0,26.0,5.5)):
+        add(nm,_a(-(hw+0.8),top,z0,2*(hw+0.8),1.4,d,kind='plate',role2='tail'))
+        for sgn in (1,-1):
+            x=hw+0.1 if sgn>0 else -(hw+0.1+1.3)
+            add(nm,_a(x,-sidey,z0,1.3,2*sidey,d,kind='plate',role2='tailside',side=sgn))
+    add('tail4',_a(-5.4,-5.4,-17.5,10.8,10.8,4.0,kind='band'))
+    add('tail5',_a(-4.0,-4.0,-24.0,8.0,8.0,6.5,kind='band'),
+        _a(-1.1,4.0,-23.0,2.2,4.2,3.2,kind='spike',ax='y'),_a(-1.1,-8.2,-23.0,2.2,4.2,3.2,kind='spike',ax='yn'),
+        _a(4.0,-1.1,-23.0,4.2,2.2,3.2,kind='spike',ax='x'),_a(-8.2,-1.1,-23.0,4.2,2.2,3.2,kind='spike',ax='xn'),
+        _a(-1.1,-1.1,-27.5,2.2,2.2,3.5,kind='spike',ax='zn'))
+    # ---- patas y brazos
+    for n,sgn in (('l',1),('r',-1)):
+        def m(x0,w): return x0 if sgn>0 else -(x0+w)
+        add('thigh_'+n,_a(m(12.1,1.4),-27.0,-13.5,1.4,29.0,27.0,kind='plate',role2='thigh',side=sgn),
+                       _a(m(13.5,4.0),-16.0,-3.0,4.0,4.0,6.0,kind='spike',ax='x' if sgn>0 else 'xn',side=sgn))
+        add('shin_'+n,_a(-8.7,-23.0,-8.7,17.4,22.0,17.4,kind='plate',role2='greave'),
+                      _a(-8.2,-3.5,6.9,16.4,8.5,3.2,kind='plate',role2='knee'),
+                      _a(-1.8,-0.5,10.0,3.6,3.6,5.0,kind='spike',ax='z'))
+        add('meta_'+n,_a(-6.8,-9.0,-6.8,13.6,3.2,13.6,kind='band'),_a(-6.8,-19.0,-6.8,13.6,3.0,13.6,kind='band'))
+        add('foot_'+n,_a(-9.3,1.0,-10.8,18.6,1.6,25.6,kind='plate',role2='foot'))
+        add('arm_'+n,_a(-4.6,-10.0,-4.6,9.2,8.0,9.2,kind='plate',role2='bracer'),
+                     _a(-5.8,-1.5,-5.8,11.6,4.5,11.6,kind='plate',role2='pauldron'),
+                     _a(-1.2,3.0,-1.2,2.4,3.8,2.4,kind='spike',ax='y'))
+        add('arm2_'+n,_a(-3.9,-7.5,-3.9,7.8,6.0,7.8,kind='plate',role2='bracer'))
+    return A
 # ---------------------------------------------------------------- etapas
 STAGES={
  'chibi':dict(body=0.52,tail=0.46,neck=0.55,head=0.82,horn=0.80,arm=0.62,leg=0.52),

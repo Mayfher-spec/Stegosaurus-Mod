@@ -38,7 +38,7 @@ public final class CarnoScreen extends Screen {
     }
 
     private ProdigyProgress prog() { return pet.getProgress(); }
-    private int signature() { return java.util.Objects.hash(prog().level(), prog().pointsSpent(), pet.isAdultStage(), pet.getOrder(), pet.isSaddled()); }
+    private int signature() { return java.util.Objects.hash(prog().level(), prog().pointsSpent(), pet.isAdultStage(), pet.getOrder(), pet.isSaddled(), pet.getArmorTier()); }
     private String typedName;
 
     @Override protected void init() {
@@ -94,6 +94,10 @@ public final class CarnoScreen extends Screen {
             ModNetwork.CHANNEL.sendToServer(new ModNetwork.TalentAction(pet.getId(), 3, 0))).bounds(left + 98, top + H - 42, 80, 16).build();
         saddle.active = pet.isSaddled();
         addRenderableWidget(saddle);
+        Button gear = Button.builder(Component.literal("Quitar armadura"), b ->
+            ModNetwork.CHANNEL.sendToServer(new ModNetwork.TalentAction(pet.getId(), 4, 0))).bounds(left + 184, top + H - 42, 96, 16).build();
+        gear.active = pet.getArmorTier() > 0;
+        addRenderableWidget(gear);
     }
 
     // ---------------------------------------------------------------- ordenes
@@ -174,8 +178,11 @@ public final class CarnoScreen extends Screen {
         for (int i = 0; i < 4; i++) { text(g, k[i] + ": " + v[i], x + (i % 2) * 120, y + (i / 2) * 12, 0xFFC8CDD2); }
         text(g, "Color: " + VARIANT[Math.max(0, Math.min(3, pet.getVariant()))] + (pet.isFemale() ? "  (hembra)" : "  (macho)"), x, y + 30, 0xFFC8CDD2);
         text(g, "Silla: " + (pet.isSaddled() ? "equipada" : "sin silla (clic con una silla en la mano)"), x, y + 42, 0xFFC8CDD2);
-        text(g, "Talentos desbloqueados: " + prog().talentsUnlocked() + " / " + prog().table().length, x, y + 54, 0xFFC8CDD2);
+        String[] mat = {"", "hierro", "oro", "diamante", "netherita"};
+        int at = pet.getArmorTier();
+        text(g, "Armadura: " + (at > 0 ? "de " + mat[at] : "sin armadura (clic con una en la mano)"), x, y + 54, 0xFFC8CDD2);
+        text(g, "Talentos desbloqueados: " + prog().talentsUnlocked() + " / " + prog().table().length, x, y + 66, 0xFFC8CDD2);
         int ul = pet.ultimateLevel();
-        text(g, ul > 0 ? "Rugido ancestral: nivel " + ul + " (tecla R, montado o cerca)" : "Rugido ancestral: se obtiene al nivel 50", x, y + 66, ul > 0 ? 0xFFF2D27A : 0xFF8E98A3);
+        text(g, ul > 0 ? "Rugido ancestral: nivel " + ul + " (tecla R, montado o cerca)" : "Rugido ancestral: se obtiene al nivel 50", x, y + 78, ul > 0 ? 0xFFF2D27A : 0xFF8E98A3);
     }
 }

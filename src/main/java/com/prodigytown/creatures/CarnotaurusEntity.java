@@ -90,6 +90,8 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
     private static final UUID M_ARM_ADD = UUID.fromString("c4a7b0de-0005-4d1e-9a10-5e90a5a10005");
     private static final UUID M_KB_ADD = UUID.fromString("c4a7b0de-0006-4d1e-9a10-5e90a5a10006");
     private static final UUID M_SPD_MUL = UUID.fromString("c4a7b0de-0007-4d1e-9a10-5e90a5a10007");
+    private static final UUID M_ARM_GEAR = UUID.fromString("c4a7b0de-0008-4d1e-9a10-5e90a5a10008");
+    private static final UUID M_TGH_GEAR = UUID.fromString("c4a7b0de-0009-4d1e-9a10-5e90a5a10009");
     /** Estadisticas del adulto en el nivel 30 (220 PV, 26 de dano, 10 de armadura) frente a la fila 30 de la tabla compartida (270 / 27 / 14). */
     private static final double K_HP = 220.0 / 270.0, K_DMG = 26.0 / 27.0, K_ARM = 10.0 / 14.0;
     private static final UUID ENRAGE_DAMAGE_ID = UUID.fromString("a8e3c6b1-52f4-4d0b-8c6e-1f9b7d2e4a22");
@@ -105,6 +107,8 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
     private boolean sexAssigned = false;
     private static final EntityDataAccessor<Boolean> ADULT = SynchedEntityData.defineId(CarnotaurusEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> SADDLED = SynchedEntityData.defineId(CarnotaurusEntity.class, EntityDataSerializers.BOOLEAN);
+    /** Armadura equipada: 0 = ninguna, 1 hierro, 2 oro, 3 diamante, 4 netherita (solo el adulto la lleva). */
+    private static final EntityDataAccessor<Integer> ARMOR_TIER = SynchedEntityData.defineId(CarnotaurusEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> ORDER = SynchedEntityData.defineId(CarnotaurusEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> FALLEN = SynchedEntityData.defineId(CarnotaurusEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Integer> ABILITY_KIND = SynchedEntityData.defineId(CarnotaurusEntity.class, EntityDataSerializers.INT);
@@ -161,6 +165,7 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
         this.entityData.define(FEMALE, Boolean.FALSE);
         this.entityData.define(ADULT, Boolean.TRUE);
         this.entityData.define(SADDLED, Boolean.FALSE);
+        this.entityData.define(ARMOR_TIER, 0);
         this.entityData.define(ORDER, PetOrders.FOLLOW);
         this.entityData.define(FALLEN, Boolean.FALSE);
         this.entityData.define(ABILITY_KIND, 0);
@@ -181,6 +186,7 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
         tag.putInt("Growth", growth);
         tag.put("Progress", progress.save());
         tag.putBoolean("Saddled", isSaddled());
+        tag.putInt("ArmorTier", getArmorTier());
         tag.putInt("PetOrder", getOrder());
         tag.putBoolean("PetFallen", isFallen());
         if (orderHome != null) tag.putLong("OrderHome", orderHome.asLong());
@@ -197,6 +203,7 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
         this.progress = ProdigyProgress.load(tag.getCompound("Progress"), isAdultStage() ? ProdigyProgress.ADULT_START_LEVEL : 1, Talents.CARNO);
         this.entityData.set(PROGRESS, progress.save());
         this.entityData.set(SADDLED, tag.getBoolean("Saddled"));
+        this.entityData.set(ARMOR_TIER, isAdultStage() ? Math.max(0, Math.min(4, tag.getInt("ArmorTier"))) : 0);
         this.entityData.set(ORDER, PetOrders.clamp(tag.getInt("PetOrder")));
         this.entityData.set(FALLEN, tag.getBoolean("PetFallen"));
         this.orderHome = tag.contains("OrderHome") ? BlockPos.of(tag.getLong("OrderHome")) : null;
@@ -268,6 +275,9 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
         setMod(Attributes.ARMOR, M_ARM_ADD, adult ? GrowthTable.ARMOR[lv] * K_ARM - 10.0 + progress.rank("D1") : 0.0, AttributeModifier.Operation.ADDITION);
         setMod(Attributes.KNOCKBACK_RESISTANCE, M_KB_ADD, adult ? 0.05 * progress.rank("D3") : 0.0, AttributeModifier.Operation.ADDITION);
         setMod(Attributes.MOVEMENT_SPEED, M_SPD_MUL, adult ? 0.02 * progress.rank("S1") : 0.0, AttributeModifier.Operation.MULTIPLY_TOTAL);
+        int gear = adult ? getArmorTier() : 0;   // mismos valores que la armadura del estegosaurio
+        setMod(Attributes.ARMOR, M_ARM_GEAR, StegosaurusEntity.ARMOR_VALUE[gear], AttributeModifier.Operation.ADDITION);
+        setMod(Attributes.ARMOR_TOUGHNESS, M_TGH_GEAR, StegosaurusEntity.TOUGHNESS_VALUE[gear], AttributeModifier.Operation.ADDITION);
     }
     private void setMod(Attribute attr, UUID id, double amount, AttributeModifier.Operation op) {
         AttributeInstance inst = this.getAttribute(attr);
@@ -851,6 +861,25 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
         this.entityData.set(SADDLED, false);
     }
 
+    // ------------------------------------------------------------------ armadura (hierro / oro / diamante / netherita)
+    public int getArmorTier() { return this.entityData.get(ARMOR_TIER); }
+
+    /** Equipa una armadura (la anterior cae al suelo). Solo servidor y solo el adulto. */
+    public void equipArmor(int tier) {
+        if (this.level().isClientSide || !isAdultStage()) return;
+        int old = getArmorTier();
+        this.entityData.set(ARMOR_TIER, Math.max(0, Math.min(4, tier)));
+        if (old > 0 && old != tier) this.spawnAtLocation(new net.minecraft.world.item.ItemStack(ProdigyCreatures.CARNO_ARMOR_ITEMS.get(old - 1).get()));
+        applyStageStats(true);
+    }
+
+    public void removeArmor() {
+        if (this.level().isClientSide || getArmorTier() == 0) return;
+        this.spawnAtLocation(new net.minecraft.world.item.ItemStack(ProdigyCreatures.CARNO_ARMOR_ITEMS.get(getArmorTier() - 1).get()));
+        this.entityData.set(ARMOR_TIER, 0);
+        applyStageStats(true);
+    }
+
     public void rename(String name) {
         if (this.level().isClientSide) return;
         String n = name == null ? "" : name.trim();
@@ -1072,6 +1101,16 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
             }
             return InteractionResult.PASS;
         }
+        if (held.getItem() instanceof CarnotaurusArmorItem armor) {
+            if (!isAdultStage()) {
+                if (!client) player.displayClientMessage(Component.literal("Solo un carnotauro adulto puede llevar armadura"), true);
+            } else if (!client && armor.tier != getArmorTier()) {
+                equipArmor(armor.tier);
+                if (!player.getAbilities().instabuild) held.shrink(1);
+                this.playSound(net.minecraft.sounds.SoundEvents.ARMOR_EQUIP_IRON, 1.0F, 0.7F);
+            }
+            return InteractionResult.sidedSuccess(client);
+        }
         if (isAdultStage() && held.is(Items.SADDLE) && !isSaddled()) {
             if (!client) {
                 this.entityData.set(SADDLED, true);
@@ -1170,6 +1209,7 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
                 com.prodigytown.creatures.egg.CarnotaurusEggs.rollVariant(this.random, getVariant())).get()));
         }
         if (isSaddled()) this.spawnAtLocation(Items.SADDLE);
+        if (getArmorTier() > 0) this.spawnAtLocation(new net.minecraft.world.item.ItemStack(ProdigyCreatures.CARNO_ARMOR_ITEMS.get(getArmorTier() - 1).get()));
     }
 
     // ------------------------------------------------------------------ sonidos y varios

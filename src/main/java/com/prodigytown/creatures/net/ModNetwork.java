@@ -47,6 +47,7 @@ public final class ModNetwork {
                     else if (m.action == 1) carno.resetTalents();
                     else if (m.action == 2) carno.toggleSit();
                     else if (m.action == 3) carno.removeSaddle();
+                    else if (m.action == 4) carno.removeArmor();
                     return;
                 }
                 if (!(e instanceof StegosaurusEntity stego) || !stego.isOwnedBy(sp) || stego.distanceTo(sp) > 40.0F) return;
