@@ -888,6 +888,26 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
         applyStageStats(true);
     }
 
+    /**
+     * Vuelve a ser una cria (solo el adulto vivo). Suelta la silla y la armadura, baja al jinete y conserva dueno,
+     * nombre, color, nivel y orden. Para volver a crecer hacen falta de nuevo las carnes crudas. Solo servidor.
+     */
+    public void revertToChibi() {
+        if (this.level().isClientSide || !isAlive() || isFallen() || !isAdultStage()) return;
+        this.ejectPassengers();
+        removeSaddle();
+        removeArmor();
+        this.getNavigation().stop();
+        this.growth = 0;
+        setAdultStage(false);
+        this.playSound(ModSounds.CHIBI_EVOLVE.get(), 2.0F, 1.6F);
+        if (this.level() instanceof ServerLevel sl) {
+            sl.sendParticles(ParticleTypes.POOF, getX(), getY() + 0.8, getZ(), 24, 0.6, 0.5, 0.6, 0.05);
+            sl.sendParticles(ParticleTypes.END_ROD, getX(), getY() + 1.0, getZ(), 14, 0.5, 0.5, 0.5, 0.06);
+        }
+        if (this.getOwner() instanceof Player p) p.displayClientMessage(Component.literal("Tu carnotauro volvio a ser una cria"), true);
+    }
+
     public void rename(String name) {
         if (this.level().isClientSide) return;
         String n = name == null ? "" : name.trim();
@@ -1061,19 +1081,27 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
     private static boolean isRaw(ItemStack s) {
         return s.is(Items.BEEF) || s.is(Items.PORKCHOP) || s.is(Items.MUTTON) || s.is(Items.CHICKEN) || s.is(Items.RABBIT);
     }
+    /** Para curar y hacer crecer a un carnotauro domado: solo carne de vaca, cerdo o cordero (cruda o cocinada). */
+    private static boolean isHealMeat(ItemStack s) {
+        return s.is(Items.BEEF) || s.is(Items.PORKCHOP) || s.is(Items.MUTTON)
+            || s.is(Items.COOKED_BEEF) || s.is(Items.COOKED_PORKCHOP) || s.is(Items.COOKED_MUTTON);
+    }
+    private static boolean isRawHealMeat(ItemStack s) {
+        return s.is(Items.BEEF) || s.is(Items.PORKCHOP) || s.is(Items.MUTTON);
+    }
 
     @Override public InteractionResult mobInteract(Player player, InteractionHand hand) {
         ItemStack held = player.getItemInHand(hand);
         boolean client = this.level().isClientSide;
         if (isFallen()) {
-            if (this.isTame() && this.isOwnedBy(player) && held.is(ProdigyCreatures.CARNO_JERKY.get())) {
+            if (this.isTame() && this.isOwnedBy(player) && held.is(ProdigyCreatures.GOLDEN_MUTTON.get())) {
                 if (!client) {
                     if (!player.getAbilities().instabuild) held.shrink(1);
                     PetOrders.revive(this);
                     this.playSound(ModSounds.STEGO_ADULT_HAPPY.get(), 1.4F, 1.2F);
                 }
             } else if (!client && this.isOwnedBy(player)) {
-                player.displayClientMessage(Component.literal("Esta fuera de combate: reanimalo con carne curada"), true);
+                player.displayClientMessage(Component.literal("Esta fuera de combate: reanimalo con carne de cordero dorada"), true);
             }
             return InteractionResult.sidedSuccess(client);
         }
@@ -1093,13 +1121,13 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
             return InteractionResult.sidedSuccess(client);
         }
         if (!this.isOwnedBy(player)) return super.mobInteract(player, hand);
-        if (isMeat(held) || held.is(ProdigyCreatures.CARNO_JERKY.get())) {
+        if (isHealMeat(held)) {
             boolean needsHeal = this.getHealth() < this.getMaxHealth();
-            boolean grows = !isAdultStage() && isRaw(held);
+            boolean grows = !isAdultStage() && isRawHealMeat(held);
             if (needsHeal || grows) {
                 if (!client) {
                     if (!player.getAbilities().instabuild) held.shrink(1);
-                    this.heal(held.is(ProdigyCreatures.CARNO_JERKY.get()) ? 30.0F : isRaw(held) ? 8.0F : 14.0F);
+                    this.heal(isRawHealMeat(held) ? 8.0F : 14.0F);
                     this.playSound(ModSounds.STEGO_ADULT_EAT.get(), 1.0F, isAdultStage() ? 0.9F : 1.4F);
                     if (this.level() instanceof ServerLevel sl) sl.sendParticles(ParticleTypes.HEART, getX(), getY() + getBbHeight(), getZ(), 4, 0.4, 0.3, 0.4, 0.02);
                     if (grows && ++growth >= FEEDS_TO_GROW) grow();

@@ -76,8 +76,8 @@ public class ProdigyCreatures {
             .sized(2.7f, 3.8f).clientTrackingRange(10).build(MODID + ":carnotaurus"));
     public static final RegistryObject<Item> CARNOTAURUS_EGG = ITEMS.register("carnotaurus_spawn_egg", () ->
         new ForgeSpawnEggItem(() -> CARNOTAURUS.get(), 0x8E2F25, 0xE0C9A0, new Item.Properties()));
-    /** Carne curada: reanima al carnotauro caido y lo cura mucho. */
-    public static final RegistryObject<Item> CARNO_JERKY = ITEMS.register("carnotaurus_jerky", () -> new Item(new Item.Properties().stacksTo(64)));
+    /** Carne de cordero dorada (cordero cocido rodeado de oro): reanima a un carnotauro caido. */
+    public static final RegistryObject<Item> GOLDEN_MUTTON = ITEMS.register("golden_mutton", () -> new Item(new Item.Properties().stacksTo(16).rarity(net.minecraft.world.item.Rarity.RARE)));
 
     public static final RegistryObject<Item> STEGOSAURUS_EGG = ITEMS.register("stegosaurus_spawn_egg", () ->
         new ProdigyStegosaurusEgg(new Item.Properties()));
@@ -137,7 +137,7 @@ public class ProdigyCreatures {
             if (event.getTabKey() == CreativeModeTabs.FOOD_AND_DRINKS) {
                 event.accept(TAMING_SALAD.get());
                 event.accept(FEED.get());
-                event.accept(CARNO_JERKY.get());
+                event.accept(GOLDEN_MUTTON.get());
             }
             if (event.getTabKey() == CreativeModeTabs.COMBAT) {
                 for (RegistryObject<Item> armor : ARMOR_ITEMS) event.accept(armor.get());

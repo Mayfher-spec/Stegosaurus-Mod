@@ -112,6 +112,34 @@ public final class CarnoScreen extends Screen {
         }
     }
 
+    /** Boton "volver a pequeno": icono de huevo; pide confirmar con un segundo clic (3 s). Solo activo en adulto. */
+    private final class ChibiButton extends Button {
+        ChibiButton(int x, int y, OnPress press) {
+            super(x, y, 22, 22, Component.empty(), press, DEFAULT_NARRATION);
+        }
+        @Override public void renderWidget(GuiGraphics g, int mx, int my, float pt) {
+            int x = getX(), y = getY();
+            boolean on = this.active, armed = System.currentTimeMillis() < chibiConfirmUntil;
+            g.fill(x, y, x + width, y + height, on ? 0xCC10161C : 0x8810161C);
+            g.renderOutline(x, y, width, height, !on ? 0xFF4A4F54 : armed ? 0xFFE0453A : (isHoveredOrFocused() ? GOLD : 0xFFB8862A));
+            g.pose().pushPose();
+            g.pose().translate(x + 3.0F, y + 3.0F, 0.0F);
+            if (!on) g.setColor(1.0F, 1.0F, 1.0F, 0.35F);
+            g.renderItem(new ItemStack(Items.EGG), 0, 0);
+            g.setColor(1.0F, 1.0F, 1.0F, 1.0F);
+            g.pose().popPose();
+            if (on) { // flecha hacia abajo: pasa a cria
+                int cx = x + width - 4;
+                g.fill(cx - 1, y + 2, cx + 1, y + 7, 0xFF58C7F2);
+                g.fill(cx - 3, y + 6, cx + 3, y + 7, 0xFF58C7F2);
+                g.fill(cx - 2, y + 7, cx + 2, y + 8, 0xFF58C7F2);
+                g.fill(cx - 1, y + 8, cx + 1, y + 9, 0xFF58C7F2);
+            }
+        }
+    }
+
+    private long chibiConfirmUntil = 0L;
+
     // ---------------------------------------------------------------- inicio
     @Override protected void init() {
         sc = Math.max(0.4F, Math.min(1.35F, Math.min((this.width - 8.0F) / W, (this.height - 8.0F) / H)));
@@ -135,6 +163,15 @@ public final class CarnoScreen extends Screen {
         int[] pr = PORTRAIT[tab];
         addRenderableWidget(new GearButton(left + pr[0] + 6, top + pr[3] - 28, false, b -> ModNetwork.CHANNEL.sendToServer(new ModNetwork.TalentAction(pet.getId(), 3, 0))));
         addRenderableWidget(new GearButton(left + pr[2] - 28, top + pr[3] - 28, true, b -> ModNetwork.CHANNEL.sendToServer(new ModNetwork.TalentAction(pet.getId(), 4, 0))));
+        ChibiButton toChibi = new ChibiButton(left + (pr[0] + pr[2]) / 2 - 11, top + pr[3] - 28, b -> {
+            long now = System.currentTimeMillis();
+            if (now < chibiConfirmUntil) {
+                ModNetwork.CHANNEL.sendToServer(new ModNetwork.TalentAction(pet.getId(), 5, 0));
+                this.onClose();
+            } else chibiConfirmUntil = now + 3000L;
+        });
+        toChibi.active = pet.isAdultStage();
+        addRenderableWidget(toChibi);
         switch (tab) {
             case 0 -> {
                 for (int i = 0; i < 6; i++) {
@@ -264,6 +301,8 @@ public final class CarnoScreen extends Screen {
         if (my >= top + pr[3] - 28 && my < top + pr[3] - 6) {
             if (mx >= left + pr[0] + 6 && mx < left + pr[0] + 28) g.renderTooltip(this.font, Component.literal(pet.isSaddled() ? "Quitar silla" : "Sin silla (clic con una silla en la mano)"), rmx, rmy);
             else if (mx >= left + pr[2] - 28 && mx < left + pr[2] - 6) g.renderTooltip(this.font, Component.literal(pet.getArmorTier() > 0 ? "Quitar armadura" : "Sin armadura (clic con una en la mano)"), rmx, rmy);
+            else if (mx >= left + (pr[0] + pr[2]) / 2 - 11 && mx < left + (pr[0] + pr[2]) / 2 + 11) g.renderTooltip(this.font, Component.literal(!pet.isAdultStage() ? "Ya es una cria"
+                : System.currentTimeMillis() < chibiConfirmUntil ? "Pulsa otra vez para confirmar" : "Volver a pequeno (suelta silla y armadura)"), rmx, rmy);
         }
         int[] tt = TITLE[tab];
         if (!renaming && mx >= left + tt[0] && mx < left + tt[2] && my >= top + tt[1] && my < top + tt[3]) g.renderTooltip(this.font, Component.literal("Clic para ponerle nombre"), rmx, rmy);

@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "GGG",
+    "GMG",
+    "GGG"
+  ],
+  "key": {
+    "G": { "item": "minecraft:gold_ingot" },
+    "M": { "item": "minecraft:cooked_mutton" }
+  },
+  "result": {
+    "item": "prodigycreatures:golden_mutton",
+    "count": 1
+  }
+}
