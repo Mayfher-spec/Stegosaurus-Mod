@@ -70,3 +70,8 @@ Recetas: 3 bloques en U de hierro/oro/diamante con cuero en el centro; netherita
 Vista previa (solo desarrollo): scratchpad/armor/ap.py <color> <nivel> [vistas] (renderer propio, sin Minecraft).
 NIDOS: los carnotauros no generan nidos ni estructuras: son errantes puros (aparecen solos en Badlands; hembras silvestres adultas sueltan un huevo al caer). No hay guardia de nido ni vuelta a cria.
 Pendiente / no incluido: armadura para la cria (la cria no lleva silla ni armadura) y animacion de evolucion.
+
+v1.1.15: arreglo de crash al arrancar ("Overlay already registered: prodigycreatures:mount_hud", llegaba desde v1.1.13).
+Causa: Forge/EventBus genera la clase de cada manejador como <paquete>.__<NombreCortoDeLaClase>_<metodo>_<Evento>. CarnoMountHud.ModBus y MountHud.ModBus tienen el mismo nombre corto ("ModBus"),
+el mismo metodo (overlays) y el mismo evento, asi que chocaban y se ejecutaba dos veces el de MountHud (y tampoco funcionaba hideVanilla del carnotauro). Las clases internas de CarnoMountHud pasan a llamarse CarnoModBus / CarnoForgeBus.
+REGLA: dos clases internas @Mod.EventBusSubscriber del mismo paquete no deben compartir nombre corto si repiten metodo y evento.
