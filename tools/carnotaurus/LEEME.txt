@@ -75,3 +75,15 @@ v1.1.15: arreglo de crash al arrancar ("Overlay already registered: prodigycreat
 Causa: Forge/EventBus genera la clase de cada manejador como <paquete>.__<NombreCortoDeLaClase>_<metodo>_<Evento>. CarnoMountHud.ModBus y MountHud.ModBus tienen el mismo nombre corto ("ModBus"),
 el mismo metodo (overlays) y el mismo evento, asi que chocaban y se ejecutaba dos veces el de MountHud (y tampoco funcionaba hideVanilla del carnotauro). Las clases internas de CarnoMountHud pasan a llamarse CarnoModBus / CarnoForgeBus.
 REGLA: dos clases internas @Mod.EventBusSubscriber del mismo paquete no deben compartir nombre corto si repiten metodo y evento.
+
+v1.1.16: equilibrio, boca y nueva interfaz.
+VIDA/DAÑO: el adulto ya no supera al T-Rex de RoR (250 de vida). Base adulto nivel 30: 140 de vida, 18 de daño, 5 de armadura (CarnotaurusEntity.ADULT_HP/ADULT_DMG/ADULT_ARM;
+la tabla de crecimiento se escala con K_* = base/valor del estegosaurio a nivel 30). A nivel 100 llega a ~233 de vida (280 con todo el Corazon de bestia). Su agresividad y velocidad no cambian.
+BOCA: la mordida visual ya no depende del vaiven de 6 ticks de vanilla: la entidad cuenta biteT (BITE_LEN = 16 ticks) cuando empieza un golpe y el modelo abre la mandibula ~1,05 rad (antes ~0,9 durante 2 ticks),
+con la cabeza echada atras, lanzada y cierre seco con rebote. El cabezazo abre 0,55 y el rugido 1,05.
+INTERFAZ (K): CarnoScreen reescrita con los 3 mockups del usuario: Comandos / Ataques / Talentos sobre fondos limpios textures/gui/carno/bg_{cmd,atk,tal}.png (1086x814, derivados de los mockups:
+se borraron retrato, nombre, numeros, etiquetas, nodos y lineas y se dibujan en vivo) + iconos redondos icon_{bite,charge,roar,butt,eye}.png. Coordenadas virtuales 724x543 (mockup a mitad de escala).
+Comandos: 6 tarjetas -> orden (Quieto, Deambular, Seguir, Patrullar, Sentarse, Dormir) con descripcion de PetOrders.HELP. Ataques: mordida (clic izq.), embestida (V), rugido (R), cabezazo (B) y la pasiva Instinto depredador,
+con daño/recarga/tecla calculados con los talentos del jugador. Talentos: 3 ramas (Ferocidad = combate, Supervivencia = defensa, Cacería = soporte), 19 nodos + las 3 mejoras de la definitiva bajo el medallon "Rugido ancestral".
+Nombre: clic en la placa del titulo. Silla/armadura: botones con icono en el retrato. Restablecer pide un segundo clic. Talents.CARNO cambia nombres/textos (ids, costes y requisitos iguales).
+Las zonas (TABS, PORTRAIT, TITLE, HP, STAT_Y, CARD_*, nodeBox) estan al principio de CarnoScreen; ajustalas ahi si algun texto no encaja en el hueco del fondo.

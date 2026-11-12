@@ -179,15 +179,16 @@ public final class CarnotaurusModel<T extends CarnotaurusEntity> extends EntityM
         head.rotY(Mth.sin(age * 0.9F) * 0.015F * aggro);
 
         // ---- mordida: preparar (echa la cabeza atras y abre), golpear (se lanza), cerrar y sacudir la presa ----
-        float atk = e.getAttackAnim(pt);
-        if (atk > 0.0F) {
-            float wind = sstep(atk / 0.22F) * (1.0F - sstep((atk - 0.22F) / 0.12F));
-            float strike = sstep((atk - 0.18F) / 0.18F) * (1.0F - sstep((atk - 0.50F) / 0.50F));
-            float open = Math.max(wind * 0.6F, sstep((atk - 0.14F) / 0.14F) * (1.0F - sstep((atk - 0.40F) / 0.12F)));
-            neck1.rotX(-0.22F * wind + 0.45F * strike); neck2.rotX(0.06F * wind - 0.12F * strike); head.rotX(-0.15F * wind + 0.22F * strike);
+        if (e.biteT >= 0) {
+            float atk = Mth.clamp((Mth.lerp(pt, e.biteTO, e.biteT) + 0.5F) / (float) CarnotaurusEntity.BITE_LEN, 0.0F, 1.0F);
+            float wind = sstep(atk / 0.20F) * (1.0F - sstep((atk - 0.20F) / 0.14F));                  // echa la cabeza atras
+            float strike = sstep((atk - 0.16F) / 0.16F) * (1.0F - sstep((atk - 0.55F) / 0.45F));      // se lanza hacia la presa
+            float open = sstep(atk / 0.18F) * (1.0F - sstep((atk - 0.52F) / 0.20F));                  // boca muy abierta hasta cerrar de golpe
+            float snap = sstep((atk - 0.52F) / 0.10F) * (1.0F - sstep((atk - 0.66F) / 0.20F));        // pequeno rebote al cerrar
+            neck1.rotX(-0.26F * wind + 0.45F * strike); neck2.rotX(0.08F * wind - 0.12F * strike); head.rotX(-0.30F * wind + 0.20F * strike);
             body.rotX(-0.04F * wind + 0.10F * strike); body.move(2.0F * strike);
-            jaw.rotX(0.9F * open);
-            head.rotY(Mth.sin(atk * Mth.PI * 3.0F) * 0.12F * strike);
+            jaw.rotX((adult ? 1.05F : 0.80F) * open - 0.22F * snap);
+            head.rotY(Mth.sin(atk * Mth.PI * 3.0F) * 0.10F * strike * (1.0F - open * 0.5F));
         }
         // ---- golpe recibido: sacude la cabeza hacia atras y se recupera ----
         if (e.hurtTime > 0) {
@@ -204,14 +205,14 @@ public final class CarnotaurusModel<T extends CarnotaurusEntity> extends EntityM
                 float wind = sstep(p / 0.28F) * (1.0F - sstep((p - 0.28F) / 0.10F));
                 float strike = sstep((p - 0.26F) / 0.16F) * (1.0F - sstep((p - 0.55F) / 0.45F));
                 neck1.rotX(-0.25F * wind + 0.60F * strike); neck2.rotX(0.08F * wind - 0.16F * strike); head.rotX(-0.18F * wind + 0.32F * strike);
-                body.rotX(-0.05F * wind + 0.20F * strike); jaw.rotX(0.12F * strike);
+                body.rotX(-0.05F * wind + 0.20F * strike); jaw.rotX(0.55F * strike);
                 for (int i = 0; i < 2; i++) { thigh[i].rotX(-strike * 0.18F); foot[i].rotX(strike * 0.18F); }
             } else {         // rugido: se encoge e inspira, lanza la cabeza al cielo, sostiene temblando y suelta
                 float coil = sstep(p / 0.20F) * (1.0F - sstep((p - 0.20F) / 0.10F));
                 float hold = sstep((p - 0.20F) / 0.10F) * (1.0F - sstep((p - 0.82F) / 0.18F));
                 float tr = Mth.sin(age * 2.4F);
                 neck1.rotX(0.22F * coil - 0.34F * hold); neck2.rotX(0.10F * coil - 0.36F * hold); head.rotX(0.14F * coil - 0.45F * hold);
-                jaw.rotX(0.12F * coil + (0.85F + 0.06F * tr) * hold);
+                jaw.rotX(0.12F * coil + (1.05F + 0.06F * tr) * hold);
                 body.rotX(0.07F * coil - 0.11F * hold); body.move(3.5F * coil - 1.5F * hold);
                 chest.rotX(-0.06F * coil + 0.05F * hold + Mth.sin(age * 0.9F) * 0.02F * hold);
                 body.p.zRot += tr * 0.022F * hold;

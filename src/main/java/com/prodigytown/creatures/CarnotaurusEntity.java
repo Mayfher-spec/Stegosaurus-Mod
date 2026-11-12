@@ -93,7 +93,9 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
     private static final UUID M_ARM_GEAR = UUID.fromString("c4a7b0de-0008-4d1e-9a10-5e90a5a10008");
     private static final UUID M_TGH_GEAR = UUID.fromString("c4a7b0de-0009-4d1e-9a10-5e90a5a10009");
     /** Estadisticas del adulto en el nivel 30 (220 PV, 26 de dano, 10 de armadura) frente a la fila 30 de la tabla compartida (270 / 27 / 14). */
-    private static final double K_HP = 220.0 / 270.0, K_DMG = 26.0 / 27.0, K_ARM = 10.0 / 14.0;
+    /** Cifras del adulto a nivel 30 (la tabla de crecimiento se escala con K_*): por debajo del T-Rex (250 de vida), tambien en estado salvaje. */
+    private static final double ADULT_HP = 140.0, ADULT_DMG = 18.0, ADULT_ARM = 5.0;
+    private static final double K_HP = ADULT_HP / 270.0, K_DMG = ADULT_DMG / 27.0, K_ARM = ADULT_ARM / 14.0;
     private static final UUID ENRAGE_DAMAGE_ID = UUID.fromString("a8e3c6b1-52f4-4d0b-8c6e-1f9b7d2e4a22");
     /** Carnes crudas que necesita la cria para convertirse en adulto. */
     public static final int FEEDS_TO_GROW = 6;
@@ -126,6 +128,9 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
      * runAnim = 0 andando .. 1 corriendo/embistiendo; aggroAnim = postura de caza; turnAnim = giro (grados/tick).
      */
     public float sitAnim, sleepAnim, sitAnimO, sleepAnimO;
+    /** Mordida visual (cliente): ticks desde que empezo el golpe (-1 = sin golpe). Dura BITE_LEN ticks, mucho mas que el vaiven de 6 ticks de vanilla, para abrir bien la boca. */
+    public static final int BITE_LEN = 16;
+    public int biteT = -1, biteTO = -1;
     public float gait, gaitO, speedAnim, speedAnimO, runAnim, runAnimO, aggroAnim, aggroAnimO, turnAnim, turnAnimO;
     private int growth;
     @Nullable private BlockPos orderHome;
@@ -255,10 +260,10 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
         boolean adult = isAdultStage();
         float frac = this.getMaxHealth() <= 0 ? 1.0F : this.getHealth() / this.getMaxHealth();
         // el Brutus: mucha vida, daño y armadura, y muy veloz (cazador de persecucion)
-        setBase(Attributes.MAX_HEALTH, adult ? 220.0 : 50.0);
-        setBase(Attributes.ATTACK_DAMAGE, adult ? 26.0 : 7.0);
+        setBase(Attributes.MAX_HEALTH, adult ? ADULT_HP : 50.0);
+        setBase(Attributes.ATTACK_DAMAGE, adult ? ADULT_DMG : 7.0);
         setBase(Attributes.MOVEMENT_SPEED, adult ? 0.34 : 0.30);
-        setBase(Attributes.ARMOR, adult ? 10.0 : 2.0);
+        setBase(Attributes.ARMOR, adult ? ADULT_ARM : 2.0);
         setBase(Attributes.KNOCKBACK_RESISTANCE, 0.85);
         applyProgressStats(adult);
         if (keepFraction) this.setHealth(Math.max(1.0F, this.getMaxHealth() * frac));
@@ -268,11 +273,11 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
     /** Nivel y talentos -> modificadores de atributos (solo el adulto; la cria no usa la tabla). */
     private void applyProgressStats(boolean adult) {
         int lv = progress.level();
-        setMod(Attributes.MAX_HEALTH, M_HP_ADD, adult ? GrowthTable.HEALTH[lv] * K_HP - 220.0 : 0.0, AttributeModifier.Operation.ADDITION);
+        setMod(Attributes.MAX_HEALTH, M_HP_ADD, adult ? GrowthTable.HEALTH[lv] * K_HP - ADULT_HP : 0.0, AttributeModifier.Operation.ADDITION);
         setMod(Attributes.MAX_HEALTH, M_HP_MUL, adult ? 0.04 * progress.rank("D2") : 0.0, AttributeModifier.Operation.MULTIPLY_TOTAL);
-        setMod(Attributes.ATTACK_DAMAGE, M_DMG_ADD, adult ? GrowthTable.DAMAGE[lv] * K_DMG - 26.0 : 0.0, AttributeModifier.Operation.ADDITION);
+        setMod(Attributes.ATTACK_DAMAGE, M_DMG_ADD, adult ? GrowthTable.DAMAGE[lv] * K_DMG - ADULT_DMG : 0.0, AttributeModifier.Operation.ADDITION);
         setMod(Attributes.ATTACK_DAMAGE, M_DMG_MUL, adult ? 0.05 * progress.rank("C1") + 0.10 * progress.rank("C7") : 0.0, AttributeModifier.Operation.MULTIPLY_TOTAL);
-        setMod(Attributes.ARMOR, M_ARM_ADD, adult ? GrowthTable.ARMOR[lv] * K_ARM - 10.0 + progress.rank("D1") : 0.0, AttributeModifier.Operation.ADDITION);
+        setMod(Attributes.ARMOR, M_ARM_ADD, adult ? GrowthTable.ARMOR[lv] * K_ARM - ADULT_ARM + progress.rank("D1") : 0.0, AttributeModifier.Operation.ADDITION);
         setMod(Attributes.KNOCKBACK_RESISTANCE, M_KB_ADD, adult ? 0.05 * progress.rank("D3") : 0.0, AttributeModifier.Operation.ADDITION);
         setMod(Attributes.MOVEMENT_SPEED, M_SPD_MUL, adult ? 0.02 * progress.rank("S1") : 0.0, AttributeModifier.Operation.MULTIPLY_TOTAL);
         int gear = adult ? getArmorTier() : 0;   // mismos valores que la armadura del estegosaurio
@@ -591,6 +596,9 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
      */
     private void clientAnimTick() {
         sitAnimO = sitAnim; sleepAnimO = sleepAnim;
+        biteTO = biteT;
+        if (this.swinging && this.swingTime <= 0) { biteT = 0; biteTO = 0; }
+        else if (biteT >= 0) biteT = biteT + 1 >= BITE_LEN ? -1 : biteT + 1;
         gaitO = gait; speedAnimO = speedAnim; runAnimO = runAnim; aggroAnimO = aggroAnim; turnAnimO = turnAnim;
         sitAnim += ((getOrder() == PetOrders.SIT ? 1.0F : 0.0F) - sitAnim) * 0.12F;
         sleepAnim += (((getOrder() == PetOrders.SLEEP || isFallen()) ? 1.0F : 0.0F) - sleepAnim) * 0.08F;
