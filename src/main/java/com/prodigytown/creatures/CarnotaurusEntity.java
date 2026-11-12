@@ -240,6 +240,20 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
     public int getMorph() { return this.entityData.get(MORPH); }
     public int getMorphKind() { return this.entityData.get(MORPH_KIND); }
     @Override protected boolean isImmobile() { return super.isImmobile() || getMorph() > 0; }
+    /** Dormido (orden Dormir) o caido: no se mueve, no gira y nadie lo empuja; solo respira y salen las Zzz. */
+    private boolean isSleepingNow() { return isFallen() || getOrder() == PetOrders.SLEEP; }
+    @Override public boolean isPushable() { return super.isPushable() && !isSleepingNow() && getMorph() <= 0; }
+    private float frozenYaw = Float.NaN;
+    private void freezeWhileSleeping() {
+        if (!isSleepingNow() || this.isPassenger()) { frozenYaw = Float.NaN; return; }
+        if (Float.isNaN(frozenYaw)) frozenYaw = this.yBodyRot;
+        this.setYRot(frozenYaw); this.yRotO = frozenYaw;
+        this.yBodyRot = frozenYaw; this.yBodyRotO = frozenYaw;
+        this.yHeadRot = frozenYaw; this.yHeadRotO = frozenYaw;
+        this.setXRot(0.0F); this.xRotO = 0.0F;
+        Vec3 mv = this.getDeltaMovement();
+        this.setDeltaMovement(0.0, mv.y, 0.0);
+    }
     @Override public void handleEntityEvent(byte id) {
         if (id == 64 || id == 65) { this.flashFade = 24; this.flashKind = id == 64 ? 0 : 1; }
         else super.handleEntityEvent(id);
@@ -592,6 +606,7 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
 
     @Override public void tick() {
         super.tick();
+        freezeWhileSleeping();
         if (this.level().isClientSide) {
             clientAnimTick();
         } else {

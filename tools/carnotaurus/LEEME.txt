@@ -128,3 +128,8 @@ v1.1.23 - Destello, cinematicas y sonidos propios
   Entidad: datos MORPH / MORPH_KIND (1 crece, 2 encoge); GROW_LEN 56, SHRINK_LEN 36. Inmovil e invulnerable mientras dura; el cambio de etapa ocurre al final.
   Cliente: CarnotaurusFlashLayer (blanco -> color de la variante; al encoger blanco azulado). Silueta blanca que crece/encoge en CarnotaurusRenderer.
   Entity events 64 (destello al crecer) y 65 (al encoger).
+
+v1.1.24 - Dormir: cabeza a la vista y sin moverse
+  Pose: cuello estirado al frente (sleepNeck1 1.37, sleepNeck2 -0.85, cabeza 0) y girado -0.25 hacia el suelo; ya no se curva bajo el cuerpo.
+  Ccuerpo apoyado: sleepDrop adulto 40.33, cria 12.66.
+  Entidad: dormido o caido -> congela la orientacion (frozenYaw), anula el movimiento horizontal y no es empujable (isPushable). Solo respira y salen las Zzz.

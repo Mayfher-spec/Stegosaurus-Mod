@@ -78,8 +78,8 @@ public final class CarnotaurusModel<T extends CarnotaurusEntity> extends EntityM
         }
         this.all = list.toArray(new Bone[0]);
         this.restDepth = smax(legDepth(0, 0, 0, 0, 0), legDepth(1, 0, 0, 0, 0));
-        if (adult) { sitDrop = 41.87F; sleepDrop = 41.94F; sleepNeck1 = 1.90F; sleepNeck2 = 0.90F; sleepHead = 0.40F; }
-        else { sitDrop = 20.36F; sleepDrop = 17.93F; sleepNeck1 = 1.90F; sleepNeck2 = 0.90F; sleepHead = 0.40F; }
+        if (adult) { sitDrop = 41.87F; sleepDrop = 40.33F; sleepNeck1 = 1.37F; sleepNeck2 = -0.85F; sleepHead = 0.0F; }
+        else { sitDrop = 20.36F; sleepDrop = 12.66F; sleepNeck1 = 1.37F; sleepNeck2 = -0.85F; sleepHead = 0.0F; }
     }
 
     private static float rotY2(float y, float z, float a) { return y * Mth.cos(a) - z * Mth.sin(a); }
@@ -237,6 +237,7 @@ public final class CarnotaurusModel<T extends CarnotaurusEntity> extends EntityM
             body.p.zRot = body.rz + 1.50F * sleep;
             for (int i = 0; i < 5; i++) tail[i].rotX(-0.50F * sleep);
             neck1.rotX(sleepNeck1 * sleep); neck2.rotX(sleepNeck2 * sleep); head.rotX(sleepHead * sleep);
+            neck1.rotY(-0.25F * sleep); // el cuello queda estirado al frente y la cabeza baja hasta apoyarse en el suelo (a la vista, no escondida bajo el cuerpo)
             jaw.p.xRot = Mth.lerp(sleep, jaw.p.xRot, jaw.rx);
             chest.rotX(Mth.sin(age * 0.07F) * 0.02F * sleep);
         }
