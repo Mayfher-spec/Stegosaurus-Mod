@@ -115,3 +115,8 @@ v1.1.20 - Carnotauro: volver a cria, comida y reanimacion
 v1.1.21 - Interior de la boca del carnotauro
  - Paladar con crestas, suelo de la boca y lengua con surco pintados en las 4 texturas (antes era un bloque plano color diente); se oscurece hacia la garganta.
  - La lengua sube sobre el suelo de la boca (antes quedaba enterrada dentro del bloque de dientes). Malla regenerada con tools/carnotaurus/export.py.
+
+v1.1.22 - Dormir de costado, hecho una rueda
+  CarnotaurusModel.setupAnim: al dormir el cuerpo rueda 1.5 rad sobre su eje largo (body.zRot), baja hasta apoyar el costado,
+  la cola se enrosca hacia la barriga (rotX -0.50 por segmento) y el cuello/cabeza se curvan hacia el mismo lado.
+  Sentado no cambia. Valores medidos con una vista previa 3D propia (adulto sleepDrop 41.94, cria 17.93).
