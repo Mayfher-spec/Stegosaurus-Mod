@@ -102,7 +102,7 @@ public final class MountHud {
         RenderSystem.defaultBlendFunc();
 
         // ---- marco con retrato, vida y XP (encima de la barra de objetos, a la derecha); textura 640x180
-        final float fw = 150.0F, fh = fw * 180.0F / 640.0F, k = fw / 640.0F;
+        final float fw = 108.0F, fh = fw * 180.0F / 640.0F, k = fw / 640.0F;
         float fx = w / 2.0F + 2.0F, fy = h - 31 - fh;
         tex(g, FRAME[variant], fx, fy, fw, fh, 640, 180);
         // barra de vida: x205..570, y84..103.5
@@ -116,7 +116,7 @@ public final class MountHud {
             g.fillGradient(bx0, by0, bx0 + fillW, by1, hi, lo);
             g.fill(bx0, by0, bx0 + fillW, by0 + 1, 0x66FFFFFF);
         }
-        text(g, font, Math.round(hp) + " / " + Math.round(max), (bx0 + bx1) / 2.0F, (by0 + by1) / 2.0F - 2.2F, 0.55F, 0xFFFFFFFF, true, true);
+        text(g, font, Math.round(hp) + " / " + Math.round(max), (bx0 + bx1) / 2.0F, (by0 + by1) / 2.0F - 2.0F, 0.5F, 0xFFFFFFFF, true, true);
         // XP: siete segmentos cian; los no alcanzados se apagan (x205..531, y114.5..125.6)
         int sx0 = Math.round(fx + 205 * k), sx1 = Math.round(fx + 531 * k), sy0 = Math.round(fy + 114.0F * k), sy1 = Math.round(fy + 126.0F * k);
         int xpNeed = Math.max(1, s.getProgress().xpToNext());
@@ -128,7 +128,7 @@ public final class MountHud {
         String lv = Component.translatable("prodigycreatures.hud.level").getString() + " " + s.getProgress().level();
         String sep = "  /  ";
         float total = font.width(name) + font.width(sep) + font.width(lv);
-        float hs = Math.min(0.55F, (503 - 207) * k / Math.max(1.0F, total));
+        float hs = Math.min(0.5F, (503 - 207) * k / Math.max(1.0F, total));
         float hx = fx + 207 * k, hy = fy + 63.0F * k - 4.0F * hs;
         text(g, font, name, hx, hy, hs, 0xFFF2E6CC, false, true);
         hx += font.width(name) * hs;

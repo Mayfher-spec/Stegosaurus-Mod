@@ -100,3 +100,8 @@ v1.1.18 - HUD de montura del estegosaurio con las nuevas artes (misma linea que 
  - Botones: Embestida, Cabezazo (mordida, clic izq.), Coletazo (clic der.) y Rugido ancestral, con barrido de recarga, segundos y tecla en la casilla hexagonal.
  - Texturas: textures/gui/hud_shp_<v>, hud_sbtn_<boton>, hud_sic_<boton>_<v>.
  - El HUD del carnotauro pasa a cuadricula 2x2 un poco antes para no tocar el marco.
+
+v1.1.19 - Ajuste de los HUD de montura
+ - Marcos de vida mas pequenos (estego 150 -> 108 px, carno 104 -> 84 px); textos reescalados.
+ - Botones de poder limpios: sin motas oscuras ni restos de halo alrededor de los marcos (mascara recalculada).
+ - Iconos del estego: quitadas las piedras y el polvo dibujados en el arte.

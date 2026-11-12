@@ -103,7 +103,7 @@ public final class CarnoMountHud {
         RenderSystem.defaultBlendFunc();
 
         // ---- marco con la vida (encima de la barra de objetos, a la derecha); textura 512x171
-        final float fw = 104.0F, fh = fw * 171.0F / 512.0F, k = fw / 512.0F;
+        final float fw = 84.0F, fh = fw * 171.0F / 512.0F, k = fw / 512.0F;
         float fx = w / 2.0F + 2.0F, fy = h - 31 - fh;
         tex(g, FRAME_HP[variant], fx, fy, fw, fh, 512, 171);
         float hp = Math.max(0.0F, c.getHealth()), max = Math.max(1.0F, c.getMaxHealth());
@@ -117,15 +117,15 @@ public final class CarnoMountHud {
             g.fillGradient(bx0, by0, bx0 + fillW, by1, hi, lo);
             g.fill(bx0, by0, bx0 + fillW, by0 + 1, 0x66FFFFFF);
         }
-        text(g, font, Math.round(hp) + " / " + Math.round(max), (bx0 + bx1) / 2.0F, (by0 + by1) / 2.0F - 2.4F, 0.6F, 0xFFFFFFFF, true, true);
+        text(g, font, Math.round(hp) + " / " + Math.round(max), (bx0 + bx1) / 2.0F, (by0 + by1) / 2.0F - 2.0F, 0.5F, 0xFFFFFFFF, true, true);
         // XP: linea fina del color de la variante en el borde inferior del hueco
         int xpNeed = Math.max(1, c.getProgress().xpToNext());
         int xw = c.getProgress().level() >= 100 ? bx1 - bx0 : Math.round((bx1 - bx0) * Math.min(1.0F, c.getProgress().xp() / (float) xpNeed));
         if (xw > 0) g.fill(bx0, by1 - 1, bx0 + xw, by1, accent);
         // nombre y nivel sobre las placas
         String name = c.hasCustomName() ? c.getCustomName().getString() : "Carnotauro";
-        fitText(g, font, name, fx + 257 * k, fy + 56 * k, 190 * k, 0.6F, 0xFFF2E6CC, true);
-        fitText(g, font, "Nv " + c.getProgress().level(), fx + 405 * k, fy + 53.5F * k, 56 * k, 0.5F, 0xFF3A1D06, false);
+        fitText(g, font, name, fx + 257 * k, fy + 56 * k, 190 * k, 0.5F, 0xFFF2E6CC, true);
+        fitText(g, font, "Nv " + c.getProgress().level(), fx + 405 * k, fy + 53.5F * k, 56 * k, 0.45F, 0xFF3A1D06, false);
 
         // ---- poderes: botones de 125x140 con el icono debajo del marco; fila si cabe a la derecha de la barra, si no 2x2
         String[] keys = {key(ClientKeys.CHARGE.getTranslatedKeyMessage().getString()), key(ClientKeys.TAIL.getTranslatedKeyMessage().getString()), "Izq", key(ClientKeys.ULTIMATE.getTranslatedKeyMessage().getString())};
