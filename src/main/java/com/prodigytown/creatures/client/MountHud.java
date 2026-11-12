@@ -1,5 +1,6 @@
 package com.prodigytown.creatures.client;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.prodigytown.creatures.ProdigyCreatures;
 import com.prodigytown.creatures.StegosaurusEntity;
 import net.minecraft.client.Minecraft;
@@ -14,7 +15,7 @@ import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-/** HUD al montar: nombre, nivel, vida y recargas de mordida / coletazo / embestida (estilo Saint's Dragons). */
+/** HUD al montar el estegosaurio: marco con retrato, nombre, nivel, vida, XP y los 4 poderes (embestida, cabezazo/mordida, coletazo y rugido ancestral). */
 public final class MountHud {
     private MountHud() {}
 
@@ -35,66 +36,39 @@ public final class MountHud {
         }
     }
 
-    private static final ResourceLocation FRAME = new ResourceLocation(ProdigyCreatures.MODID, "textures/gui/hud_frame.png");
-    /** ICON[variante][0 mordida, 1 coletazo, 2 embestida]: iconos con el color de cada raza. */
-    private static final ResourceLocation[][] ICON = new ResourceLocation[5][3];
+    private static final ResourceLocation[] FRAME = new ResourceLocation[5];
+    private static final ResourceLocation[] BTN = new ResourceLocation[4];
+    /** ICON[boton][variante]: boton 0 embestida, 1 cabezazo (mordida), 2 coletazo, 3 rugido. */
+    private static final ResourceLocation[][] ICON = new ResourceLocation[4][5];
+    /** Indice de recarga de la entidad por boton: embestida 0, mordida 2, coletazo 1, definitiva 3. */
+    private static final int[] WHICH = {0, 2, 1, 3};
+    /** Centro de la casilla hexagonal de la tecla en cada boton (px de la textura 150x168). */
+    private static final float[][] HEX = {{75.3F, 103.5F}, {75.0F, 104.4F}, {75.0F, 104.4F}, {74.1F, 104.7F}};
     static {
-        String[] kinds = {"bite", "tail", "charge"};
-        for (int v = 0; v < 5; v++)
-            for (int k = 0; k < 3; k++)
-                ICON[v][k] = new ResourceLocation(ProdigyCreatures.MODID, "textures/gui/ab_" + kinds[k] + "_" + v + ".png");
+        for (int v = 0; v < 5; v++) {
+            FRAME[v] = new ResourceLocation(ProdigyCreatures.MODID, "textures/gui/hud_shp_" + v + ".png");
+            for (int b = 0; b < 4; b++) ICON[b][v] = new ResourceLocation(ProdigyCreatures.MODID, "textures/gui/hud_sic_" + b + "_" + v + ".png");
+        }
+        for (int b = 0; b < 4; b++) BTN[b] = new ResourceLocation(ProdigyCreatures.MODID, "textures/gui/hud_sbtn_" + b + ".png");
     }
 
-    private static final ResourceLocation[] ULT_ICON = new ResourceLocation[5];
-    static { for (int v = 0; v < 5; v++) ULT_ICON[v] = new ResourceLocation(ProdigyCreatures.MODID, "textures/gui/ab_ult_" + v + ".png"); }
-
-    /** Boton de la definitiva: encima de la mordida. Apagado con el nivel que falta hasta el 50; con barrido de recarga y nivel (I/II/III). */
-    private static void renderUltimate(GuiGraphics g, Font font, StegosaurusEntity s, int cx, int cy, int r) {
-        int ul = s.ultimateLevel();
-        int x = cx - r, y = cy - r;
-        g.blit(ULT_ICON[Math.max(0, Math.min(4, s.getVariant()))], x, y, 2 * r, 2 * r, 0.0F, 0.0F, 64, 64, 64, 64);
-        if (ul <= 0) {
-            fillCircle(g, cx, cy, r, 0xC0081018);
-            g.pose().pushPose();
-            g.pose().translate(cx, cy - 3.0F, 0.0F);
-            g.pose().scale(0.7F, 0.7F, 1.0F);
-            g.drawCenteredString(font, "Nv.50", 0, 0, 0xFFFFFFFF);
-            g.pose().popPose();
-        } else {
-            float left = s.cooldownLeft(3);
-            if (left > 0.0F) {
-                fillSweep(g, cx, cy, r, left);
-                g.pose().pushPose();
-                g.pose().translate(cx, cy - 3.0F, 0.0F);
-                g.pose().scale(0.85F, 0.85F, 1.0F);
-                g.drawCenteredString(font, Integer.toString(s.cooldownSeconds(3)), 0, 0, 0xFFFFFFFF);
-                g.pose().popPose();
-            }
-            String lv = ul == 1 ? "I" : ul == 2 ? "II" : "III";
-            g.pose().pushPose();
-            g.pose().translate(cx - r + 1.0F, cy - r + 1.0F, 0.0F);
-            g.pose().scale(0.6F, 0.6F, 1.0F);
-            g.drawString(font, lv, 0, 0, 0xFFFFE08A, true);
-            g.pose().popPose();
-        }
-        String key = ClientKeys.ULTIMATE.getTranslatedKeyMessage().getString();
-        float kw = font.width(key) * 0.55F;
-        int bx2 = cx + r - 3, by2 = cy + r - 5;
-        g.fill((int) (bx2 - kw / 2 - 1), by2 - 1, (int) (bx2 + kw / 2 + 2), by2 + 5, 0xCC000000);
+    private static void text(GuiGraphics g, Font font, String s, float x, float y, float scale, int color, boolean centered, boolean shadow) {
         g.pose().pushPose();
-        g.pose().translate(bx2 - kw / 2.0F, by2, 0.0F);
-        g.pose().scale(0.55F, 0.55F, 1.0F);
-        g.drawString(font, key, 0, 0, 0xFFF2D27A, false);
+        g.pose().translate(x, y, 0.0F);
+        g.pose().scale(scale, scale, 1.0F);
+        if (centered) g.drawString(font, s, -font.width(s) / 2, 0, color, shadow); else g.drawString(font, s, 0, 0, color, shadow);
         g.pose().popPose();
     }
 
-    private static void fillCircle(GuiGraphics g, int cx, int cy, int r, int color) {
-        for (int dy = -r; dy <= r; dy++) {
-            int half = (int) Math.floor(Math.sqrt(r * r - dy * dy));
-            g.fill(cx - half, cy + dy, cx + half + 1, cy + dy + 1, color);
-        }
+    private static void tex(GuiGraphics g, ResourceLocation t, float x, float y, float w, float h, int texW, int texH) {
+        g.pose().pushPose();
+        g.pose().translate(x, y, 0.0F);
+        g.pose().scale(w / texW, h / texH, 1.0F);
+        g.blit(t, 0, 0, texW, texH, 0.0F, 0.0F, texW, texH, texW, texH);
+        g.pose().popPose();
     }
 
+    /** Barrido circular de recarga (sentido horario) sobre un disco de radio r. */
     private static void fillSweep(GuiGraphics g, int cx, int cy, int r, float left) {
         double start = (1.0 - left) * Math.PI * 2.0;
         for (int dy = -r; dy <= r; dy++) {
@@ -108,95 +82,90 @@ public final class MountHud {
                 }
                 if (on && runStart == Integer.MIN_VALUE) runStart = dx;
                 if (!on && runStart != Integer.MIN_VALUE) {
-                    g.fill(cx + runStart, cy + dy, cx + dx, cy + dy + 1, 0xB0081018);
+                    g.fill(cx + runStart, cy + dy, cx + dx, cy + dy + 1, 0xB8081018);
                     runStart = Integer.MIN_VALUE;
                 }
             }
         }
     }
 
+    private static String key(String s) {
+        return s.length() > 4 ? s.substring(0, 3) : s;
+    }
+
     private static void render(GuiGraphics g, int w, int h) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.options.hideGui || !(mc.player.getVehicle() instanceof StegosaurusEntity s)) return;
         Font font = mc.font;
+        int variant = Math.max(0, Math.min(4, s.getVariant()));
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
 
-        // ---- marco con la vida (encima de la barra de objetos); textura 512x171, interior x148..451 y83..118
-        final int fw = 88, fh = Math.round(fw * 171.0F / 512.0F);
-        int fx = w / 2 + 9, fy = h - 31 - fh; // hueco sobre los slots 6-9 de la barra rapida
-        float k = fw / 512.0F;
-        int ix = fx + Math.round(148 * k), iw = Math.round((451 - 148) * k), iy = fy + Math.round(83 * k), ih = Math.round((118 - 83) * k);
+        // ---- marco con retrato, vida y XP (encima de la barra de objetos, a la derecha); textura 640x180
+        final float fw = 150.0F, fh = fw * 180.0F / 640.0F, k = fw / 640.0F;
+        float fx = w / 2.0F + 2.0F, fy = h - 31 - fh;
+        tex(g, FRAME[variant], fx, fy, fw, fh, 640, 180);
+        // barra de vida: x205..570, y84..103.5
+        int bx0 = Math.round(fx + 205 * k), bx1 = Math.round(fx + 570 * k), by0 = Math.round(fy + 84 * k), by1 = Math.round(fy + 103.5F * k);
         float hp = Math.max(0.0F, s.getHealth()), max = Math.max(1.0F, s.getMaxHealth());
         float frac = Math.min(1.0F, hp / max);
-        g.blit(FRAME, fx, fy, fw, fh, 0.0F, 0.0F, 512, 171, 512, 171);
-        int fillW = Math.round(iw * frac);
+        int fillW = Math.round((bx1 - bx0) * frac);
         if (fillW > 0) {
-            int hi = frac > 0.5F ? 0xFFE23A34 : frac > 0.25F ? 0xFFE88A2A : 0xFFD02020;
-            int lo = frac > 0.5F ? 0xFF8E1414 : frac > 0.25F ? 0xFF9A5210 : 0xFF700C0C;
-            g.fillGradient(ix, iy, ix + fillW, iy + ih, hi, lo);
-            g.fill(ix, iy, ix + fillW, iy + 1, 0x66FFFFFF);
-            for (int t = 1; t < 10; t++) { // marcas cada 10 %
-                int tx = ix + iw * t / 10;
-                if (tx < ix + fillW) g.fill(tx, iy, tx + 1, iy + ih, 0x33000000);
-            }
+            int hi = frac > 0.5F ? 0xFFE8403A : frac > 0.25F ? 0xFFEE9A30 : 0xFFE02828;
+            int lo = frac > 0.5F ? 0xFF931616 : frac > 0.25F ? 0xFFA25A12 : 0xFF780C0C;
+            g.fillGradient(bx0, by0, bx0 + fillW, by1, hi, lo);
+            g.fill(bx0, by0, bx0 + fillW, by0 + 1, 0x66FFFFFF);
         }
-        String num = Math.round(hp) + " / " + Math.round(max);
-        g.pose().pushPose();
-        g.pose().translate(ix + iw / 2.0F, iy + (ih - 4.5F) / 2.0F + 0.5F, 0.0F);
-        g.pose().scale(0.55F, 0.55F, 1.0F);
-        g.drawCenteredString(font, num, 0, 0, 0xFFFFFFFF);
-        g.pose().popPose();
+        text(g, font, Math.round(hp) + " / " + Math.round(max), (bx0 + bx1) / 2.0F, (by0 + by1) / 2.0F - 2.2F, 0.55F, 0xFFFFFFFF, true, true);
+        // XP: siete segmentos cian; los no alcanzados se apagan (x205..531, y114.5..125.6)
+        int sx0 = Math.round(fx + 205 * k), sx1 = Math.round(fx + 531 * k), sy0 = Math.round(fy + 114.0F * k), sy1 = Math.round(fy + 126.0F * k);
+        int xpNeed = Math.max(1, s.getProgress().xpToNext());
+        float xf = s.getProgress().level() >= 100 ? 1.0F : Math.min(1.0F, s.getProgress().xp() / (float) xpNeed);
+        int lit = sx0 + Math.round((sx1 - sx0) * xf);
+        if (lit < sx1) g.fill(lit, sy0, sx1, sy1, 0xC00E1218);
+        // cabecera: nombre / nivel sobre la placa oscura (x207..503, centro y63)
         String name = s.hasCustomName() ? s.getCustomName().getString() : "Estegosaurio";
-        g.pose().pushPose();
-        g.pose().translate(fx + fw / 2.0F + 6.0F, fy - 1.0F, 0.0F);
-        g.pose().scale(0.6F, 0.6F, 1.0F);
-        g.drawCenteredString(font, name + "  " + Component.translatable("prodigycreatures.hud.level").getString() + s.getProgress().level(), 0, 0, 0xFFF2D27A);
-        g.pose().popPose();
+        String lv = Component.translatable("prodigycreatures.hud.level").getString() + " " + s.getProgress().level();
+        String sep = "  /  ";
+        float total = font.width(name) + font.width(sep) + font.width(lv);
+        float hs = Math.min(0.55F, (503 - 207) * k / Math.max(1.0F, total));
+        float hx = fx + 207 * k, hy = fy + 63.0F * k - 4.0F * hs;
+        text(g, font, name, hx, hy, hs, 0xFFF2E6CC, false, true);
+        hx += font.width(name) * hs;
+        text(g, font, sep, hx, hy, hs, 0xFF8A8F96, false, false);
+        hx += font.width(sep) * hs;
+        text(g, font, lv, hx, hy, hs, 0xFFF2C75A, false, true);
 
-        renderUltimate(g, font, s, w - 19, h - 52, 11);
-
-        // ---- poderes: iconos circulares a la derecha, con barrido de recarga (mordida grande, coletazo y embestida pequenos)
-        String[] keys = {"Izq", "Der", ClientKeys.CHARGE.getTranslatedKeyMessage().getString()};
-        int[] which = {2, 1, 0};
-        int[] cx = {w - 19, w - 48, w - 42};
-        int[] cy = {h - 21, h - 14, h - 41};
-        int[] rad = {13, 10, 10};
-        for (int i = 0; i < 3; i++) {
-            int r = rad[i], x = cx[i] - r, y = cy[i] - r;
-            float left = s.cooldownLeft(which[i]);
-            g.blit(ICON[Math.max(0, Math.min(4, s.getVariant()))][i], x, y, 2 * r, 2 * r, 0.0F, 0.0F, 64, 64, 64, 64);
-            if (left > 0.0F) {
-                double start = (1.0 - left) * Math.PI * 2.0;
-                for (int dy = -r; dy <= r; dy++) {
-                    int runStart = Integer.MIN_VALUE;
-                    for (int dx = -r; dx <= r + 1; dx++) {
-                        boolean on = false;
-                        if (dx <= r && dx * dx + dy * dy <= r * r) {
-                            double ang = Math.atan2(dx + 0.5, -(dy + 0.5));
-                            if (ang < 0) ang += Math.PI * 2.0;
-                            on = ang >= start;
-                        }
-                        if (on && runStart == Integer.MIN_VALUE) runStart = dx;
-                        if (!on && runStart != Integer.MIN_VALUE) {
-                            g.fill(cx[i] + runStart, cy[i] + dy, cx[i] + dx, cy[i] + dy + 1, 0xB0081018);
-                            runStart = Integer.MIN_VALUE;
-                        }
-                    }
+        // ---- poderes: cuatro botones; en fila si caben a la derecha del marco, si no en cuadricula 2x2
+        String[] keys = {key(ClientKeys.CHARGE.getTranslatedKeyMessage().getString()), "Izq", "Der", key(ClientKeys.ULTIMATE.getTranslatedKeyMessage().getString())};
+        final float bw = 40.0F, bh = bw * 168.0F / 150.0F, bk = bw / 150.0F, step = bw + 2.0F;
+        boolean row = w - 4 * step - 3 >= fx + fw + 4.0F;
+        for (int i = 0; i < 4; i++) {
+            float x, y;
+            if (row) { x = w - 4 * step - 3 + i * step; y = h - 4 - bh; }
+            else { x = w - 2 * step - 3 + (i % 2) * step; y = h - 4 - 2 * bh - 2 + (i / 2) * (bh + 2); }
+            float ccx = x + 75.0F * bk, ccy = y + 69.0F * bk, ir = 35.4F * bk;
+            tex(g, ICON[i][variant], ccx - 36.9F * bk, ccy - 36.9F * bk, 73.8F * bk, 73.8F * bk, 96, 96);
+            int icx = Math.round(ccx), icy = Math.round(ccy), r = Math.round(ir);
+            boolean locked = i == 3 && s.ultimateLevel() <= 0;
+            if (locked) {
+                fillSweep(g, icx, icy, r, 1.0F);
+                fillSweep(g, icx, icy, r, 1.0F);
+                text(g, font, "Nv.50", ccx, ccy - 2.4F, 0.6F, 0xFFE0E4E8, true, true);
+            } else {
+                float left = s.cooldownLeft(WHICH[i]);
+                if (left > 0.0F) {
+                    fillSweep(g, icx, icy, r, left);
+                    text(g, font, Integer.toString(s.cooldownSeconds(WHICH[i])), ccx, ccy - 3.2F, 0.8F, 0xFFFFFFFF, true, true);
                 }
-                g.pose().pushPose();
-                g.pose().translate(cx[i], cy[i] - 3.0F, 0.0F);
-                g.pose().scale(0.85F, 0.85F, 1.0F);
-                g.drawCenteredString(font, Integer.toString(s.cooldownSeconds(which[i])), 0, 0, 0xFFFFFFFF);
-                g.pose().popPose();
             }
-            // etiqueta de la tecla en la esquina inferior derecha del circulo
-            float kw = font.width(keys[i]) * 0.55F;
-            int bx2 = cx[i] + r - 3, by2 = cy[i] + r - 5;
-            g.fill((int) (bx2 - kw / 2 - 1), by2 - 1, (int) (bx2 + kw / 2 + 2), by2 + 5, 0xCC000000);
-            g.pose().pushPose();
-            g.pose().translate(bx2 - kw / 2.0F, by2, 0.0F);
-            g.pose().scale(0.55F, 0.55F, 1.0F);
-            g.drawString(font, keys[i], 0, 0, 0xFFF2D27A, false);
-            g.pose().popPose();
+            tex(g, BTN[i], x, y, bw, bh, 150, 168);
+            // tecla dentro de la casilla hexagonal
+            float hxc = x + HEX[i][0] * bk, hyc = y + HEX[i][1] * bk;
+            float ks = Math.min(0.6F, 6.4F / Math.max(1, font.width(keys[i])));
+            text(g, font, keys[i], hxc, hyc - 4.0F * ks, ks, 0xFFF6DFA0, true, false);
+            if (i == 3 && s.ultimateLevel() > 0) text(g, font, "I".repeat(s.ultimateLevel()), ccx - ir * 0.72F, ccy - ir * 0.95F, 0.55F, 0xFFFFE08A, true, true);
         }
+        RenderSystem.disableBlend();
     }
 }

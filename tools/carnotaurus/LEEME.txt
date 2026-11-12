@@ -94,3 +94,9 @@ v1.1.17 - HUD de montura con las nuevas artes
    barrido de recarga con segundos y tecla real configurada. Rugido bloqueado hasta nivel 50.
  - Si no cabe una fila a la derecha de la barra de objetos, los botones pasan a una cuadricula 2x2.
  - Texturas: textures/gui/carno/hud_hp_<v>, hud_btn_<poder>, hud_ic_<poder>_<v>.
+
+v1.1.18 - HUD de montura del estegosaurio con las nuevas artes (misma linea que el del carnotauro)
+ - Marco con retrato por variante (cibernetico, dorado, magma, esmeralda, natural), nombre / nivel, vida y XP en 7 segmentos.
+ - Botones: Embestida, Cabezazo (mordida, clic izq.), Coletazo (clic der.) y Rugido ancestral, con barrido de recarga, segundos y tecla en la casilla hexagonal.
+ - Texturas: textures/gui/hud_shp_<v>, hud_sbtn_<boton>, hud_sic_<boton>_<v>.
+ - El HUD del carnotauro pasa a cuadricula 2x2 un poco antes para no tocar el marco.

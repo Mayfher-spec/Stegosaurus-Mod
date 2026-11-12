@@ -130,7 +130,7 @@ public final class CarnoMountHud {
         // ---- poderes: botones de 125x140 con el icono debajo del marco; fila si cabe a la derecha de la barra, si no 2x2
         String[] keys = {key(ClientKeys.CHARGE.getTranslatedKeyMessage().getString()), key(ClientKeys.TAIL.getTranslatedKeyMessage().getString()), "Izq", key(ClientKeys.ULTIMATE.getTranslatedKeyMessage().getString())};
         final float bw = 38.0F, bh = bw * 140.0F / 125.0F, bk = bw / 125.0F, step = bw + 2.0F;
-        boolean row = w - 4 * step - 3 >= w / 2.0F + 95.0F;
+        boolean row = w - 4 * step - 3 >= w / 2.0F + 110.0F;
         for (int i = 0; i < 4; i++) {
             float x, y;
             if (row) { x = w - 4 * step - 3 + i * step; y = h - 4 - bh; }
