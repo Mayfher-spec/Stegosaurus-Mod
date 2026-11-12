@@ -26,6 +26,36 @@ public final class Talents {
         new Talent("U2", 0, "Definitiva: alcance", 3, new int[]{3,4,5}, new int[]{50,75,100}, new String[][]{}, "Mejora de la definitiva: +1,5 / +3 / +4,5 bloques de alcance (el rango pide nivel 50 / 75 / 100)", new String[]{}),
         new Talent("U3", 2, "Definitiva: recarga", 3, new int[]{4,5,6}, new int[]{50,75,100}, new String[][]{}, "Mejora de la definitiva: recarga de 52 / 46 / 40 s en vez de 60 s (el rango pide nivel 50 / 75 / 100)", new String[]{})
     };
+    /** Arbol del carnotauro (Brutus): mismas ramas, costes, niveles y requisitos que el del estegosaurio, con el combate adaptado a mordida, embestida y cabezazo. */
+    public static final Talent[] CARNO = buildCarno();
+
+    private static Talent retext(Talent o, String name, String effect) {
+        return new Talent(o.id, o.branch, name, o.maxRank, o.cost, o.minLevel, o.reqs, effect, o.exclusive);
+    }
+
+    private static Talent[] buildCarno() {
+        Talent[] t = ALL.clone();
+        for (int i = 0; i < t.length; i++) {
+            Talent o = t[i];
+            switch (o.id) {
+                case "C1" -> t[i] = retext(o, "Mandíbula entrenada", "+5 % de daño por rango (hasta +25 %)");
+                case "C2" -> t[i] = retext(o, "Mordida desgarradora", "+0,5 bloques de alcance de la mordida montado por rango");
+                case "C3" -> t[i] = retext(o, "Embestida de cacería", "La embestida hace +20 / +40 / +60 % más de daño; desde el rango 2 deja lento 2 s a quien embiste");
+                case "C4" -> t[i] = retext(o, "Cuernos afilados", "Devuelve 15 / 25 / 35 % del daño cuerpo a cuerpo recibido (máx. 15 PV por golpe)");
+                case "C5" -> t[i] = retext(o, "Cabezazo demoledor", "El cabezazo hace +50 / +100 / +150 % de daño y su recarga baja un 10 % por rango");
+                case "C6" -> t[i] = retext(o, "Furia protectora", "+10 / +20 / +30 % de daño mientras el dueño esté por debajo del 50 % de vida o haya sido herido hace menos de 5 s");
+                case "D5" -> t[i] = retext(o, "Guardia del Brutus I–III", "Montado: redirige 50 / 75 / 100 % del daño dirigido al jinete hacia el carnotauro (pasa por su armadura)");
+                case "S3" -> t[i] = retext(o, "Compañero fiel", "Se teletransporta a tu lado desde 88 / 80 / 64 bloques (sin el talento, 96)");
+                case "S6" -> t[i] = retext(o, "Rugido de aliento", "Si el dueño baja del 30 % de vida, ruge y le da Resistencia II y Regeneración durante 8 s (recarga 90 s)");
+                case "U1" -> t[i] = retext(o, "Definitiva: potencia", "Rugido ancestral: +15 / +30 / +50 % de daño (el rango pide nivel 50 / 75 / 100)");
+                case "U2" -> t[i] = retext(o, "Definitiva: alcance", "Rugido ancestral: +1,5 / +3 / +4,5 bloques de alcance (el rango pide nivel 50 / 75 / 100)");
+                case "U3" -> t[i] = retext(o, "Definitiva: recarga", "Rugido ancestral: recarga de 52 / 46 / 40 s en vez de 60 s (el rango pide nivel 50 / 75 / 100)");
+                default -> { }
+            }
+        }
+        return t;
+    }
+
     private Talents() {}
     public static int index(String id) {
         for (int i = 0; i < ALL.length; i++) if (ALL[i].id.equals(id)) return i;

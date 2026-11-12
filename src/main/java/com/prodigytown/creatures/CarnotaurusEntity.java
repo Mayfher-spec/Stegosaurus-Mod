@@ -14,6 +14,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.AgeableMob;
@@ -26,6 +27,8 @@ import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.entity.TamableAnimal;
+import net.minecraft.world.entity.ai.attributes.Attribute;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -55,6 +58,10 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import com.prodigytown.creatures.progress.GrowthTable;
+import com.prodigytown.creatures.progress.ProdigyPet;
+import com.prodigytown.creatures.progress.ProdigyProgress;
+import com.prodigytown.creatures.progress.Talents;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.EnumSet;
@@ -68,7 +75,7 @@ import java.util.UUID;
  * Adulto: montable con silla, embestida (V), cabezazo con cuernos (B / clic derecho), mordida (clic izquierdo) y rugido (R).
  * Comparte con el estegosaurio las ordenes y el estado "caido" (ver PetOrders y PetEvents).
  */
-public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder {
+public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder, ProdigyPet {
     /** Colores: Rojo, Verde, Acero y Arena. El adulto es siempre el "Brutus": grande, robusto y agresivo. */
     public static final int SCARLET = 0, GREEN = 1, STEEL = 2, ARENA = 3, VARIANTS = 4;
     public static final String[] VARIANT_NAMES = {"Rojo", "Verde", "Acero", "Arena"};
@@ -76,6 +83,15 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
     /** Furia: por debajo de este porcentaje de vida el adulto corre y muerde mas fuerte. */
     private static final float ENRAGE_BELOW = 0.40F;
     private static final UUID ENRAGE_SPEED_ID = UUID.fromString("5c1d0f5e-3d7a-4b8e-9a52-7c1e2b0a9d11");
+    private static final UUID M_HP_ADD = UUID.fromString("c4a7b0de-0001-4d1e-9a10-5e90a5a10001");
+    private static final UUID M_HP_MUL = UUID.fromString("c4a7b0de-0002-4d1e-9a10-5e90a5a10002");
+    private static final UUID M_DMG_ADD = UUID.fromString("c4a7b0de-0003-4d1e-9a10-5e90a5a10003");
+    private static final UUID M_DMG_MUL = UUID.fromString("c4a7b0de-0004-4d1e-9a10-5e90a5a10004");
+    private static final UUID M_ARM_ADD = UUID.fromString("c4a7b0de-0005-4d1e-9a10-5e90a5a10005");
+    private static final UUID M_KB_ADD = UUID.fromString("c4a7b0de-0006-4d1e-9a10-5e90a5a10006");
+    private static final UUID M_SPD_MUL = UUID.fromString("c4a7b0de-0007-4d1e-9a10-5e90a5a10007");
+    /** Estadisticas del adulto en el nivel 30 (220 PV, 26 de dano, 10 de armadura) frente a la fila 30 de la tabla compartida (270 / 27 / 14). */
+    private static final double K_HP = 220.0 / 270.0, K_DMG = 26.0 / 27.0, K_ARM = 10.0 / 14.0;
     private static final UUID ENRAGE_DAMAGE_ID = UUID.fromString("a8e3c6b1-52f4-4d0b-8c6e-1f9b7d2e4a22");
     /** Carnes crudas que necesita la cria para convertirse en adulto. */
     public static final int FEEDS_TO_GROW = 6;
@@ -93,6 +109,12 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
     private static final EntityDataAccessor<Boolean> FALLEN = SynchedEntityData.defineId(CarnotaurusEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Integer> ABILITY_KIND = SynchedEntityData.defineId(CarnotaurusEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> ABILITY_LEFT = SynchedEntityData.defineId(CarnotaurusEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<CompoundTag> PROGRESS = SynchedEntityData.defineId(CarnotaurusEntity.class, EntityDataSerializers.COMPOUND_TAG);
+    /** Recargas para el HUD: (tick de fin << 12) | duracion. 0 embestida, 1 cabezazo, 2 mordida, 3 rugido. */
+    private static final EntityDataAccessor<Long> CD_CHARGE = SynchedEntityData.defineId(CarnotaurusEntity.class, EntityDataSerializers.LONG);
+    private static final EntityDataAccessor<Long> CD_BUTT = SynchedEntityData.defineId(CarnotaurusEntity.class, EntityDataSerializers.LONG);
+    private static final EntityDataAccessor<Long> CD_BITE = SynchedEntityData.defineId(CarnotaurusEntity.class, EntityDataSerializers.LONG);
+    private static final EntityDataAccessor<Long> CD_ROAR = SynchedEntityData.defineId(CarnotaurusEntity.class, EntityDataSerializers.LONG);
 
     /**
      * Solo cliente: estado de animacion suavizado. Cada valor guarda su version del tick anterior (...O) para interpolar con el tiempo parcial.
@@ -104,6 +126,8 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
     private int growth;
     @Nullable private BlockPos orderHome;
     private int cdCharge, cdButt, cdRoar, cdBite;
+    private ProdigyProgress progress = ProdigyProgress.atLevel(ProdigyProgress.ADULT_START_LEVEL, Talents.CARNO);
+    private int lastCombatTick = -100000, guardUntil = -1, guardPct = 0, guardReadyAt = 0, aidReadyAt = 0;
     /** IA: pausa entre rugidos de guerra y entre embestidas, objetivo del ultimo rugido, furia y objetivo inalcanzable (se ignora un rato). */
     private int cdAiRoar, cdAiCharge, growlTimer, unreachableId = -1, unreachableUntil;
     private int lastRoarTargetId = -1;
@@ -141,6 +165,11 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
         this.entityData.define(FALLEN, Boolean.FALSE);
         this.entityData.define(ABILITY_KIND, 0);
         this.entityData.define(ABILITY_LEFT, 0);
+        this.entityData.define(PROGRESS, ProdigyProgress.atLevel(ProdigyProgress.ADULT_START_LEVEL, Talents.CARNO).save());
+        this.entityData.define(CD_CHARGE, 0L);
+        this.entityData.define(CD_BUTT, 0L);
+        this.entityData.define(CD_BITE, 0L);
+        this.entityData.define(CD_ROAR, 0L);
     }
 
     @Override public void addAdditionalSaveData(CompoundTag tag) {
@@ -150,6 +179,7 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
         tag.putBoolean("Female", isFemale());
         tag.putBoolean("SexAssigned", sexAssigned);
         tag.putInt("Growth", growth);
+        tag.put("Progress", progress.save());
         tag.putBoolean("Saddled", isSaddled());
         tag.putInt("PetOrder", getOrder());
         tag.putBoolean("PetFallen", isFallen());
@@ -163,6 +193,9 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
         this.entityData.set(FEMALE, tag.getBoolean("Female"));
         this.sexAssigned = tag.getBoolean("SexAssigned");
         this.growth = tag.getInt("Growth");
+        // sin progreso guardado: los adultos de antes cargan en el nivel 30 y las crias en el 1
+        this.progress = ProdigyProgress.load(tag.getCompound("Progress"), isAdultStage() ? ProdigyProgress.ADULT_START_LEVEL : 1, Talents.CARNO);
+        this.entityData.set(PROGRESS, progress.save());
         this.entityData.set(SADDLED, tag.getBoolean("Saddled"));
         this.entityData.set(ORDER, PetOrders.clamp(tag.getInt("PetOrder")));
         this.entityData.set(FALLEN, tag.getBoolean("PetFallen"));
@@ -202,6 +235,7 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
     @Override public void onSyncedDataUpdated(EntityDataAccessor<?> key) {
         super.onSyncedDataUpdated(key);
         if (ADULT.equals(key)) this.refreshDimensions();
+        if (PROGRESS.equals(key)) this.progress = ProdigyProgress.load(this.entityData.get(PROGRESS), ProdigyProgress.ADULT_START_LEVEL, Talents.CARNO);
     }
 
     @Override public EntityDimensions getDimensions(Pose pose) {
@@ -219,9 +253,27 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
         setBase(Attributes.MOVEMENT_SPEED, adult ? 0.34 : 0.30);
         setBase(Attributes.ARMOR, adult ? 10.0 : 2.0);
         setBase(Attributes.KNOCKBACK_RESISTANCE, 0.85);
+        applyProgressStats(adult);
         if (keepFraction) this.setHealth(Math.max(1.0F, this.getMaxHealth() * frac));
         else if (this.getHealth() > this.getMaxHealth()) this.setHealth(this.getMaxHealth());
         this.refreshDimensions();
+    }
+    /** Nivel y talentos -> modificadores de atributos (solo el adulto; la cria no usa la tabla). */
+    private void applyProgressStats(boolean adult) {
+        int lv = progress.level();
+        setMod(Attributes.MAX_HEALTH, M_HP_ADD, adult ? GrowthTable.HEALTH[lv] * K_HP - 220.0 : 0.0, AttributeModifier.Operation.ADDITION);
+        setMod(Attributes.MAX_HEALTH, M_HP_MUL, adult ? 0.04 * progress.rank("D2") : 0.0, AttributeModifier.Operation.MULTIPLY_TOTAL);
+        setMod(Attributes.ATTACK_DAMAGE, M_DMG_ADD, adult ? GrowthTable.DAMAGE[lv] * K_DMG - 26.0 : 0.0, AttributeModifier.Operation.ADDITION);
+        setMod(Attributes.ATTACK_DAMAGE, M_DMG_MUL, adult ? 0.05 * progress.rank("C1") + 0.10 * progress.rank("C7") : 0.0, AttributeModifier.Operation.MULTIPLY_TOTAL);
+        setMod(Attributes.ARMOR, M_ARM_ADD, adult ? GrowthTable.ARMOR[lv] * K_ARM - 10.0 + progress.rank("D1") : 0.0, AttributeModifier.Operation.ADDITION);
+        setMod(Attributes.KNOCKBACK_RESISTANCE, M_KB_ADD, adult ? 0.05 * progress.rank("D3") : 0.0, AttributeModifier.Operation.ADDITION);
+        setMod(Attributes.MOVEMENT_SPEED, M_SPD_MUL, adult ? 0.02 * progress.rank("S1") : 0.0, AttributeModifier.Operation.MULTIPLY_TOTAL);
+    }
+    private void setMod(Attribute attr, UUID id, double amount, AttributeModifier.Operation op) {
+        AttributeInstance inst = this.getAttribute(attr);
+        if (inst == null) return;
+        inst.removeModifier(id);
+        if (amount != 0.0) inst.addPermanentModifier(new AttributeModifier(id, "prodigy_progress", amount, op));
     }
     private void setBase(net.minecraft.world.entity.ai.attributes.Attribute attr, double v) {
         var inst = this.getAttribute(attr);
@@ -231,6 +283,8 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
     /** Recien nacido de un huevo: chibi del color del huevo, domado y a tu lado si hay dueno. */
     public void initFromEgg(int color, @Nullable java.util.UUID owner) {
         setVariant(color);
+        this.progress = ProdigyProgress.atLevel(1, Talents.CARNO);
+        this.entityData.set(PROGRESS, progress.save());
         setAdultStage(false);
         this.growth = 0;
         if (owner != null) {
@@ -487,7 +541,7 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
             if (--recalc > 0) return;
             recalc = 10;
             double dist = Math.sqrt(CarnotaurusEntity.this.distanceToSqr(o));
-            if (dist >= 96.0 && CarnotaurusEntity.this.level() instanceof ServerLevel) {
+            if (dist >= rejoinDistance() && CarnotaurusEntity.this.level() instanceof ServerLevel) {
                 CarnotaurusEntity.this.teleportTo(o.getX(), o.getY(), o.getZ());
                 CarnotaurusEntity.this.getNavigation().stop();
                 return;
@@ -516,6 +570,7 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
             if (cdAiCharge > 0) cdAiCharge--;
             abilityTick();
             huntTick();
+            serverProgressTick();
             PetOrders.serverTick(this);
         }
     }
@@ -619,12 +674,13 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
     private void chargeHits() {
         Vec3 dir = Vec3.directionFromRotation(0.0F, this.getYRot());
         AABB box = this.getBoundingBox().inflate(0.7, 0.2, 0.7).move(dir.scale(1.4));
-        float dmg = (float) this.getAttributeValue(Attributes.ATTACK_DAMAGE) * 1.4F;
+        float dmg = (float) this.getAttributeValue(Attributes.ATTACK_DAMAGE) * (1.4F + 0.2F * progress.rank("C3")) * furyMultiplier();
         boolean ridden = this.getControllingPassenger() != null;
         for (LivingEntity e : this.level().getEntitiesOfClass(LivingEntity.class, box, x -> !isAlly(x) && (ridden || !isTame() || x instanceof Enemy || x == getTarget()))) {
             if (!chargeHit.add(e.getId())) continue;
             e.hurt(this.damageSources().mobAttack(this), dmg);
             e.knockback(1.6, -dir.x, -dir.z);
+            if (progress.rank("C3") >= 2) e.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 40, 3)); // Embestida de caceria: lo deja lento 2 s
             this.playSound(ModSounds.STEGO_CHARGE_HIT.get(), 2.4F, 0.85F + this.random.nextFloat() * 0.2F);
             if (this.level() instanceof ServerLevel sl) sl.sendParticles(ParticleTypes.CRIT, e.getX(), e.getY() + e.getBbHeight() * 0.6, e.getZ(), 12, 0.4, 0.4, 0.4, 0.3);
         }
@@ -635,11 +691,13 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
         if (this.level().isClientSide || !isAdultStage() || isFallen() || isOrderedToSit()) return;
         if (!(this.level() instanceof ServerLevel server)) return;
         Vec3 look = Vec3.directionFromRotation(0.0F, this.getControllingPassenger() instanceof Player r ? r.getYRot() : this.getYRot());
-        float atk = (float) this.getAttributeValue(Attributes.ATTACK_DAMAGE);
+        float atk = (float) this.getAttributeValue(Attributes.ATTACK_DAMAGE) * furyMultiplier();
+        lastCombatTick = this.tickCount;
         switch (ability) {
             case 0 -> {
                 if (cdCharge > 0 || getAbilityLeft() > 0) return;
-                cdCharge = 160;
+                cdCharge = Math.round(160 * cooldownFactor());
+                markCd(CD_CHARGE, cdCharge);
                 chargeHit.clear();
                 if (this.getControllingPassenger() instanceof Player r) this.setYRot(r.getYRot());
                 startAbility(1, CHARGE_LEN);
@@ -647,12 +705,13 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
             }
             case 1 -> {
                 if (cdButt > 0 || getAbilityLeft() > 0) return;
-                cdButt = 70;
+                cdButt = Math.round(70 * (1.0F - 0.10F * progress.rank("C5")) * cooldownFactor());
+                markCd(CD_BUTT, cdButt);
                 startAbility(2, BUTT_LEN);
                 this.playSound(ModSounds.CARNO_ROAR.get(), 1.0F, 1.5F * vp());
                 Vec3 c = this.position().add(look.scale(2.6)).add(0, 1.2, 0);
                 for (LivingEntity e : server.getEntitiesOfClass(LivingEntity.class, new AABB(c, c).inflate(2.4, 1.6, 2.4), x -> !isAlly(x))) {
-                    e.hurt(this.damageSources().mobAttack(this), atk * 1.3F);
+                    e.hurt(this.damageSources().mobAttack(this), atk * (1.3F + 0.5F * progress.rank("C5")));
                     e.knockback(1.3, -look.x, -look.z);
                     e.setDeltaMovement(e.getDeltaMovement().add(0.0, 0.5, 0.0));
                     e.hurtMarked = true;
@@ -662,10 +721,12 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
             }
             case 2 -> {
                 if (cdBite > 0) return;
-                cdBite = 12;
+                cdBite = Math.max(2, Math.round(12 * cooldownFactor()));
+                markCd(CD_BITE, cdBite);
                 LivingEntity best = null;
-                double bd = 4.2 * 4.2;
-                for (LivingEntity e : server.getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(4.0, 1.5, 4.0), x -> !isAlly(x))) {
+                double reach = 4.2 + 0.5 * progress.rank("C2");
+                double bd = reach * reach;
+                for (LivingEntity e : server.getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(reach - 0.2, 1.5, reach - 0.2), x -> !isAlly(x))) {
                     Vec3 to = e.position().subtract(this.position());
                     if (to.lengthSqr() < 1.0E-4 || to.normalize().dot(look) < 0.35) continue;
                     double d = this.distanceToSqr(e);
@@ -680,9 +741,12 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
             }
             case 3 -> {
                 if (cdRoar > 0 || getAbilityLeft() > 0) return;
-                cdRoar = 500;
+                int ul = ultimateLevel(); // desde el nivel 50 el rugido es el "Rugido ancestral" de su color
+                cdRoar = Math.round((ul > 0 ? 1200 - 20 * new int[]{0, 8, 14, 20}[progress.rank("U3")] : 500) * cooldownFactor());
+                markCd(CD_ROAR, cdRoar);
                 startAbility(3, ROAR_LEN);
                 roar(server, false);
+                if (ul > 0) ancestralRoar(server, ul, atk);
             }
             default -> {}
         }
@@ -708,11 +772,235 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
         }
     }
 
+    // ------------------------------------------------------------------ progresion (nivel, XP, talentos)
+
+    @Override public ProdigyProgress getProgress() { return progress; }
+    private float cooldownFactor() { return 1.0F - 0.10F * progress.rank("C7"); }
+    private float supportBoost() { return 1.0F + 0.20F * progress.rank("S7"); }
+
+    /** C6 Furia protectora: mas dano mientras el dueno esta por debajo del 50 % de vida o fue herido hace poco. */
+    private float furyMultiplier() {
+        float mult = 1.0F;
+        int fury = progress.rank("C6");
+        LivingEntity owner = this.getOwner();
+        if (fury > 0 && owner != null) {
+            boolean low = owner.getHealth() < owner.getMaxHealth() * 0.5F;
+            boolean recentlyHurt = owner.tickCount - owner.getLastHurtByMobTimestamp() < 100 && owner.getLastHurtByMobTimestamp() != 0;
+            if (low || recentlyHurt) mult += 0.10F * fury;
+        }
+        return mult;
+    }
+
+    /** Nivel de la definitiva (rugido ancestral): 1 desde el nivel 50, 2 desde el 75 y 3 en el 100. Solo el adulto. */
+    public int ultimateLevel() {
+        if (!isAdultStage()) return 0;
+        int lv = progress.level();
+        return lv >= 100 ? 3 : lv >= 75 ? 2 : lv >= 50 ? 1 : 0;
+    }
+
+    private void pushProgress() { this.entityData.set(PROGRESS, progress.save()); }
+
+    private void applyProgress() {
+        if (this.level().isClientSide) return;
+        applyProgressStats(isAdultStage());
+        if (this.getHealth() > this.getMaxHealth()) this.setHealth(this.getMaxHealth());
+    }
+
+    @Override public void gainXp(int amount) {
+        if (this.level().isClientSide || amount <= 0) return;
+        float oldMax = this.getMaxHealth();
+        boolean leveled = progress.addXp(amount);
+        if (leveled) {
+            applyProgress();
+            float diff = this.getMaxHealth() - oldMax;
+            if (diff > 0) this.heal(diff);
+            if (this.getOwner() instanceof Player p)
+                p.displayClientMessage(Component.literal("Tu carnotauro sube a nivel " + progress.level() + (isAdultStage() ? " (" + progress.pointsAvailable() + " puntos disponibles)" : "")), true);
+            this.playSound(net.minecraft.sounds.SoundEvents.PLAYER_LEVELUP, 1.0F, 0.8F);
+        }
+        pushProgress();
+    }
+
+    public boolean unlockTalent(int idx) {
+        if (this.level().isClientSide || !isAdultStage()) return false;
+        float oldMax = this.getMaxHealth();
+        if (!progress.unlock(idx)) return false;
+        applyProgress();
+        float diff = this.getMaxHealth() - oldMax;
+        if (diff > 0) this.heal(diff);
+        pushProgress();
+        return true;
+    }
+
+    public void resetTalents() {
+        if (this.level().isClientSide) return;
+        progress.reset();
+        applyProgress();
+        pushProgress();
+    }
+
+    public void toggleSit() {
+        if (this.level().isClientSide) return;
+        PetOrders.setOrder(this, this.isOrderedToSit() ? PetOrders.FOLLOW : PetOrders.SIT);
+    }
+
+    public void removeSaddle() {
+        if (this.level().isClientSide || !isSaddled()) return;
+        this.ejectPassengers();
+        this.spawnAtLocation(Items.SADDLE);
+        this.entityData.set(SADDLED, false);
+    }
+
+    public void rename(String name) {
+        if (this.level().isClientSide) return;
+        String n = name == null ? "" : name.trim();
+        if (n.length() > 32) n = n.substring(0, 32);
+        this.setCustomName(n.isEmpty() ? null : Component.literal(n));
+        this.setCustomNameVisible(!n.isEmpty());
+    }
+
+    /** Distancia a partir de la cual se teletransporta junto al dueno (S3). */
+    public double rejoinDistance() { return new double[]{96.0, 88.0, 80.0, 64.0}[progress.rank("S3")]; }
+
+    /** Reduccion de dano por caida del dueno (S4) que aporta este companero, 0..1. */
+    public float fallReduction() {
+        int r = progress.rank("S4");
+        return r <= 0 ? 0.0F : Math.min(1.0F, 0.30F * r * supportBoost());
+    }
+
+    /** D5 Guardia: porcentaje del dano al jinete que absorbe el carnotauro (0 si no aplica). */
+    public int guardPercent() {
+        return this.getControllingPassenger() == null ? 0 : new int[]{0, 50, 75, 100}[progress.rank("D5")];
+    }
+
+    public void takeRedirected(DamageSource source, float amount) {
+        if (!this.level().isClientSide && amount > 0.0F) this.hurt(source, amount);
+    }
+
+    private void markCd(EntityDataAccessor<Long> acc, int ticks) {
+        int t = Math.max(1, Math.min(4095, ticks));
+        this.entityData.set(acc, ((this.level().getGameTime() + t) << 12) | t);
+    }
+    private static EntityDataAccessor<Long> cdAcc(int which) {
+        return which == 0 ? CD_CHARGE : which == 1 ? CD_BUTT : which == 3 ? CD_ROAR : CD_BITE;
+    }
+    /** Fraccion de recarga que falta (1 = recien usada, 0 = lista). which: 0 embestida, 1 cabezazo, 2 mordida, 3 rugido. Sirve en el cliente. */
+    public float cooldownLeft(int which) {
+        long v = this.entityData.get(cdAcc(which));
+        long dur = v & 4095L;
+        if (dur == 0L) return 0.0F;
+        long remaining = (v >> 12) - this.level().getGameTime();
+        return remaining <= 0 ? 0.0F : Math.min(1.0F, remaining / (float) dur);
+    }
+    public int cooldownSeconds(int which) {
+        long v = this.entityData.get(cdAcc(which));
+        if ((v & 4095L) == 0L) return 0;
+        long remaining = (v >> 12) - this.level().getGameTime();
+        return remaining <= 0 ? 0 : (int) ((remaining + 19) / 20);
+    }
+
+    /** Servidor: regeneracion (S2, S5) y Rugido de aliento (S6). */
+    private void serverProgressTick() {
+        if (this.tickCount % 20 == 0 && this.isAlive() && this.getHealth() < this.getMaxHealth()) {
+            float pct = 0.0F;
+            int s2 = progress.rank("S2");
+            if (s2 > 0) pct += new float[]{0F, 0.10F, 0.15F, 0.20F}[s2];
+            int s5 = progress.rank("S5");
+            if (s5 > 0 && this.tickCount - lastCombatTick > 200) pct += new float[]{0F, 0.3F, 0.5F, 0.7F}[s5];
+            if (pct > 0.0F) this.heal(this.getMaxHealth() * pct / 100.0F * supportBoost());
+        }
+        if (this.tickCount % 10 == 0 && progress.rank("S6") > 0 && isTame() && isAdultStage() && !isFallen() && this.tickCount >= aidReadyAt) {
+            LivingEntity o = this.getOwner();
+            if (o != null && o.isAlive() && this.distanceToSqr(o) < 24.0 * 24.0 && o.getHealth() < o.getMaxHealth() * 0.30F) {
+                aidReadyAt = this.tickCount + Math.round(1800 * cooldownFactor());
+                o.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, Math.round(160 * supportBoost()), 1));
+                o.addEffect(new MobEffectInstance(MobEffects.REGENERATION, Math.round(160 * supportBoost()), 1));
+                this.playSound(ModSounds.CARNO_ROAR.get(), 3.0F, 1.1F * vp());
+                if (this.level() instanceof ServerLevel sl) sl.sendParticles(ParticleTypes.HEART, o.getX(), o.getY() + o.getBbHeight(), o.getZ(), 8, 0.5, 0.4, 0.5, 0.02);
+            }
+        }
+    }
+
+    private boolean isUltFoe(LivingEntity e) {
+        if (isAlly(e) || !e.isAlive() || e instanceof Player || e instanceof AbstractVillager || e instanceof IronGolem || e instanceof ArmorStand) return false;
+        return !(e instanceof TamableAnimal t && t.isTame());
+    }
+
+    /**
+     * Rugido ancestral (definitiva desde el nivel 50): onda de choque con dano y un efecto segun el color.
+     * Rojo: arde. Verde: veneno (y cura a los aliados). Acero: aturde (y protege a los aliados). Arena: ciega (y acelera a los aliados).
+     */
+    private void ancestralRoar(ServerLevel server, int ul, float atk) {
+        float dmg = atk * new float[]{1.0F, 1.5F, 2.0F, 2.5F}[ul] * (1.0F + new float[]{0F, 0.15F, 0.30F, 0.50F}[progress.rank("U1")]);
+        double reach = 8.0 + 2.0 * ul + 1.5 * progress.rank("U2");
+        this.playSound(ModSounds.CARNO_ROAR.get(), 5.0F, 0.7F * vp());
+        this.playSound(ModSounds.STEGO_CHARGE_HIT.get(), 3.0F, 0.6F);
+        int v = getVariant();
+        for (LivingEntity e : server.getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(reach), x -> x != this)) {
+            if (isAlly(e)) {
+                switch (v) {
+                    case GREEN -> e.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 160, 1));
+                    case STEEL -> e.addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 160, 0));
+                    case ARENA -> e.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 160, 1));
+                    default -> e.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 160, 1));
+                }
+                continue;
+            }
+            if (!isUltFoe(e)) continue;
+            e.hurt(this.damageSources().mobAttack(this), dmg);
+            e.knockback(v == ARENA ? 1.8 : 1.1, this.getX() - e.getX(), this.getZ() - e.getZ());
+            switch (v) {
+                case GREEN -> e.addEffect(new MobEffectInstance(MobEffects.POISON, 160, 1));
+                case STEEL -> { e.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 60, 4)); e.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 100, 1)); }
+                case ARENA -> e.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 80, 0));
+                default -> e.setSecondsOnFire(6);
+            }
+        }
+        net.minecraft.core.particles.ParticleOptions fx = switch (v) {
+            case GREEN -> ParticleTypes.SPORE_BLOSSOM_AIR;
+            case STEEL -> ParticleTypes.ELECTRIC_SPARK;
+            case ARENA -> ParticleTypes.CLOUD;
+            default -> ParticleTypes.FLAME;
+        };
+        for (double r = 2.0; r <= reach; r += 2.0)
+            for (int k = 0; k < 16; k++) {
+                double a = k * Math.PI * 2.0 / 16.0;
+                server.sendParticles(fx, getX() + Math.cos(a) * r, getY() + 0.4, getZ() + Math.sin(a) * r, 2, 0.15, 0.2, 0.15, 0.04);
+            }
+        lastCombatTick = this.tickCount;
+    }
+
+    @Override public boolean hurt(DamageSource source, float amount) {
+        if (!this.level().isClientSide) {
+            this.lastCombatTick = this.tickCount;
+            if (this.tickCount < guardUntil) amount *= (1.0F - guardPct / 100.0F);
+        }
+        boolean result = super.hurt(source, amount);
+        if (result && !this.level().isClientSide) {
+            // D4 Instinto defensivo: al bajar del 50 % de vida
+            int d4 = progress.rank("D4");
+            if (d4 > 0 && this.tickCount >= guardReadyAt && this.tickCount >= guardUntil && this.getHealth() < this.getMaxHealth() * 0.5F) {
+                guardPct = new int[]{0, 20, 30, 40}[d4];
+                guardUntil = this.tickCount + 100;
+                guardReadyAt = this.tickCount + Math.round(20 * new int[]{0, 60, 50, 40}[d4] * cooldownFactor());
+            }
+            // C4 Cuernos afilados: devuelve parte del dano cuerpo a cuerpo
+            int c4 = progress.rank("C4");
+            if (c4 > 0 && !source.is(DamageTypes.THORNS) && source.getEntity() instanceof LivingEntity attacker
+                    && source.getDirectEntity() == source.getEntity() && !isAlly(attacker)) {
+                float back = Math.min(15.0F, amount * new float[]{0F, 0.15F, 0.25F, 0.35F}[c4]);
+                if (back > 0.0F) attacker.hurt(this.damageSources().thorns(this), back);
+            }
+        }
+        return result;
+    }
+
     // ------------------------------------------------------------------ combate
 
     @Override public boolean doHurtTarget(Entity entity) {
         if (!(entity instanceof LivingEntity living) || isAlly(entity)) return false;
-        float damage = (float) this.getAttributeValue(Attributes.ATTACK_DAMAGE);
+        float damage = (float) this.getAttributeValue(Attributes.ATTACK_DAMAGE) * furyMultiplier();
+        lastCombatTick = this.tickCount;
         boolean hit = entity.hurt(this.damageSources().mobAttack(this), damage);
         if (hit) {
             this.swing(InteractionHand.MAIN_HAND);
@@ -813,6 +1101,9 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
 
     private void grow() {
         growth = 0;
+        int guard = 0;
+        while (progress.level() < ProdigyProgress.ADULT_START_LEVEL && guard++ < 100) progress.addXp(Math.max(1, progress.xpToNext() - progress.xp())); // el adulto empieza como minimo en el nivel 30
+        this.entityData.set(PROGRESS, progress.save());
         setAdultStage(true);
         this.playSound(ModSounds.CARNO_ROAR.get(), 2.5F, 1.1F);
         if (this.level() instanceof ServerLevel sl) sl.sendParticles(ParticleTypes.TOTEM_OF_UNDYING, getX(), getY() + 1.2, getZ(), 40, 0.8, 1.0, 0.8, 0.3);

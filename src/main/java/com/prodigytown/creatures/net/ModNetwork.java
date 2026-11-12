@@ -42,6 +42,13 @@ public final class ModNetwork {
                 ServerPlayer sp = ctx.get().getSender();
                 if (sp == null) return;
                 Entity e = sp.level().getEntity(m.entityId);
+                if (e instanceof CarnotaurusEntity carno && carno.isOwnedBy(sp) && carno.distanceTo(sp) <= 40.0F) {
+                    if (m.action == 0) carno.unlockTalent(m.index);
+                    else if (m.action == 1) carno.resetTalents();
+                    else if (m.action == 2) carno.toggleSit();
+                    else if (m.action == 3) carno.removeSaddle();
+                    return;
+                }
                 if (!(e instanceof StegosaurusEntity stego) || !stego.isOwnedBy(sp) || stego.distanceTo(sp) > 40.0F) return;
                 if (m.action == 0) stego.unlockTalent(m.index);
                 else if (m.action == 1) stego.resetTalents();
@@ -99,6 +106,7 @@ public final class ModNetwork {
                 if (sp == null) return;
                 Entity e = sp.level().getEntity(m.entityId);
                 if (e instanceof StegosaurusEntity stego && stego.isOwnedBy(sp) && stego.distanceTo(sp) <= 40.0F) stego.rename(m.name);
+                else if (e instanceof CarnotaurusEntity carno && carno.isOwnedBy(sp) && carno.distanceTo(sp) <= 40.0F) carno.rename(m.name);
             });
             ctx.get().setPacketHandled(true);
         }

@@ -12,16 +12,27 @@ public final class ProdigyProgress {
 
     private int level = ADULT_START_LEVEL;
     private int xp = 0;
-    private final int[] ranks = new int[Talents.ALL.length];
+    /** Tabla de talentos de la especie (estegosaurio: Talents.ALL, carnotauro: Talents.CARNO). */
+    private final Talent[] table;
+    private final int[] ranks;
+
+    public ProdigyProgress() { this(Talents.ALL); }
+    public ProdigyProgress(Talent[] table) { this.table = table; this.ranks = new int[table.length]; }
+    public Talent[] table() { return table; }
+    private int indexOf(String id) {
+        for (int i = 0; i < table.length; i++) if (table[i].id.equals(id)) return i;
+        return -1;
+    }
 
     /** Progreso nuevo empezando en el nivel dado (el bebe empieza en 1; el adulto en 30). */
-    public static ProdigyProgress atLevel(int lv) {
-        ProdigyProgress p = new ProdigyProgress();
+    public static ProdigyProgress atLevel(int lv) { return atLevel(lv, Talents.ALL); }
+    public static ProdigyProgress atLevel(int lv, Talent[] table) {
+        ProdigyProgress p = new ProdigyProgress(table);
         p.level = Math.max(1, Math.min(GrowthTable.MAX_LEVEL, lv));
         return p;
     }
     public ProdigyProgress copy() {
-        ProdigyProgress c = new ProdigyProgress();
+        ProdigyProgress c = new ProdigyProgress(table);
         c.level = level; c.xp = xp;
         System.arraycopy(ranks, 0, c.ranks, 0, ranks.length);
         return c;
@@ -30,13 +41,13 @@ public final class ProdigyProgress {
     public int xp() { return xp; }
     public int xpToNext() { return level >= GrowthTable.MAX_LEVEL ? 0 : GrowthTable.XP_TO_NEXT[level]; }
     public int rank(int idx) { return ranks[idx]; }
-    public int rank(String id) { int i = Talents.index(id); return i < 0 ? 0 : ranks[i]; }
+    public int rank(String id) { int i = indexOf(id); return i < 0 ? 0 : ranks[i]; }
 
     public int pointsEarned() { return GrowthTable.POINTS_TOTAL[level]; }
     public int pointsSpent() {
         int total = 0;
         for (int i = 0; i < ranks.length; i++)
-            for (int r = 0; r < ranks[i]; r++) total += Talents.ALL[i].cost[r];
+            for (int r = 0; r < ranks[i]; r++) total += table[i].cost[r];
         return total;
     }
     public int pointsAvailable() { return pointsEarned() - pointsSpent(); }
@@ -58,16 +69,16 @@ public final class ProdigyProgress {
 
     /** @return null si se puede subir un rango, o el motivo (en espanol) si no. */
     public String whyNotUnlock(int idx) {
-        Talent t = Talents.ALL[idx];
+        Talent t = table[idx];
         int cur = ranks[idx];
         if (cur >= t.maxRank) return "Rango maximo alcanzado";
         if (level < t.minLevel[cur]) return "Requiere nivel " + t.minLevel[cur];
         for (String[] req : t.reqs) {
             int need = Integer.parseInt(req[1]);
-            if (rank(req[0]) < need) return "Requiere " + Talents.ALL[Talents.index(req[0])].name + " rango " + need;
+            if (rank(req[0]) < need) return "Requiere " + table[indexOf(req[0])].name + " rango " + need;
         }
         for (String ex : t.exclusive) {
-            if (rank(ex) > 0) return "Excluyente con " + Talents.ALL[Talents.index(ex)].name;
+            if (rank(ex) > 0) return "Excluyente con " + table[indexOf(ex)].name;
         }
         int cost = t.cost[cur];
         if (pointsAvailable() < cost) return "Faltan puntos (coste " + cost + ")";
@@ -86,19 +97,21 @@ public final class ProdigyProgress {
         CompoundTag tag = new CompoundTag();
         tag.putInt("Level", level);
         tag.putInt("Xp", xp);
-        for (int i = 0; i < ranks.length; i++) if (ranks[i] > 0) tag.putInt(Talents.ALL[i].id, ranks[i]);
+        for (int i = 0; i < ranks.length; i++) if (ranks[i] > 0) tag.putInt(table[i].id, ranks[i]);
         return tag;
     }
 
     public static ProdigyProgress load(CompoundTag tag) { return load(tag, ADULT_START_LEVEL); }
 
-    public static ProdigyProgress load(CompoundTag tag, int defaultLevel) {
-        ProdigyProgress p = atLevel(defaultLevel);
+    public static ProdigyProgress load(CompoundTag tag, int defaultLevel) { return load(tag, defaultLevel, Talents.ALL); }
+
+    public static ProdigyProgress load(CompoundTag tag, int defaultLevel, Talent[] table) {
+        ProdigyProgress p = atLevel(defaultLevel, table);
         if (tag == null) return p;
         if (tag.contains("Level")) p.level = Math.max(1, Math.min(GrowthTable.MAX_LEVEL, tag.getInt("Level")));
         p.xp = Math.max(0, tag.getInt("Xp"));
         for (int i = 0; i < p.ranks.length; i++) {
-            Talent t = Talents.ALL[i];
+            Talent t = table[i];
             p.ranks[i] = Math.max(0, Math.min(t.maxRank, tag.getInt(t.id)));
         }
         // Defensa ante datos corruptos o puntos negativos: si se gastaron mas puntos de los ganados, reiniciar.

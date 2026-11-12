@@ -35,7 +35,7 @@ public final class MountCamera {
     @SubscribeEvent public static void onCamera(ViewportEvent.ComputeCameraAngles event) {
         if (failed) return;
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || mc.level == null || !(mc.player.getVehicle() instanceof StegosaurusEntity)) return;
+        if (mc.player == null || mc.level == null || !(mc.player.getVehicle() instanceof StegosaurusEntity || mc.player.getVehicle() instanceof com.prodigytown.creatures.CarnotaurusEntity)) return;
         Camera cam = event.getCamera();
         if (!cam.isDetached() || mc.options.getCameraType() != CameraType.THIRD_PERSON_BACK) return;
         try {

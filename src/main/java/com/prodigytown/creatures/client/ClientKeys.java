@@ -75,12 +75,13 @@ public final class ClientKeys {
                 if (mc.screen != null) continue;
                 net.minecraft.world.entity.TamableAnimal best = null;
                 for (net.minecraft.world.entity.TamableAnimal s : mc.level.getEntitiesOfClass(net.minecraft.world.entity.TamableAnimal.class,
-                        player.getBoundingBox().inflate(24.0), e -> (e instanceof StegosaurusEntity || e instanceof com.prodigytown.chibi.ChibiStego) && e.isTame() && e.isOwnedBy(player))) {
+                        player.getBoundingBox().inflate(24.0), e -> (e instanceof StegosaurusEntity || e instanceof com.prodigytown.chibi.ChibiStego || e instanceof com.prodigytown.creatures.CarnotaurusEntity) && e.isTame() && e.isOwnedBy(player))) {
                     if (best == null || s.distanceToSqr(player) < best.distanceToSqr(player)) best = s;
                 }
                 if (best instanceof StegosaurusEntity adult) ClientHooks.openTalents(adult);
                 else if (best instanceof com.prodigytown.chibi.ChibiStego chibi) ClientHooks.openOrders(chibi);
-                else player.displayClientMessage(net.minecraft.network.chat.Component.literal("No hay un estegosaurio tuyo cerca"), true);
+                else if (best instanceof com.prodigytown.creatures.CarnotaurusEntity carno) ClientHooks.openCarno(carno);
+                else player.displayClientMessage(net.minecraft.network.chat.Component.literal("No hay un companero tuyo cerca"), true);
             }
         }
     }

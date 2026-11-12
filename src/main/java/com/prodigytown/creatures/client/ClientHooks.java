@@ -12,6 +12,9 @@ public final class ClientHooks {
     public static void openOrders(StegosaurusEntity stego) {
         Minecraft.getInstance().setScreen(new OrdersScreen(stego));
     }
+    public static void openCarno(com.prodigytown.creatures.CarnotaurusEntity carno) {
+        Minecraft.getInstance().setScreen(new CarnoScreen(carno));
+    }
     public static void openTalents(StegosaurusEntity stego) {
         Minecraft.getInstance().setScreen(new TalentScreen(stego));
     }

@@ -1,6 +1,7 @@
 package com.prodigytown.creatures.progress;
 
 import com.prodigytown.creatures.ProdigyCreatures;
+import com.prodigytown.creatures.CarnotaurusEntity;
 import com.prodigytown.creatures.StegosaurusEntity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.TamableAnimal;
@@ -56,7 +57,7 @@ public final class ProgressEvents {
         for (net.minecraft.world.entity.Entity e : level.getAllEntities()) {
             if (!(e instanceof TamableAnimal t) || !(e instanceof ProdigyPet pet) || !t.isTame()) continue;
             if (newDay) pet.gainXp(100);
-            if (ride && e instanceof StegosaurusEntity s && s.getFirstPassenger() instanceof Player) pet.gainXp(1);
+            if (ride && e.getFirstPassenger() instanceof Player && (e instanceof StegosaurusEntity || e instanceof CarnotaurusEntity)) pet.gainXp(1);
         }
     }
 
@@ -67,6 +68,8 @@ public final class ProgressEvents {
             player.getBoundingBox().inflate(8.0), e -> e.isTame() && e.isOwnedBy(player));
         float best = 0.0F;
         for (StegosaurusEntity pet : pets) best = Math.max(best, pet.fallReduction());
+        for (CarnotaurusEntity pet : player.level().getEntitiesOfClass(CarnotaurusEntity.class, player.getBoundingBox().inflate(8.0), e -> e.isTame() && e.isOwnedBy(player)))
+            best = Math.max(best, pet.fallReduction());
         if (best > 0.0F) event.setDamageMultiplier(event.getDamageMultiplier() * (1.0F - best));
     }
 
@@ -74,13 +77,16 @@ public final class ProgressEvents {
     @SubscribeEvent
     public static void onRiderHurt(LivingHurtEvent event) {
         if (!(event.getEntity() instanceof Player player) || player.level().isClientSide) return;
-        if (!(player.getVehicle() instanceof StegosaurusEntity stego)) return;
-        int pct = stego.guardPercent();
+        int pct;
+        if (player.getVehicle() instanceof StegosaurusEntity stego) pct = stego.guardPercent();
+        else if (player.getVehicle() instanceof CarnotaurusEntity carno) pct = carno.guardPercent();
+        else return;
         if (pct <= 0) return;
         var src = event.getSource();
         if (src.getEntity() == null || src.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) return;
         float redirected = event.getAmount() * pct / 100.0F;
         event.setAmount(event.getAmount() - redirected);
-        stego.takeRedirected(src, redirected);
+        if (player.getVehicle() instanceof StegosaurusEntity stego2) stego2.takeRedirected(src, redirected);
+        else if (player.getVehicle() instanceof CarnotaurusEntity carno2) carno2.takeRedirected(src, redirected);
     }
 }

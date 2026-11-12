@@ -1,4 +1,4 @@
-Carnotauro (v1.1.12): esqueleto articulado PROPIO, generado por codigo.
+Carnotauro (v1.1.13): esqueleto articulado PROPIO, generado por codigo.
 
   python3 tools/carnotaurus/export.py .      (desde la raiz del repo; necesita numpy y pillow)
 
@@ -47,3 +47,13 @@ agua/aire y soportes de armadura. Domado: caza monstruos (y animales con la orde
 BrutusMeleeGoal (mordida cada 0.6 s, 0.45 s en furia, velocidad x1.35, olvida 10 s a lo inalcanzable), BattleRoarGoal (ruge una vez por presa lejana y al entrar en furia),
 BrutalChargeGoal (embestida a ~20 bloques/s a presas de frente entre 10 y 26 bloques, termina al chocar), furia por debajo del 40 % de vida (+15 % velocidad, +25 % dano),
 velocidad base 0.34, giro 13 grados/tick cazando (SmoothMoveControl.setMaxTurn), gruñidos periodicos. Ajustes rapidos: ENRAGE_BELOW, PreyGoal/isPrey, cooldowns cdAiRoar/cdAiCharge.
+
+v1.1.13: el carnotauro iguala al estegosaurio en progresion e interfaz.
+PROGRESION: CarnotaurusEntity implementa ProdigyPet (nivel 1-100, XP por matar, por dia y montado, comando /prodigy). Tablas compartidas (GrowthTable) escaladas al Brutus (PV x220/270, dano x26/27, armadura x10/14), asi el adulto en nivel 30 conserva 220/26/10.
+Adultos silvestres y antiguos cargan en el nivel 30; las crias empiezan en el 1 y al crecer suben al 30 como minimo. Arbol propio Talents.CARNO (22 talentos, 191 pts): mismas ramas, costes y requisitos que el estegosaurio con combate adaptado
+(C1 mandibula, C2 alcance de mordida, C3 embestida de caceria, C4 cuernos que devuelven dano, C5 cabezazo demoledor, C6 furia protectora, C7 dominio; D1-D5 defensa con guardia al jinete; S1-S7 soporte con Rugido de aliento S6; U1-U3 mejoras de la definitiva).
+ProdigyProgress ahora recibe la tabla de talentos de la especie.
+DEFINITIVA: el rugido (R) pasa a ser "Rugido ancestral" desde el nivel 50 (II a 75, III a 100; recarga 60 s): onda de choque con dano y efecto por color (rojo arde, verde envenena y cura aliados, acero aturde y protege, arena ciega y acelera).
+Antes del 50 el rugido es el de siempre (recarga 25 s). La IA salvaje no usa talentos.
+INTERFAZ: tecla K abre CarnoScreen (talentos, resumen con nombre/sentar/quitar silla, ordenes); CarnoMountHud (vida, nivel, XP y 4 recargas sincronizadas; oculta los corazones de montura de vanilla); MountCamera tambien para el carnotauro.
+Pendiente / no incluido: armaduras del carnotauro (necesitan malla y texturas propias), animacion de evolucion y guardia de nido.
