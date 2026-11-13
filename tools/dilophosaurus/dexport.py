@@ -13,4 +13,8 @@ for var in dpaint.VARIANTS:
     a = dpaint.cp.dilate(a)
     Image.fromarray(a).save(os.path.join(tex, 'dilophosaurus_%s.png' % var), optimize=True)
     Image.fromarray(g).save(os.path.join(tex, 'dilophosaurus_%s_glow.png' % var), optimize=True)
+    a, g = dpaint.make_atlas(var, closed=True)   # ojos cerrados: parpadeo y sueno
+    a = dpaint.cp.dilate(a)
+    Image.fromarray(a).save(os.path.join(tex, 'dilophosaurus_%s_closed.png' % var), optimize=True)
+    Image.fromarray(g).save(os.path.join(tex, 'dilophosaurus_%s_closed_glow.png' % var), optimize=True)
 print('H', H, 'hy', hy)

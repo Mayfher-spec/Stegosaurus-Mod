@@ -11,6 +11,7 @@ public final class ClientModEvents {
     @SubscribeEvent public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(ProdigyCreatures.STEGOSAURUS.get(), StegosaurusRenderer::new);
         event.registerEntityRenderer(ProdigyCreatures.CARNOTAURUS.get(), CarnotaurusRenderer::new);
+        event.registerEntityRenderer(ProdigyCreatures.DILOPHOSAURUS.get(), DilophosaurusRenderer::new);
         event.registerBlockEntityRenderer(ProdigyCreatures.NEST_BE.get(), StegosaurusNestRenderer::new);
     }
     @SubscribeEvent public static void registerParticles(net.minecraftforge.client.event.RegisterParticleProvidersEvent event) {
@@ -37,6 +38,8 @@ public final class ClientModEvents {
     @SubscribeEvent public static void registerLayers(EntityRenderersEvent.RegisterLayerDefinitions event) {
         event.registerLayerDefinition(CarnotaurusModel.LAYER_ADULT, CarnotaurusModel::createAdultLayer);
         event.registerLayerDefinition(CarnotaurusModel.LAYER_CHIBI, CarnotaurusModel::createChibiLayer);
+        event.registerLayerDefinition(DilophosaurusModel.LAYER_ADULT, DilophosaurusModel::createAdultLayer);
+        event.registerLayerDefinition(DilophosaurusModel.LAYER_CHIBI, DilophosaurusModel::createChibiLayer);
         event.registerLayerDefinition(StegosaurusModel.LAYER_LOCATION, StegosaurusModel::createBodyLayer);
         event.registerLayerDefinition(StegosaurusSaddleModel.LAYER_LOCATION, StegosaurusSaddleModel::createBodyLayer);
         event.registerLayerDefinition(StegosaurusArmorModel.LAYER_LOCATION, StegosaurusArmorModel::createBodyLayer);

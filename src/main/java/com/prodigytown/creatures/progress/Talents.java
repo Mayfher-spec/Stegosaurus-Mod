@@ -66,6 +66,46 @@ public final class Talents {
         return t;
     }
 
+
+    /**
+     * Arbol del dilofosaurio: tres ramas (0 Caza, 1 Movilidad, 2 Supervivencia) de seis talentos y la mejora final "Cazador Primordial" (rama 3).
+     * Mismos puntos por nivel (GrowthTable); cada talento tiene un efecto real en DilophosaurusEntity.
+     */
+    public static final Talent[] DILO = buildDilo();
+
+    private static Talent t(String id, int branch, String name, int maxRank, int[] cost, int[] minLevel, String[][] reqs, String effect) {
+        return new Talent(id, branch, name, maxRank, cost, minLevel, reqs, effect, new String[]{});
+    }
+
+    private static Talent[] buildDilo() {
+        return new Talent[]{
+            // --- Rama roja: CAZA ---
+            t("C1", 0, "Mandíbula fortalecida", 5, new int[]{1,1,2,2,3}, new int[]{10,10,10,10,10}, new String[][]{}, "+6 % de daño de la mordida por rango (hasta +30 %)"),
+            t("C2", 0, "Zarpazos afilados", 3, new int[]{2,2,3}, new int[]{20,20,20}, new String[][]{{"C1","2"}}, "+10 % de daño del zarpazo doble por rango y +0,3 bloques de alcance"),
+            t("C3", 0, "Hemorragia", 3, new int[]{2,2,3}, new int[]{28,28,28}, new String[][]{{"C1","2"}}, "Mordida y zarpazos provocan sangrado: 10 / 16 / 22 % del ataque por segundo durante 4 s"),
+            t("C4", 0, "Golpe crítico", 3, new int[]{2,3,3}, new int[]{36,36,36}, new String[][]{{"C2","1"},{"C3","1"}}, "8 / 14 / 20 % de probabilidad de golpe crítico (+60 % de daño)"),
+            t("C5", 0, "Instinto cazador", 3, new int[]{2,3,3}, new int[]{46,46,46}, new String[][]{{"C4","1"}}, "+10 / +20 / +30 % de daño contra presas por debajo del 50 % de vida"),
+            t("C6", 0, "Depredador implacable", 3, new int[]{3,3,4}, new int[]{58,58,58}, new String[][]{{"C5","1"}}, "Al abatir una presa: Velocidad I durante 4 / 6 / 8 s y recupera 3 / 6 / 9 % de su vida"),
+            // --- Rama azul: MOVILIDAD ---
+            t("M1", 1, "Patas veloces", 5, new int[]{1,1,2,2,3}, new int[]{10,10,10,10,10}, new String[][]{}, "+2 % de velocidad de movimiento por rango (hasta +10 %)"),
+            t("M2", 1, "Salto mejorado", 3, new int[]{2,2,3}, new int[]{20,20,20}, new String[][]{{"M1","2"}}, "El Salto depredador llega +12 / +24 / +36 % más lejos"),
+            t("M3", 1, "Recuperación de energía", 3, new int[]{2,2,3}, new int[]{28,28,28}, new String[][]{{"M1","2"}}, "−5 / −10 / −15 % de recarga en todas sus habilidades"),
+            t("M4", 1, "Caída controlada", 3, new int[]{2,3,3}, new int[]{36,36,36}, new String[][]{{"M2","1"}}, "−35 / −70 / −100 % de daño por caída para él y su jinete"),
+            t("M5", 1, "Persecución persistente", 3, new int[]{2,3,3}, new int[]{46,46,46}, new String[][]{{"M3","1"}}, "+4 / +8 / +12 % de velocidad mientras persigue a una presa"),
+            t("M6", 1, "Maestro del acecho", 2, new int[]{4,5}, new int[]{58,58}, new String[][]{{"M4","1"},{"M5","1"}}, "El Salto depredador hace +30 / +60 % de daño y su recarga baja otro 10 / 20 %"),
+            // --- Rama verde: SUPERVIVENCIA ---
+            t("S1", 2, "Piel resistente", 5, new int[]{1,1,2,2,3}, new int[]{10,10,10,10,10}, new String[][]{}, "+1 de armadura por rango (hasta +5)"),
+            t("S2", 2, "Recuperación rápida", 3, new int[]{1,2,2}, new int[]{15,15,15}, new String[][]{{"S1","1"}}, "Regenera 0,10 / 0,15 / 0,20 % de la vida máxima por segundo, también en combate"),
+            t("S3", 2, "Sentidos agudos", 3, new int[]{2,2,3}, new int[]{24,24,24}, new String[][]{{"S1","2"}}, "Marca con brillo a los monstruos hostiles a 10 / 16 / 22 bloques de su dueño"),
+            t("S4", 2, "Intimidación mejorada", 3, new int[]{2,3,3}, new int[]{36,36,36}, new String[][]{{"S2","1"},{"S3","1"}}, "El rugido y el Frenesí intimidan en +2 / +3 / +4 bloques más de radio; desde el rango 2 también debilitan"),
+            t("S5", 2, "Resistencia al daño", 3, new int[]{2,3,3}, new int[]{46,46,46}, new String[][]{{"S4","1"}}, "−4 / −8 / −12 % de daño recibido y +0,05 de resistencia al retroceso por rango"),
+            t("S6", 2, "Protector jurásico", 3, new int[]{3,3,4}, new int[]{58,58,58}, new String[][]{{"S5","1"}}, "Si el dueño baja del 40 % de vida: Resistencia y Regeneración durante 5 / 7 / 9 s (recarga 90 s)"),
+            // --- Mejora final ---
+            t("P1", 3, "CAZADOR PRIMORDIAL", 1, new int[]{6}, new int[]{70}, new String[][]{{"C6","1"},{"M6","1"},{"S6","1"}},
+              "+10 % de daño, +5 % de velocidad, +15 % de daño a monstruos hostiles, el Frenesí dura 3 s más y recarga −10 %; aura visual en el Frenesí")
+        };
+    }
+
     private Talents() {}
     public static int index(String id) {
         for (int i = 0; i < ALL.length; i++) if (ALL[i].id.equals(id)) return i;

@@ -89,19 +89,23 @@ def frill_tex(var, fu, fv, ly, ctx):
         col = lerp(col, pal['glow'], line * 0.7); gl = pal['glow'] * (line * 0.85)[:, None]
     return col, gl
 
-def eye_tex(var, loc, ctx, col, gl):
+def eye_tex(var, loc, ctx, col, gl, closed=False):
     pal = PAL[var]; r = {'chibi': 3.6, 'adult': 3.1}[ctx['stage']]; sx, sy, sz = ctx['sv']
     cz, cy = 7.5 * sz, 0.8 * sy
     dz = loc[:, 2] - cz; dy = loc[:, 1] - cy; e2 = (dz / r) ** 2 + (dy / r) ** 2
     m = e2 <= 1.0; ring = m & (e2 > 0.58); iris = m & ~ring
     out = col.copy(); g = gl.copy()
+    if closed:   # parpado cerrado: piel con una linea oscura (sin brillo)
+        line = m & (np.abs(dy) < 0.55)
+        out[m] = out[m] * 0.82; out[line] = pal['pupil']; g[m] = 0
+        return out, g
     out[m] = pal['pupil']; out[iris] = pal['eye']
     pup = iris & (np.abs(dz) < 0.6) & (np.abs(dy) < r * 0.78); out[pup] = pal['pupil']
     glint = iris & ((dz - 1.0) ** 2 + (dy - 1.1) ** 2 < 0.8); out[glint] = out[glint] * 0.35 + np.array([255, 255, 240]) * 0.65
     if var in ('electric', 'magma', 'spectral') or ctx['stage'] == 'adult': g[iris & ~pup] = pal['eye'] * (1.0 if var != 'natural' and var != 'desert' else 0.55); g[glint] = (255, 255, 240)
     return out, g
 
-def make_atlas(var):
+def make_atlas(var, closed=False):
     out, H = drig.get_all()
     fr = {st: frames(out[st][0]) for st in out}
     atlas = np.zeros((H, W, 4), np.uint8); glow = np.zeros((H, W, 4), np.uint8); pal = PAL[var]
@@ -133,7 +137,7 @@ def make_atlas(var):
                 else:   # lengua
                     col = np.tile(pal['tongue'], (len(ii), 1)) * (0.92 + 0.08 * np.cos(loc[:, 0] * 1.1))[:, None]; gl = np.zeros_like(col)
                 if role in ('skin', 'belly') and ((op.get('head') and face == 'down') or (op.get('jaw') and face == 'up')): col = np.tile(pal['mouth'], (len(ii), 1)) * (0.9 if op.get('jaw') else 1.0)
-                if c['part'] == 'head' and c['i'] == 0 and face in ('xmin', 'xmax'): col, gl = eye_tex(var, loc, ctx, col, gl)
+                if c['part'] == 'head' and c['i'] == 0 and face in ('xmin', 'xmax'): col, gl = eye_tex(var, loc, ctx, col, gl, closed)
                 atlas[jj, ii, :3] = np.clip(col, 0, 255).astype(np.uint8); atlas[jj, ii, 3] = 255
                 if gl.any():
                     lit = gl.sum(axis=1) > 6

@@ -464,5 +464,218 @@
         "stream": false
       }
     ]
+  },
+  "dilophosaurus.ambient": {
+    "subtitle": "subtitles.prodigycreatures.dilophosaurus.ambient",
+    "sounds": [
+      {
+        "name": "prodigycreatures:dilophosaurus/ambient1",
+        "stream": false
+      },
+      {
+        "name": "prodigycreatures:dilophosaurus/ambient2",
+        "stream": false
+      },
+      {
+        "name": "prodigycreatures:dilophosaurus/ambient3",
+        "stream": false
+      }
+    ]
+  },
+  "dilophosaurus.ambient_baby": {
+    "subtitle": "subtitles.prodigycreatures.dilophosaurus.ambient_baby",
+    "sounds": [
+      {
+        "name": "prodigycreatures:dilophosaurus/baby_ambient1",
+        "stream": false
+      },
+      {
+        "name": "prodigycreatures:dilophosaurus/baby_ambient2",
+        "stream": false
+      }
+    ]
+  },
+  "dilophosaurus.hurt": {
+    "subtitle": "subtitles.prodigycreatures.dilophosaurus.hurt",
+    "sounds": [
+      {
+        "name": "prodigycreatures:dilophosaurus/hurt1",
+        "stream": false
+      },
+      {
+        "name": "prodigycreatures:dilophosaurus/hurt2",
+        "stream": false
+      }
+    ]
+  },
+  "dilophosaurus.hurt_baby": {
+    "subtitle": "subtitles.prodigycreatures.dilophosaurus.hurt_baby",
+    "sounds": [
+      {
+        "name": "prodigycreatures:dilophosaurus/hurt_baby",
+        "stream": false
+      }
+    ]
+  },
+  "dilophosaurus.death": {
+    "subtitle": "subtitles.prodigycreatures.dilophosaurus.death",
+    "sounds": [
+      {
+        "name": "prodigycreatures:dilophosaurus/death",
+        "stream": false
+      }
+    ]
+  },
+  "dilophosaurus.bite": {
+    "subtitle": "subtitles.prodigycreatures.dilophosaurus.bite",
+    "sounds": [
+      {
+        "name": "prodigycreatures:dilophosaurus/bite",
+        "stream": false
+      }
+    ]
+  },
+  "dilophosaurus.claw": {
+    "subtitle": "subtitles.prodigycreatures.dilophosaurus.claw",
+    "sounds": [
+      {
+        "name": "prodigycreatures:dilophosaurus/claw",
+        "stream": false
+      }
+    ]
+  },
+  "dilophosaurus.pounce": {
+    "subtitle": "subtitles.prodigycreatures.dilophosaurus.pounce",
+    "sounds": [
+      {
+        "name": "prodigycreatures:dilophosaurus/pounce",
+        "stream": false
+      }
+    ]
+  },
+  "dilophosaurus.frill_open": {
+    "subtitle": "subtitles.prodigycreatures.dilophosaurus.frill_open",
+    "sounds": [
+      {
+        "name": "prodigycreatures:dilophosaurus/frill_open",
+        "stream": false
+      }
+    ]
+  },
+  "dilophosaurus.frill_close": {
+    "subtitle": "subtitles.prodigycreatures.dilophosaurus.frill_close",
+    "sounds": [
+      {
+        "name": "prodigycreatures:dilophosaurus/frill_close",
+        "stream": false
+      }
+    ]
+  },
+  "dilophosaurus.roar": {
+    "subtitle": "subtitles.prodigycreatures.dilophosaurus.roar",
+    "sounds": [
+      {
+        "name": "prodigycreatures:dilophosaurus/roar",
+        "stream": false
+      }
+    ]
+  },
+  "dilophosaurus.frenzy": {
+    "subtitle": "subtitles.prodigycreatures.dilophosaurus.frenzy",
+    "sounds": [
+      {
+        "name": "prodigycreatures:dilophosaurus/frenzy",
+        "stream": false
+      }
+    ]
+  },
+  "dilophosaurus.eat": {
+    "subtitle": "subtitles.prodigycreatures.dilophosaurus.eat",
+    "sounds": [
+      {
+        "name": "prodigycreatures:dilophosaurus/eat",
+        "stream": false
+      }
+    ]
+  },
+  "dilophosaurus.happy": {
+    "subtitle": "subtitles.prodigycreatures.dilophosaurus.happy",
+    "sounds": [
+      {
+        "name": "prodigycreatures:dilophosaurus/happy",
+        "stream": false
+      }
+    ]
+  },
+  "dilophosaurus.sleep": {
+    "subtitle": "subtitles.prodigycreatures.dilophosaurus.sleep",
+    "sounds": [
+      {
+        "name": "prodigycreatures:dilophosaurus/sleep",
+        "stream": false
+      }
+    ]
+  },
+  "dilophosaurus.breathe": {
+    "subtitle": "subtitles.prodigycreatures.dilophosaurus.breathe",
+    "sounds": [
+      {
+        "name": "prodigycreatures:dilophosaurus/breathe",
+        "stream": false
+      }
+    ]
+  },
+  "dilophosaurus.sit": {
+    "subtitle": "subtitles.prodigycreatures.dilophosaurus.sit",
+    "sounds": [
+      {
+        "name": "prodigycreatures:dilophosaurus/sit",
+        "stream": false
+      }
+    ]
+  },
+  "dilophosaurus.wake": {
+    "subtitle": "subtitles.prodigycreatures.dilophosaurus.wake",
+    "sounds": [
+      {
+        "name": "prodigycreatures:dilophosaurus/wake",
+        "stream": false
+      }
+    ]
+  },
+  "dilophosaurus.evolution": {
+    "subtitle": "subtitles.prodigycreatures.dilophosaurus.evolution",
+    "sounds": [
+      {
+        "name": "prodigycreatures:dilophosaurus/evolution",
+        "stream": false
+      }
+    ]
+  },
+  "dilophosaurus.revert": {
+    "subtitle": "subtitles.prodigycreatures.dilophosaurus.revert",
+    "sounds": [
+      {
+        "name": "prodigycreatures:dilophosaurus/revert",
+        "stream": false
+      }
+    ]
+  },
+  "dilophosaurus.step": {
+    "subtitle": "subtitles.prodigycreatures.dilophosaurus.step",
+    "sounds": [
+      {
+        "name": "prodigycreatures:dilophosaurus/step1",
+        "stream": false
+      },
+      {
+        "name": "prodigycreatures:dilophosaurus/step2",
+        "stream": false
+      },
+      {
+        "name": "prodigycreatures:dilophosaurus/step3",
+        "stream": false
+      }
+    ]
   }
 }

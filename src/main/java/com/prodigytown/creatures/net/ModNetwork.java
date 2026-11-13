@@ -1,6 +1,7 @@
 package com.prodigytown.creatures.net;
 
 import com.prodigytown.creatures.CarnotaurusEntity;
+import com.prodigytown.creatures.DilophosaurusEntity;
 
 import com.prodigytown.creatures.ProdigyCreatures;
 import com.prodigytown.creatures.StegosaurusEntity;
@@ -42,6 +43,15 @@ public final class ModNetwork {
                 ServerPlayer sp = ctx.get().getSender();
                 if (sp == null) return;
                 Entity e = sp.level().getEntity(m.entityId);
+                if (e instanceof DilophosaurusEntity dilo && dilo.isOwnedBy(sp) && dilo.distanceTo(sp) <= 40.0F) {
+                    if (m.action == 0) dilo.unlockTalent(m.index);
+                    else if (m.action == 1) dilo.resetTalents();
+                    else if (m.action == 2) dilo.toggleSit();
+                    else if (m.action == 3) dilo.removeSaddle();
+                    else if (m.action == 4) dilo.removeArmor();
+                    else if (m.action == 5) dilo.revertToChibi();
+                    return;
+                }
                 if (e instanceof CarnotaurusEntity carno && carno.isOwnedBy(sp) && carno.distanceTo(sp) <= 40.0F) {
                     if (m.action == 0) carno.unlockTalent(m.index);
                     else if (m.action == 1) carno.resetTalents();
@@ -91,7 +101,8 @@ public final class ModNetwork {
                 }
                 if (e instanceof net.minecraft.world.entity.TamableAnimal t && e instanceof com.prodigytown.creatures.PetOrders.Holder
                         && t.isTame() && t.isOwnedBy(sp) && t.distanceTo(sp) <= 40.0F) {
-                    com.prodigytown.creatures.PetOrders.setOrder(t, m.order);
+                    if (t instanceof DilophosaurusEntity dilo && m.order == com.prodigytown.creatures.PetOrders.ATTACK) dilo.commandAttack(sp);
+                    else com.prodigytown.creatures.PetOrders.setOrder(t, m.order);
                 }
             });
             ctx.get().setPacketHandled(true);
@@ -109,6 +120,7 @@ public final class ModNetwork {
                 Entity e = sp.level().getEntity(m.entityId);
                 if (e instanceof StegosaurusEntity stego && stego.isOwnedBy(sp) && stego.distanceTo(sp) <= 40.0F) stego.rename(m.name);
                 else if (e instanceof CarnotaurusEntity carno && carno.isOwnedBy(sp) && carno.distanceTo(sp) <= 40.0F) carno.rename(m.name);
+                else if (e instanceof DilophosaurusEntity dilo && dilo.isOwnedBy(sp) && dilo.distanceTo(sp) <= 40.0F) dilo.rename(m.name);
             });
             ctx.get().setPacketHandled(true);
         }
@@ -122,6 +134,15 @@ public final class ModNetwork {
             ctx.get().enqueueWork(() -> {
                 ServerPlayer sp = ctx.get().getSender();
                 if (sp == null) return;
+                if (m.ability >= 10) { // dilofosaurio: 10 mordida, 11 zarpazo, 12 salto, 13 frenesi
+                    DilophosaurusEntity dilo = null;
+                    if (sp.getVehicle() instanceof DilophosaurusEntity mount && mount.isOwnedBy(sp)) dilo = mount;
+                    else for (DilophosaurusEntity d : sp.level().getEntitiesOfClass(DilophosaurusEntity.class, sp.getBoundingBox().inflate(24.0),
+                            d -> d.isTame() && d.isOwnedBy(sp) && d.isAdultStage()))
+                        if (dilo == null || d.distanceToSqr(sp) < dilo.distanceToSqr(sp)) dilo = d;
+                    if (dilo != null) dilo.useAbility(sp, m.ability - 10);
+                    return;
+                }
                 List<StegosaurusEntity> pets = sp.level().getEntitiesOfClass(StegosaurusEntity.class,
                     sp.getBoundingBox().inflate(24.0), s -> s.isTame() && s.isOwnedBy(sp));
                 StegosaurusEntity best = null;

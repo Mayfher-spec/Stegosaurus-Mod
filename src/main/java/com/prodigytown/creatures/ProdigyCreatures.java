@@ -74,6 +74,11 @@ public class ProdigyCreatures {
     public static final RegistryObject<EntityType<CarnotaurusEntity>> CARNOTAURUS = ENTITIES.register("carnotaurus", () ->
         EntityType.Builder.of(CarnotaurusEntity::new, MobCategory.CREATURE)
             .sized(2.7f, 3.8f).clientTrackingRange(10).build(MODID + ":carnotaurus"));
+    public static final RegistryObject<EntityType<DilophosaurusEntity>> DILOPHOSAURUS = ENTITIES.register("dilophosaurus", () ->
+        EntityType.Builder.of(DilophosaurusEntity::new, MobCategory.CREATURE)
+            .sized(1.2f, 2.6f).clientTrackingRange(10).build(MODID + ":dilophosaurus"));
+    public static final RegistryObject<Item> DILOPHOSAURUS_SPAWN_EGG = ITEMS.register("dilophosaurus_spawn_egg", () ->
+        new ForgeSpawnEggItem(() -> DILOPHOSAURUS.get(), 0x3E6B3A, 0xE08A2E, new Item.Properties()));
     public static final RegistryObject<Item> CARNOTAURUS_EGG = ITEMS.register("carnotaurus_spawn_egg", () ->
         new ForgeSpawnEggItem(() -> CARNOTAURUS.get(), 0x8E2F25, 0xE0C9A0, new Item.Properties()));
     /** Carne de cordero dorada (cordero cocido rodeado de oro): reanima a un carnotauro caido. */
@@ -111,6 +116,7 @@ public class ProdigyCreatures {
         var bus = FMLJavaModLoadingContext.get().getModEventBus();
         GeckoLib.initialize();
         com.prodigytown.creatures.net.ModNetwork.register();
+        net.minecraftforge.fml.ModLoadingContext.get().registerConfig(net.minecraftforge.fml.config.ModConfig.Type.COMMON, DiloConfig.SPEC, "prodigycreatures-dilophosaurus.toml");
         // Legacy baby registry is initialized by this SAME mod, not by a second @Mod.
         ChibiAlpha.register(bus);
         ENTITIES.register(bus);
@@ -130,6 +136,7 @@ public class ProdigyCreatures {
             if (event.getTabKey() == CreativeModeTabs.SPAWN_EGGS) {
                 event.accept(STEGOSAURUS_EGG.get());
                 event.accept(CARNOTAURUS_EGG.get());
+                event.accept(DILOPHOSAURUS_SPAWN_EGG.get());
                 event.accept(NEST_ITEM.get());
                 for (RegistryObject<Item> egg : EGG_ITEMS) event.accept(egg.get());
                 for (RegistryObject<Item> egg : CARNO_EGG_ITEMS) event.accept(egg.get());
@@ -176,9 +183,20 @@ public class ProdigyCreatures {
         }
 
         @SubscribeEvent
+        public static void registerDiloSpawn(SpawnPlacementRegisterEvent event) {
+            event.register(DILOPHOSAURUS.get(), SpawnPlacements.Type.ON_GROUND, Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+                (type, level, reason, pos, random) -> level.getBlockState(pos.below()).isFaceSturdy(level, pos.below(), Direction.UP)
+                    && DilophosaurusEntity.roomFor(level, pos) && Mob.checkMobSpawnRules(type, level, reason, pos, random)
+                    // aparicion baja: solo 1 de cada 4 intentos naturales prospera
+                    && (reason != net.minecraft.world.entity.MobSpawnType.NATURAL && reason != net.minecraft.world.entity.MobSpawnType.CHUNK_GENERATION || random.nextInt(4) == 0),
+                SpawnPlacementRegisterEvent.Operation.REPLACE);
+        }
+
+        @SubscribeEvent
         public static void registerAttributes(EntityAttributeCreationEvent event) {
             event.put(STEGOSAURUS.get(), StegosaurusEntity.createAttributes().build());
             event.put(CARNOTAURUS.get(), CarnotaurusEntity.createAttributes().build());
+            event.put(DILOPHOSAURUS.get(), DilophosaurusEntity.createAttributes().build());
             event.put(ChibiAlpha.STEGO.get(), ChibiStego.attributes().build());
         }
     }

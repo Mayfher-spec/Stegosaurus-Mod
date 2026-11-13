@@ -25,6 +25,18 @@ import java.util.EnumSet;
 public final class PetOrders {
     private PetOrders() {}
     public static final int FOLLOW = 0, STAY = 1, WANDER = 2, PATROL = 3, SIT = 4, SLEEP = 5, COUNT = 6;
+    /** Ordenes extra solo del dilofosaurio: 6 defender (protege al dueno) y 7 atacar objetivo (la criatura que apuntas). El resto de especies sigue con COUNT = 6. */
+    public static final int DEFEND = 6, ATTACK = 7, DILO_COUNT = 8;
+    public static final String[] DILO_NAMES = {"Seguir", "Quieto", "Deambular", "Patrullar", "Sentarse", "Dormir", "Defender", "Atacar objetivo"};
+    public static final String[] DILO_HELP = {
+        "Te seguira a donde vayas, a distancia prudente y sin cerrarte el paso.",
+        "Se queda donde esta: gira la cabeza y se entretiene, pero no se mueve por su cuenta.",
+        "Explora libremente dentro de 3 chunks de donde se lo ordenaste.",
+        "Recorre la zona en ronda y la defiende de los monstruos.",
+        "Se agacha sobre las patas dobladas y espera.",
+        "Se tumba, baja la cabeza y cierra los ojos: recupera vida poco a poco.",
+        "Se pega a ti y ataca a cualquier amenaza hostil que se acerque.",
+        "Ataca a la criatura que estes mirando al darle la orden (apuntala antes de pulsar)."};
     public static final String[] NAMES = {"Seguir", "Quieto", "Deambular", "Patrullar", "Sentarse", "Dormir"};
     public static final String[] HELP = {
         "Tu dinosaurio te seguira a donde vayas.",
@@ -51,14 +63,23 @@ public final class PetOrders {
 
     public static int clamp(int order) { return Math.max(0, Math.min(COUNT - 1, order)); }
     public static boolean isSittingOrder(int order) { return order == SIT || order == SLEEP; }
+    /** Limite de ordenes segun la especie (el dilofosaurio tiene 8). */
+    public static int clampFor(TamableAnimal mob, int order) {
+        return mob instanceof DilophosaurusEntity ? Math.max(0, Math.min(DILO_COUNT - 1, order)) : clamp(order);
+    }
 
     /** Solo servidor. */
     public static void setOrder(TamableAnimal mob, int order) {
         if (mob.level().isClientSide || !(mob instanceof Holder h) || h.isFallen()) return;
-        order = clamp(order);
+        order = clampFor(mob, order);
         int prev = h.getOrder();
         h.setOrderRaw(order);
         boolean carno = mob instanceof CarnotaurusEntity cn && cn.isAdultStage();
+        if (mob instanceof DilophosaurusEntity di && prev != order) {
+            if (order == SIT) mob.playSound(ModSounds.DILO_SIT.get(), 1.2F, di.isAdultStage() ? 1.0F : 1.4F);
+            else if (order == SLEEP) mob.playSound(ModSounds.DILO_SLEEP.get(), 1.2F, di.isAdultStage() ? 1.0F : 1.4F);
+            else if (prev == SLEEP) mob.playSound(ModSounds.DILO_WAKE.get(), 1.2F, di.isAdultStage() ? 1.0F : 1.4F);
+        }
         if ((mob instanceof StegosaurusEntity || carno) && prev != order) { // sonidos del adulto (el chibi no se toca)
             if (order == SIT) mob.playSound((carno ? ModSounds.CARNO_SIT : ModSounds.STEGO_ADULT_SIT).get(), 1.6F, 1.0F);
             else if (order == SLEEP) mob.playSound((carno ? ModSounds.CARNO_SLEEP : ModSounds.STEGO_ADULT_SLEEP).get(), 1.6F, 1.0F);
@@ -113,6 +134,7 @@ public final class PetOrders {
         if (order == SLEEP) {
             if (mob instanceof StegosaurusEntity && mob.tickCount % 110 == 0) mob.playSound(ModSounds.STEGO_ADULT_BREATHE.get(), 1.0F, 1.0F);
             else if (mob instanceof CarnotaurusEntity cn && cn.isAdultStage() && mob.tickCount % 110 == 55) mob.playSound(ModSounds.CARNO_BREATHE.get(), 1.0F, 1.0F);
+            else if (mob instanceof DilophosaurusEntity di && mob.tickCount % 100 == 40) mob.playSound(ModSounds.DILO_BREATHE.get(), 0.9F, di.isAdultStage() ? 1.0F : 1.4F);
             if (mob.tickCount % 20 == 0 && mob.getHealth() < mob.getMaxHealth()) mob.heal(Math.max(1.0F, mob.getMaxHealth() * 0.02F));
             if (mob.tickCount % 30 == 0) {
                 zzz(level, mob, fx, fz);

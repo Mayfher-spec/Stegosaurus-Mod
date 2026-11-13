@@ -2,6 +2,7 @@ package com.prodigytown.creatures.progress;
 
 import com.prodigytown.creatures.ProdigyCreatures;
 import com.prodigytown.creatures.CarnotaurusEntity;
+import com.prodigytown.creatures.DilophosaurusEntity;
 import com.prodigytown.creatures.StegosaurusEntity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.TamableAnimal;
@@ -57,7 +58,7 @@ public final class ProgressEvents {
         for (net.minecraft.world.entity.Entity e : level.getAllEntities()) {
             if (!(e instanceof TamableAnimal t) || !(e instanceof ProdigyPet pet) || !t.isTame()) continue;
             if (newDay) pet.gainXp(100);
-            if (ride && e.getFirstPassenger() instanceof Player && (e instanceof StegosaurusEntity || e instanceof CarnotaurusEntity)) pet.gainXp(1);
+            if (ride && e.getFirstPassenger() instanceof Player && (e instanceof StegosaurusEntity || e instanceof CarnotaurusEntity || e instanceof DilophosaurusEntity)) pet.gainXp(1);
         }
     }
 
@@ -69,6 +70,8 @@ public final class ProgressEvents {
         float best = 0.0F;
         for (StegosaurusEntity pet : pets) best = Math.max(best, pet.fallReduction());
         for (CarnotaurusEntity pet : player.level().getEntitiesOfClass(CarnotaurusEntity.class, player.getBoundingBox().inflate(8.0), e -> e.isTame() && e.isOwnedBy(player)))
+            best = Math.max(best, pet.fallReduction());
+        for (DilophosaurusEntity pet : player.level().getEntitiesOfClass(DilophosaurusEntity.class, player.getBoundingBox().inflate(8.0), e -> e.isTame() && e.isOwnedBy(player)))
             best = Math.max(best, pet.fallReduction());
         if (best > 0.0F) event.setDamageMultiplier(event.getDamageMultiplier() * (1.0F - best));
     }
