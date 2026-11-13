@@ -22,14 +22,14 @@ public final class DiloMountHud {
     private static final String[] ICON = {"M", "Z", "S", "F"};
 
     @Mod.EventBusSubscriber(modid = ProdigyCreatures.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
-    public static final class ModBus {
+    public static final class DiloModBus {
         @SubscribeEvent public static void overlays(RegisterGuiOverlaysEvent event) {
             event.registerAbove(VanillaGuiOverlay.HOTBAR.id(), "dilo_mount_hud", (gui, g, partial, w, h) -> render(g, w, h));
         }
     }
 
     @Mod.EventBusSubscriber(modid = ProdigyCreatures.MODID, value = Dist.CLIENT)
-    public static final class ForgeBus {
+    public static final class DiloForgeBus {
         /** La barra de corazones de montura de vanilla se sustituye por este HUD. */
         @SubscribeEvent public static void hideVanilla(RenderGuiOverlayEvent.Pre event) {
             if (event.getOverlay() != VanillaGuiOverlay.MOUNT_HEALTH.type()) return;
