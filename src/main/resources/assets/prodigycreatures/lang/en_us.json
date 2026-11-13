@@ -103,5 +103,12 @@
   "key.prodigycreatures.dilo_bite": "Dilophosaurus: Quick Bite",
   "key.prodigycreatures.dilo_claw": "Dilophosaurus: Double Slash",
   "key.prodigycreatures.dilo_pounce": "Dilophosaurus: Predator Pounce",
-  "key.prodigycreatures.dilo_frenzy": "Dilophosaurus: Jurassic Frenzy"
+  "key.prodigycreatures.dilo_frenzy": "Dilophosaurus: Jurassic Frenzy",
+  "item.prodigycreatures.dilophosaurus_egg_natural": "Dilophosaurus Egg (Natural)",
+  "item.prodigycreatures.dilophosaurus_egg_electric": "Dilophosaurus Egg (Electric Blue)",
+  "item.prodigycreatures.dilophosaurus_egg_magma": "Dilophosaurus Egg (Magma Red)",
+  "item.prodigycreatures.dilophosaurus_egg_desert": "Dilophosaurus Egg (Desert Sand)",
+  "item.prodigycreatures.dilophosaurus_egg_spectral": "Dilophosaurus Egg (Spectral Emerald)",
+  "entity.prodigycreatures.dilophosaurus_spit": "Venom Spit",
+  "key.prodigycreatures.dilo_spit": "Dilophosaurus: Venom Spit"
 }

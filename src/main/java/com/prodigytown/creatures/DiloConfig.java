@@ -6,8 +6,8 @@ import net.minecraftforge.common.ForgeConfigSpec;
 public final class DiloConfig {
     public static final ForgeConfigSpec SPEC;
     public static final ForgeConfigSpec.IntValue FRENZY_SECONDS, FRENZY_COOLDOWN_SECONDS, FRENZY_DAMAGE_PERCENT, FRENZY_SPEED_PERCENT, FRENZY_INTIMIDATE_RADIUS;
-    public static final ForgeConfigSpec.IntValue BITE_COOLDOWN_TICKS, CLAW_COOLDOWN_SECONDS, POUNCE_COOLDOWN_SECONDS;
-    public static final ForgeConfigSpec.DoubleValue BITE_DAMAGE, CLAW_DAMAGE, POUNCE_DAMAGE;
+    public static final ForgeConfigSpec.IntValue BITE_COOLDOWN_TICKS, CLAW_COOLDOWN_SECONDS, POUNCE_COOLDOWN_SECONDS, SPIT_COOLDOWN_SECONDS;
+    public static final ForgeConfigSpec.DoubleValue BITE_DAMAGE, CLAW_DAMAGE, POUNCE_DAMAGE, SPIT_DAMAGE;
     public static final ForgeConfigSpec.IntValue TAME_FEEDS_ADULT, TAME_FEEDS_CHIBI, FEEDS_TO_GROW;
 
     static {
@@ -26,6 +26,8 @@ public final class DiloConfig {
         BITE_COOLDOWN_TICKS = b.comment("Recarga de la Mordida rapida (ticks)").defineInRange("biteCooldownTicks", 14, 2, 200);
         CLAW_COOLDOWN_SECONDS = b.comment("Recarga del Zarpazo doble (segundos)").defineInRange("clawCooldownSeconds", 4, 1, 120);
         POUNCE_COOLDOWN_SECONDS = b.comment("Recarga del Salto depredador (segundos)").defineInRange("pounceCooldownSeconds", 9, 1, 120);
+        SPIT_COOLDOWN_SECONDS = b.comment("Recarga del Escupitajo venenoso (segundos)").defineInRange("spitCooldownSeconds", 8, 1, 120);
+        SPIT_DAMAGE = b.comment("Dano directo del Escupitajo venenoso, como multiplo del ataque (ademas aplica veneno)").defineInRange("spitDamage", 0.5, 0.0, 10.0);
         b.pop();
         b.push("taming");
         TAME_FEEDS_ADULT = b.comment("Carnes seguidas que necesita un dilofosaurio adulto salvaje para confiar en ti").defineInRange("feedsAdult", 4, 1, 20);

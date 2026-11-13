@@ -24,7 +24,7 @@ public final class DilophosaurusRenderer extends MobRenderer<DilophosaurusEntity
     }
 
     /** El esqueleto adulto mide ~108 unidades de alto y ~210 de largo (1 unidad = 1/16 de bloque antes de escalar): a esta escala mide ~2,8 x 5,5 bloques y encaja en su hitbox de 1,2 x 2,6. */
-    public static final float ADULT_SCALE = 0.42F, CHIBI_SCALE = 0.31F;
+    public static final float ADULT_SCALE = 0.30F, CHIBI_SCALE = 0.22F;
     /** Del tamano de la cria al del adulto (relacion de alturas). */
     private static final float CHIBI_RATIO = 0.46F;
 
@@ -57,7 +57,7 @@ public final class DilophosaurusRenderer extends MobRenderer<DilophosaurusEntity
     @Override protected void scale(DilophosaurusEntity e, PoseStack stack, float partialTick) {
         int left = e.getMorph();
         float sc = e.isAdultStage() ? ADULT_SCALE : CHIBI_SCALE;
-        float shadow = e.isAdultStage() ? 1.0F : 0.5F;
+        float shadow = e.isAdultStage() ? 0.6F : 0.35F;
         if (left > 0) {
             boolean up = e.getMorphKind() == 1;
             int len = up ? DilophosaurusEntity.GROW_LEN : DilophosaurusEntity.SHRINK_LEN;
@@ -66,7 +66,7 @@ public final class DilophosaurusRenderer extends MobRenderer<DilophosaurusEntity
             float k = up ? Mth.lerp(ease, CHIBI_RATIO, 1.0F) : Mth.lerp(ease, 1.0F, CHIBI_RATIO);
             k *= 1.0F + 0.05F * (up ? 1.0F - 0.5F * t : 0.6F) * Mth.sin(el * (0.5F + 1.2F * t));
             sc = ADULT_SCALE * k;
-            shadow = 1.0F * k;
+            shadow = 0.6F * k;
         }
         stack.scale(sc, sc, sc);
         this.shadowRadius = shadow;

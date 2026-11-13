@@ -82,6 +82,7 @@ public class StegosaurusNestBlockEntity extends BlockEntity {
         level.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, Blocks.SNIFFER_EGG.defaultBlockState()), x, y + 0.3, z, 40, 0.25, 0.3, 0.25, 0.12);
         level.sendParticles(ParticleTypes.POOF, x, y + 0.3, z, 14, 0.25, 0.25, 0.25, 0.04);
         level.sendParticles(ParticleTypes.END_ROD, x, y + 0.4, z, 12, 0.3, 0.35, 0.3, 0.05);
+        if (variant >= DilophosaurusEggs.NEST_BASE - 1) { hatchDilophosaurus(level, pos, x, y, z, variant - (DilophosaurusEggs.NEST_BASE - 1), who); return; }
         if (variant >= CarnotaurusEggs.NEST_BASE - 1) { hatchCarnotaurus(level, pos, x, y, z, variant - (CarnotaurusEggs.NEST_BASE - 1), who); return; }
         ChibiStego chibi = ChibiAlpha.STEGO.get().create(level);
         if (chibi == null) return;
@@ -105,6 +106,19 @@ public class StegosaurusNestBlockEntity extends BlockEntity {
         level.addFreshEntity(baby);
         if (who != null && level.getPlayerByUUID(who) != null) {
             level.getPlayerByUUID(who).displayClientMessage(net.minecraft.network.chat.Component.literal("Tu huevo de carnotauro ha eclosionado!"), true);
+        }
+    }
+
+    /** Nace un dilofosaurio chibi de la variante del huevo; si hay dueno, ya viene domado. */
+    private void hatchDilophosaurus(ServerLevel level, BlockPos pos, double x, double y, double z, int variant, @Nullable UUID who) {
+        com.prodigytown.creatures.DilophosaurusEntity baby = ProdigyCreatures.DILOPHOSAURUS.get().create(level);
+        if (baby == null) return;
+        baby.moveTo(x, y, z, level.random.nextFloat() * 360.0F, 0.0F);
+        baby.finalizeSpawn(level, level.getCurrentDifficultyAt(pos), MobSpawnType.EVENT, null, null);
+        baby.initFromEgg(variant, who);
+        level.addFreshEntity(baby);
+        if (who != null && level.getPlayerByUUID(who) != null) {
+            level.getPlayerByUUID(who).displayClientMessage(net.minecraft.network.chat.Component.literal("Tu huevo de dilofosaurio ha eclosionado!"), true);
         }
     }
 

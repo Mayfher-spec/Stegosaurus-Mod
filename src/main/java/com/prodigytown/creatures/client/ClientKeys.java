@@ -31,6 +31,7 @@ public final class ClientKeys {
     public static final KeyMapping DILO_CLAW = new KeyMapping("key.prodigycreatures.dilo_claw", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_X, CATEGORY);
     public static final KeyMapping DILO_POUNCE = new KeyMapping("key.prodigycreatures.dilo_pounce", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_C, CATEGORY);
     public static final KeyMapping DILO_FRENZY = new KeyMapping("key.prodigycreatures.dilo_frenzy", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_G, CATEGORY);
+    public static final KeyMapping DILO_SPIT = new KeyMapping("key.prodigycreatures.dilo_spit", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_Y, CATEGORY);
     private ClientKeys() {}
 
     @Mod.EventBusSubscriber(modid = ProdigyCreatures.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
@@ -45,6 +46,7 @@ public final class ClientKeys {
             event.register(DILO_CLAW);
             event.register(DILO_POUNCE);
             event.register(DILO_FRENZY);
+            event.register(DILO_SPIT);
         }
     }
 
@@ -94,6 +96,7 @@ public final class ClientKeys {
             while (DILO_CLAW.consumeClick()) ModNetwork.CHANNEL.sendToServer(new ModNetwork.UseAbility(11));
             while (DILO_POUNCE.consumeClick()) ModNetwork.CHANNEL.sendToServer(new ModNetwork.UseAbility(12));
             while (DILO_FRENZY.consumeClick()) ModNetwork.CHANNEL.sendToServer(new ModNetwork.UseAbility(13));
+            while (DILO_SPIT.consumeClick()) ModNetwork.CHANNEL.sendToServer(new ModNetwork.UseAbility(14));
             while (SHRINK.consumeClick()) { // Saint's Dragons: H = encoger/agrandar el dragon que miras (Mayus+H = todos los tuyos cercanos)
                 net.minecraft.world.entity.Entity look = mc.crosshairPickEntity;
                 ModNetwork.CHANNEL.sendToServer(new ModNetwork.ShrinkDragon(com.prodigytown.creatures.compat.SaintsDragonsCompat.isDragon(look) ? look.getId() : -1, player.isShiftKeyDown()));

@@ -63,6 +63,7 @@ public class ProdigyCreatures {
     }
     /** Item del huevo que corresponde a un estado del nido (1..5 estegosaurio, 6..9 carnotauro). */
     public static Item eggItemForState(int state) {
+        if (state >= com.prodigytown.creatures.egg.DilophosaurusEggs.NEST_BASE) return DILO_EGG_ITEMS.get(state - com.prodigytown.creatures.egg.DilophosaurusEggs.NEST_BASE).get();
         int base = com.prodigytown.creatures.egg.CarnotaurusEggs.NEST_BASE;
         return state >= base ? CARNO_EGG_ITEMS.get(state - base).get() : EGG_ITEMS.get(state - 1).get();
     }
@@ -74,6 +75,17 @@ public class ProdigyCreatures {
     public static final RegistryObject<EntityType<CarnotaurusEntity>> CARNOTAURUS = ENTITIES.register("carnotaurus", () ->
         EntityType.Builder.of(CarnotaurusEntity::new, MobCategory.CREATURE)
             .sized(2.7f, 3.8f).clientTrackingRange(10).build(MODID + ":carnotaurus"));
+    /** DILO_EGG_ITEMS.get(v) es el huevo de la variante v del dilofosaurio (0 natural, 1 electrico, 2 magma, 3 desierto, 4 espectral). */
+    public static final java.util.List<RegistryObject<Item>> DILO_EGG_ITEMS = new java.util.ArrayList<>();
+    static {
+        for (int i = 0; i < com.prodigytown.creatures.egg.DilophosaurusEggs.NAMES.length; i++) {
+            final int v = i;
+            DILO_EGG_ITEMS.add(ITEMS.register("dilophosaurus_egg_" + com.prodigytown.creatures.egg.DilophosaurusEggs.NAMES[i], () ->
+                new com.prodigytown.creatures.egg.DilophosaurusEggItem(v, new Item.Properties().stacksTo(16))));
+        }
+    }
+    public static final RegistryObject<EntityType<DiloSpitEntity>> DILO_SPIT = ENTITIES.register("dilophosaurus_spit", () ->
+        EntityType.Builder.<DiloSpitEntity>of(DiloSpitEntity::new, MobCategory.MISC).sized(0.3f, 0.3f).clientTrackingRange(4).updateInterval(10).build(MODID + ":dilophosaurus_spit"));
     public static final RegistryObject<EntityType<DilophosaurusEntity>> DILOPHOSAURUS = ENTITIES.register("dilophosaurus", () ->
         EntityType.Builder.of(DilophosaurusEntity::new, MobCategory.CREATURE)
             .sized(1.2f, 2.6f).clientTrackingRange(10).build(MODID + ":dilophosaurus"));
@@ -140,6 +152,7 @@ public class ProdigyCreatures {
                 event.accept(NEST_ITEM.get());
                 for (RegistryObject<Item> egg : EGG_ITEMS) event.accept(egg.get());
                 for (RegistryObject<Item> egg : CARNO_EGG_ITEMS) event.accept(egg.get());
+                for (RegistryObject<Item> egg : DILO_EGG_ITEMS) event.accept(egg.get());
             }
             if (event.getTabKey() == CreativeModeTabs.FOOD_AND_DRINKS) {
                 event.accept(TAMING_SALAD.get());

@@ -103,5 +103,12 @@
   "key.prodigycreatures.dilo_bite": "Dilofosaurio: Mordida rápida",
   "key.prodigycreatures.dilo_claw": "Dilofosaurio: Zarpazo doble",
   "key.prodigycreatures.dilo_pounce": "Dilofosaurio: Salto depredador",
-  "key.prodigycreatures.dilo_frenzy": "Dilofosaurio: Frenesí jurásico"
+  "key.prodigycreatures.dilo_frenzy": "Dilofosaurio: Frenesí jurásico",
+  "item.prodigycreatures.dilophosaurus_egg_natural": "Huevo de dilofosaurio natural",
+  "item.prodigycreatures.dilophosaurus_egg_electric": "Huevo de dilofosaurio azul eléctrico",
+  "item.prodigycreatures.dilophosaurus_egg_magma": "Huevo de dilofosaurio magma rojo",
+  "item.prodigycreatures.dilophosaurus_egg_desert": "Huevo de dilofosaurio del desierto",
+  "item.prodigycreatures.dilophosaurus_egg_spectral": "Huevo de dilofosaurio esmeralda espectral",
+  "entity.prodigycreatures.dilophosaurus_spit": "Escupitajo venenoso",
+  "key.prodigycreatures.dilo_spit": "Dilofosaurio: Escupitajo venenoso"
 }

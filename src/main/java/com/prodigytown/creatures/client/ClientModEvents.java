@@ -12,6 +12,7 @@ public final class ClientModEvents {
         event.registerEntityRenderer(ProdigyCreatures.STEGOSAURUS.get(), StegosaurusRenderer::new);
         event.registerEntityRenderer(ProdigyCreatures.CARNOTAURUS.get(), CarnotaurusRenderer::new);
         event.registerEntityRenderer(ProdigyCreatures.DILOPHOSAURUS.get(), DilophosaurusRenderer::new);
+        event.registerEntityRenderer(ProdigyCreatures.DILO_SPIT.get(), net.minecraft.client.renderer.entity.LlamaSpitRenderer::new);
         event.registerBlockEntityRenderer(ProdigyCreatures.NEST_BE.get(), StegosaurusNestRenderer::new);
     }
     @SubscribeEvent public static void registerParticles(net.minecraftforge.client.event.RegisterParticleProvidersEvent event) {

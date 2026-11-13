@@ -86,14 +86,14 @@ public class DilophosaurusEntity extends TamableAnimal implements PetOrders.Hold
     public static final int NATURAL = 0, ELECTRIC = 1, MAGMA = 2, DESERT = 3, SPECTRAL = 4, VARIANTS = 5;
     public static final String[] VARIANT_NAMES = {"Natural", "Azul eléctrico", "Magma rojo", "Arena del desierto", "Esmeralda espectral"};
     /** Tipos de habilidad en curso (ABILITY_KIND): 1 mordida, 2 zarpazo doble, 3 salto depredador, 4 activacion del frenesi, 5 rugido intimidante. */
-    public static final int K_BITE = 1, K_CLAW = 2, K_POUNCE = 3, K_FRENZY = 4, K_ROAR = 5;
-    public static final int BITE_LEN = 12, CLAW_LEN = 18, POUNCE_LEN = 24, FRENZY_LEN = 44, ROAR_LEN = 34, LAND_LEN = 8, EAT_LEN = 22;
+    public static final int K_BITE = 1, K_CLAW = 2, K_POUNCE = 3, K_FRENZY = 4, K_ROAR = 5, K_SPIT = 6;
+    public static final int BITE_LEN = 12, CLAW_LEN = 18, POUNCE_LEN = 24, FRENZY_LEN = 44, ROAR_LEN = 34, SPIT_LEN = 26, LAND_LEN = 8, EAT_LEN = 22;
     /** Ticks de la animacion de cada habilidad (los usa el modelo para sincronizar poses con los impactos reales). */
     public static int abilityLen(int kind) {
-        return switch (kind) { case K_BITE -> BITE_LEN; case K_CLAW -> CLAW_LEN; case K_POUNCE -> POUNCE_LEN; case K_FRENZY -> FRENZY_LEN; case K_ROAR -> ROAR_LEN; default -> 1; };
+        return switch (kind) { case K_BITE -> BITE_LEN; case K_CLAW -> CLAW_LEN; case K_POUNCE -> POUNCE_LEN; case K_FRENZY -> FRENZY_LEN; case K_ROAR -> ROAR_LEN; case K_SPIT -> SPIT_LEN; default -> 1; };
     }
     /** Habilidades para el HUD y la red (0 mordida, 1 zarpazo, 2 salto, 3 frenesi). */
-    public static final String[] ABILITY_NAMES = {"Mordida rápida", "Zarpazo doble", "Salto depredador", "Frenesí jurásico"};
+    public static final String[] ABILITY_NAMES = {"Mordida rápida", "Zarpazo doble", "Salto depredador", "Frenesí jurásico", "Escupitajo venenoso"};
 
     private static final UUID M_HP_ADD = UUID.fromString("d1a0f0de-0001-4d1e-9a10-5e90a5a20001");
     private static final UUID M_DMG_ADD = UUID.fromString("d1a0f0de-0002-4d1e-9a10-5e90a5a20002");
@@ -110,10 +110,10 @@ public class DilophosaurusEntity extends TamableAnimal implements PetOrders.Hold
      * Cifras del adulto a nivel 30 (la tabla de crecimiento compartida se escala con K_*): 85 de vida (entre 70 y 100), menos que el
      * estegosaurio (270) y el carnotauro (140), pero mas rapido que ambos.
      */
-    private static final double ADULT_HP = 85.0, ADULT_DMG = 11.0, ADULT_ARM = 2.0;
-    private static final double K_HP = ADULT_HP / 270.0, K_DMG = ADULT_DMG / 27.0, K_ARM = ADULT_ARM / 14.0;
-    private static final EntityDimensions ADULT_DIM = EntityDimensions.fixed(1.2F, 2.6F);
-    private static final EntityDimensions CHIBI_DIM = EntityDimensions.fixed(0.7F, 1.3F);
+    private static final double K_HP = 40.0 / 450.0, K_DMG = 4.5 / 27.0;            // 24 PV y 4,5 de ataque a nivel 30; 40 PV y 7,5 de ataque a nivel 100
+    private static final double ADULT_HP = 270.0 * K_HP, ADULT_DMG = 27.0 * K_DMG, ADULT_ARM = 1.0, K_ARM = ADULT_ARM / 14.0;
+    private static final EntityDimensions ADULT_DIM = EntityDimensions.fixed(0.9F, 1.9F);
+    private static final EntityDimensions CHIBI_DIM = EntityDimensions.fixed(0.5F, 0.95F);
 
     private static final EntityDataAccessor<Integer> VARIANT = SynchedEntityData.defineId(DilophosaurusEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> FEMALE = SynchedEntityData.defineId(DilophosaurusEntity.class, EntityDataSerializers.BOOLEAN);
@@ -139,6 +139,7 @@ public class DilophosaurusEntity extends TamableAnimal implements PetOrders.Hold
     private static final EntityDataAccessor<Long> CD_CLAW = SynchedEntityData.defineId(DilophosaurusEntity.class, EntityDataSerializers.LONG);
     private static final EntityDataAccessor<Long> CD_POUNCE = SynchedEntityData.defineId(DilophosaurusEntity.class, EntityDataSerializers.LONG);
     private static final EntityDataAccessor<Long> CD_FRENZY = SynchedEntityData.defineId(DilophosaurusEntity.class, EntityDataSerializers.LONG);
+    private static final EntityDataAccessor<Long> CD_SPIT = SynchedEntityData.defineId(DilophosaurusEntity.class, EntityDataSerializers.LONG);
 
     // ---- solo cliente: estado de animacion suavizado (cada valor guarda su version del tick anterior ...O para interpolar) ----
     public float sitAnim, sleepAnim, sitAnimO, sleepAnimO;
@@ -159,7 +160,7 @@ public class DilophosaurusEntity extends TamableAnimal implements PetOrders.Hold
     public static boolean clientJumpHeld;
     private int growth;
     @Nullable private BlockPos orderHome;
-    private int cdBite, cdClaw, cdPounce, cdFrenzy;
+    private int cdBite, cdClaw, cdPounce, cdFrenzy, cdSpit;
     private ProdigyProgress progress = ProdigyProgress.atLevel(ProdigyProgress.ADULT_START_LEVEL, Talents.DILO);
     private boolean sexAssigned = false;
     private int lastCombatTick = -100000, aidReadyAt = 0, frillTicks = 0, frenzyTotal = 0;
@@ -213,6 +214,7 @@ public class DilophosaurusEntity extends TamableAnimal implements PetOrders.Hold
         this.entityData.define(CD_CLAW, 0L);
         this.entityData.define(CD_POUNCE, 0L);
         this.entityData.define(CD_FRENZY, 0L);
+        this.entityData.define(CD_SPIT, 0L);
     }
 
     @Override public void addAdditionalSaveData(CompoundTag tag) {
@@ -255,7 +257,8 @@ public class DilophosaurusEntity extends TamableAnimal implements PetOrders.Hold
     }
 
     public boolean isFemale() { return this.entityData.get(FEMALE); }
-    private void assignSex() { this.entityData.set(FEMALE, this.random.nextBoolean()); this.sexAssigned = true; }
+    /** 70 % machos, 30 % hembras. */
+    private void assignSex() { this.entityData.set(FEMALE, this.random.nextFloat() < 0.30F); this.sexAssigned = true; }
     public int getVariant() { return this.entityData.get(VARIANT); }
     public void setVariant(int v) { this.entityData.set(VARIANT, Math.max(0, Math.min(VARIANTS - 1, v))); }
     public boolean isAdultStage() { return this.entityData.get(ADULT); }
@@ -324,10 +327,10 @@ public class DilophosaurusEntity extends TamableAnimal implements PetOrders.Hold
     private void applyStageStats(boolean keepFraction) {
         boolean adult = isAdultStage();
         float frac = this.getMaxHealth() <= 0 ? 1.0F : this.getHealth() / this.getMaxHealth();
-        setBase(Attributes.MAX_HEALTH, adult ? ADULT_HP : 28.0);
-        setBase(Attributes.ATTACK_DAMAGE, adult ? ADULT_DMG : 4.0);
+        setBase(Attributes.MAX_HEALTH, adult ? ADULT_HP : 12.0);
+        setBase(Attributes.ATTACK_DAMAGE, adult ? ADULT_DMG : 2.0);
         setBase(Attributes.MOVEMENT_SPEED, adult ? 0.38 : 0.32);
-        setBase(Attributes.ARMOR, adult ? ADULT_ARM : 1.0);
+        setBase(Attributes.ARMOR, adult ? ADULT_ARM : 0.0);
         setBase(Attributes.KNOCKBACK_RESISTANCE, 0.3);
         applyProgressStats(adult);
         if (keepFraction) this.setHealth(Math.max(1.0F, this.getMaxHealth() * frac));
@@ -440,6 +443,7 @@ public class DilophosaurusEntity extends TamableAnimal implements PetOrders.Hold
     private static boolean holdingMeat(Player p) { return isMeat(p.getMainHandItem()) || isMeat(p.getOffhandItem()); }
 
     /** Valido para golpear: ni dueno, ni aliados, ni mascotas domadas; domado tampoco jugadores, aldeanos ni golems. */
+    public boolean canHitPublic(Entity e) { return canHit(e); }
     private boolean canHit(Entity e) {
         if (!(e instanceof LivingEntity le) || isAlly(e) || !le.isAlive() || e instanceof ArmorStand) return false;
         if (isTame()) {
@@ -562,7 +566,7 @@ public class DilophosaurusEntity extends TamableAnimal implements PetOrders.Hold
             }
             boolean adult = isAdultStage();
             double d2 = me.distanceToSqr(t.getX(), t.getY(), t.getZ());
-            double reach = 2.4 + me.getBbWidth() * 0.5 + (adult ? 0.0 : -0.4) + t.getBbWidth() * 0.4;
+            double reach = 2.0 + me.getBbWidth() * 0.5 + (adult ? 0.0 : -0.4) + t.getBbWidth() * 0.4;
             double reach2 = reach * reach;
             if (--repath <= 0) {
                 repath = 3 + me.random.nextInt(4);
@@ -581,6 +585,8 @@ public class DilophosaurusEntity extends TamableAnimal implements PetOrders.Hold
                 if (me.cdFrenzy <= 0 && me.cdAiFrenzy <= 0 && d2 < 14.0 * 14.0 && me.isFrenzyWorth(t)) { me.cdAiFrenzy = 100; me.useAbility(null, 3); return; }
                 if (d2 > 25.0 && d2 < 13.0 * 13.0 && me.cdPounce <= 0 && me.cdAiPounce <= 0 && me.onGround() && Math.abs(t.getY() - me.getY()) < 3.0
                         && Math.abs(Mth.wrapDegrees(me.yawTo(t) - me.getYRot())) < 35.0F && me.random.nextInt(3) == 0) { me.cdAiPounce = 60 + me.random.nextInt(60); me.useAbility(null, 2); return; }
+                if (me.progress.rank("S7") > 0 && me.cdSpit <= 0 && d2 > 16.0 && d2 < 14.0 * 14.0 && me.random.nextInt(3) == 0
+                        && Math.abs(Mth.wrapDegrees(me.yawTo(t) - me.getYRot())) < 25.0F) { me.useAbility(null, 4); return; }
                 if (d2 <= reach2 * 1.05 && me.cdClaw <= 0 && me.random.nextInt(3) == 0) { me.useAbility(null, 1); return; }
             }
             if (d2 <= reach2 && me.cdBite <= 0) me.useAbility(null, 0);
@@ -740,6 +746,7 @@ public class DilophosaurusEntity extends TamableAnimal implements PetOrders.Hold
             if (cdClaw > 0) cdClaw--;
             if (cdPounce > 0) cdPounce--;
             if (cdFrenzy > 0) cdFrenzy--;
+            if (cdSpit > 0) cdSpit--;
             if (cdAiPounce > 0) cdAiPounce--;
             if (cdAiFrenzy > 0) cdAiFrenzy--;
             if (cdWarn > 0) cdWarn--;
@@ -775,7 +782,7 @@ public class DilophosaurusEntity extends TamableAnimal implements PetOrders.Hold
         speedAnim += (v - speedAnim) * 0.30F;
         boolean adult = isAdultStage();
         float sp01 = Mth.clamp(speedAnim / 0.9F, 0.0F, 1.0F);
-        float legLen = adult ? 1.65F : 0.71F; // largo de la pierna en bloques (cadera -> suelo)
+        float legLen = adult ? 1.18F : 0.50F; // largo de la pierna en bloques (cadera -> suelo)
         float natural = speedAnim > 0.004F ? 1.5707964F * speedAnim / (strideAmp(speedAnim, adult) * legLen) : 0.0F;
         gait += Math.min(natural, adult ? 0.62F + 0.14F * sp01 : 0.90F);
         if (gait > 628.3F) { gait -= 628.31854F; gaitO -= 628.31854F; }
@@ -842,6 +849,7 @@ public class DilophosaurusEntity extends TamableAnimal implements PetOrders.Hold
             case K_POUNCE -> pounceTick(el, left);
             case K_FRENZY -> frenzyActivationTick(el);
             case K_ROAR -> { if (el == 6) roarEffect(false); }
+            case K_SPIT -> { if (el == 12) spitLaunch(); }
             default -> { }
         }
         if (left - 1 <= 0) {
@@ -924,14 +932,14 @@ public class DilophosaurusEntity extends TamableAnimal implements PetOrders.Hold
     private float attack() { return (float) this.getAttributeValue(Attributes.ATTACK_DAMAGE); }
 
     private void biteImpact() {
-        LivingEntity v = findFront(3.6 + (isAdultStage() ? 0.0 : -0.6), 0.25);
+        LivingEntity v = findFront(3.0 + (isAdultStage() ? 0.0 : -0.5), 0.25);
         if (v == null) return;
         strike(v, attack() * (float) DiloConfig.get(DiloConfig.BITE_DAMAGE, 1.0) * (1.0F + 0.06F * progress.rank("C1")), 0.5, true);
         this.playSound(ModSounds.DILO_BITE.get(), isAdultStage() ? 1.2F : 0.8F, (0.95F + this.random.nextFloat() * 0.1F) * vp());
     }
 
     private void clawHit(int which) {
-        double reach = 3.6 + 0.3 * progress.rank("C2");
+        double reach = 3.0 + 0.3 * progress.rank("C2");
         Vec3 look = aimDir();
         float dmg = attack() * (float) DiloConfig.get(DiloConfig.CLAW_DAMAGE, 0.75) * (1.0F + 0.10F * progress.rank("C2"));
         int hits = 0;
@@ -1056,7 +1064,7 @@ public class DilophosaurusEntity extends TamableAnimal implements PetOrders.Hold
     /** La membrana se despliega durante rugidos, frenesi (primera fase), aviso territorial y un instante al ser herido. */
     private void frillTick() {
         int k = getAbilityKind();
-        boolean ab = getAbilityLeft() > 0 && (k == K_FRENZY || k == K_ROAR) && abilityLen(k) - getAbilityLeft() >= 3 && getAbilityLeft() > 5;
+        boolean ab = getAbilityLeft() > 0 && (k == K_FRENZY || k == K_ROAR || k == K_SPIT) && abilityLen(k) - getAbilityLeft() >= 3 && getAbilityLeft() > 5;
         boolean firstPhase = frenzyLeft() > 0 && frenzyTotal - frenzyLeft() < 50;
         if (frillTicks > 0) frillTicks--;
         boolean want = isAdultStage() && (ab || firstPhase || frillTicks > 0) && !isFallen() && getMorph() <= 0 || (!isAdultStage() && ab);
@@ -1120,8 +1128,42 @@ public class DilophosaurusEntity extends TamableAnimal implements PetOrders.Hold
                 startAbility(K_FRENZY, FRENZY_LEN);
                 frillTicks = FRENZY_LEN;
             }
+            case 4 -> {
+                if (progress.rank("S7") <= 0) { if (user != null) user.displayClientMessage(Component.literal("Necesita el talento Glándula venenosa"), true); return; }
+                if (cdSpit > 0) return;
+                cdSpit = Math.round(DiloConfig.get(DiloConfig.SPIT_COOLDOWN_SECONDS, 8) * 20 * cooldownFactor());
+                markCd(CD_SPIT, cdSpit);
+                this.getNavigation().stop();
+                LivingEntity st = this.getTarget();
+                if (this.getControllingPassenger() instanceof Player r) this.setYRot(r.getYRot());
+                else if (st != null) this.setYRot(yawTo(st));
+                startAbility(K_SPIT, SPIT_LEN);
+                frillTicks = SPIT_LEN + 14;
+            }
             default -> { }
         }
+    }
+    /** Lanza el proyectil de veneno hacia donde mira el jinete (o hacia su objetivo). */
+    private void spitLaunch() {
+        if (!(this.level() instanceof ServerLevel sl)) return;
+        DiloSpitEntity s = ProdigyCreatures.DILO_SPIT.get().create(sl);
+        if (s == null) return;
+        int rank = Math.max(1, progress.rank("S7"));
+        Vec3 dir;
+        if (this.getControllingPassenger() instanceof Player r) dir = r.getViewVector(1.0F);
+        else {
+            LivingEntity t = this.getTarget();
+            dir = t != null ? t.getEyePosition().subtract(this.getEyePosition()).normalize() : Vec3.directionFromRotation(this.getXRot(), this.getYRot());
+        }
+        s.setOwner(this);
+        s.setPos(this.getEyePosition().add(dir.scale(0.7)).add(0.0, -0.15, 0.0));
+        s.damage = attack() * (float) DiloConfig.get(DiloConfig.SPIT_DAMAGE, 0.5) * (1.0F + 0.25F * (rank - 1));
+        s.poisonTicks = 60 + 40 * (rank - 1);
+        s.shoot(dir.x, dir.y + 0.08, dir.z, 1.4F, 1.0F);
+        sl.addFreshEntity(s);
+        this.playSound(net.minecraft.sounds.SoundEvents.LLAMA_SPIT, 1.2F, 1.2F);
+        this.playSound(ModSounds.DILO_CLAW.get(), 0.8F, 0.7F);
+        lastCombatTick = this.tickCount;
     }
     /** Escala de la velocidad del salto segun la distancia a la presa (la IA acierta mas cerca o mas lejos). */
     private float pounceSpeedHint = 1.0F;
@@ -1131,7 +1173,7 @@ public class DilophosaurusEntity extends TamableAnimal implements PetOrders.Hold
         this.entityData.set(acc, ((this.level().getGameTime() + t) << 12) | t);
     }
     private static EntityDataAccessor<Long> cdAcc(int which) {
-        return which == 0 ? CD_BITE : which == 1 ? CD_CLAW : which == 2 ? CD_POUNCE : CD_FRENZY;
+        return which == 0 ? CD_BITE : which == 1 ? CD_CLAW : which == 2 ? CD_POUNCE : which == 3 ? CD_FRENZY : CD_SPIT;
     }
     /** Fraccion de recarga que falta (1 = recien usada, 0 = lista). which: 0 mordida, 1 zarpazo, 2 salto, 3 frenesi. Sirve en el cliente. */
     public float cooldownLeft(int which) {
@@ -1476,7 +1518,7 @@ public class DilophosaurusEntity extends TamableAnimal implements PetOrders.Hold
         return first instanceof Player p && this.isOwnedBy(p) ? p : null;
     }
     /** Altura de la silla ligera (~2,0 bloques sobre el suelo) menos el desfase del jugador sentado. */
-    @Override public double getPassengersRidingOffset() { return 1.72; }
+    @Override public double getPassengersRidingOffset() { return 1.22; }
     @Override public void positionRider(Entity passenger, Entity.MoveFunction callback) {
         if (!this.hasPassenger(passenger)) return;
         Vec3 off = new Vec3(0.0, 0.0, -0.1).yRot(-this.yBodyRot * ((float) Math.PI / 180.0F));
@@ -1522,6 +1564,9 @@ public class DilophosaurusEntity extends TamableAnimal implements PetOrders.Hold
 
     @Override protected void dropCustomDeathLoot(DamageSource source, int looting, boolean recentlyHit) {
         super.dropCustomDeathLoot(source, looting, recentlyHit);
+        // hembra salvaje adulta abatida: 50 % de dejar un huevo (la variante sale por rareza, con sesgo hacia la suya)
+        if (!this.isTame() && isFemale() && isAdultStage() && recentlyHit && this.random.nextBoolean())
+            this.spawnAtLocation(new ItemStack(ProdigyCreatures.DILO_EGG_ITEMS.get(com.prodigytown.creatures.egg.DilophosaurusEggs.rollVariant(this.random, getVariant())).get()));
         if (isSaddled()) this.spawnAtLocation(Items.SADDLE);
     }
 
@@ -1538,6 +1583,7 @@ public class DilophosaurusEntity extends TamableAnimal implements PetOrders.Hold
         return isAdultStage() ? ModSounds.DILO_AMBIENT.get() : ModSounds.DILO_AMBIENT_BABY.get();
     }
 
+    @Override public int getMaxSpawnClusterSize() { return 3; }
     @Override public boolean isFood(ItemStack stack) { return false; }
     @Nullable @Override public AgeableMob getBreedOffspring(ServerLevel level, AgeableMob partner) { return null; }
     @Override public boolean removeWhenFarAway(double distance) { return !isTame() && super.removeWhenFarAway(distance); }

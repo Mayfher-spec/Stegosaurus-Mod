@@ -100,6 +100,7 @@ public final class Talents {
             t("S4", 2, "Intimidación mejorada", 3, new int[]{2,3,3}, new int[]{36,36,36}, new String[][]{{"S2","1"},{"S3","1"}}, "El rugido y el Frenesí intimidan en +2 / +3 / +4 bloques más de radio; desde el rango 2 también debilitan"),
             t("S5", 2, "Resistencia al daño", 3, new int[]{2,3,3}, new int[]{46,46,46}, new String[][]{{"S4","1"}}, "−4 / −8 / −12 % de daño recibido y +0,05 de resistencia al retroceso por rango"),
             t("S6", 2, "Protector jurásico", 3, new int[]{3,3,4}, new int[]{58,58,58}, new String[][]{{"S5","1"}}, "Si el dueño baja del 40 % de vida: Resistencia y Regeneración durante 5 / 7 / 9 s (recarga 90 s)"),
+            t("S7", 2, "Glándula venenosa", 3, new int[]{2,3,3}, new int[]{30,30,30}, new String[][]{{"S3","1"}}, "Desbloquea el Escupitajo venenoso (tecla Y): despliega la membrana y escupe veneno a distancia. Rangos 2 y 3: veneno de 5 / 7 s y más daño"),
             // --- Mejora final ---
             t("P1", 3, "CAZADOR PRIMORDIAL", 1, new int[]{6}, new int[]{70}, new String[][]{{"C6","1"},{"M6","1"},{"S6","1"}},
               "+10 % de daño, +5 % de velocidad, +15 % de daño a monstruos hostiles, el Frenesí dura 3 s más y recarga −10 %; aura visual en el Frenesí")

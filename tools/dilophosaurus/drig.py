@@ -65,8 +65,8 @@ def build_spec(stage='adult'):
     return P
 
 STAGES = {
-    'chibi': dict(body=0.58, tail=0.52, neck=0.60, head=1.05, crest=0.75, arm=0.70, leg=0.58, frill=0.55),
-    'adult': dict(body=1.0, tail=1.0, neck=1.0, head=1.14, crest=1.0, arm=1.0, leg=1.0, frill=1.0),
+    'chibi': dict(body=0.58, tail=0.52, neck=0.60, head=1.05, crest=0.75, arm=0.70, leg=0.58, frill=0.95),
+    'adult': dict(body=1.0, tail=1.0, neck=1.0, head=1.14, crest=1.15, arm=1.0, leg=1.0, frill=1.75),
 }
 ROT_OVERRIDE = {}
 

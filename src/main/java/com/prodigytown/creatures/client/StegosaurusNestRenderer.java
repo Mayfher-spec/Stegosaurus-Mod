@@ -25,11 +25,11 @@ import org.joml.Matrix4f;
  * se agrieta por etapas y en los ultimos 12 s se balancea cada vez mas fuerte antes de eclosionar. Encima muestra el tiempo restante.
  */
 public final class StegosaurusNestRenderer implements BlockEntityRenderer<StegosaurusNestBlockEntity> {
-    /** 0..4 huevos de estegosaurio, 5..8 huevos de carnotauro (estado del nido - 1). */
-    private static final ResourceLocation[][] TEX = new ResourceLocation[9][4];
+    /** 0..4 huevos de estegosaurio, 5..8 de carnotauro, 9..13 de dilofosaurio (estado del nido - 1). */
+    private static final ResourceLocation[][] TEX = new ResourceLocation[14][4];
     static {
-        for (int v = 0; v < 9; v++) for (int s = 0; s < 4; s++) {
-            String name = v < 5 ? "stegosaurus_egg_" + StegosaurusEggs.NAMES[v] : "carnotaurus_egg_" + CarnotaurusEggs.NAMES[v - 5];
+        for (int v = 0; v < 14; v++) for (int s = 0; s < 4; s++) {
+            String name = v < 5 ? "stegosaurus_egg_" + StegosaurusEggs.NAMES[v] : v < 9 ? "carnotaurus_egg_" + CarnotaurusEggs.NAMES[v - 5] : "dilophosaurus_egg_" + com.prodigytown.creatures.egg.DilophosaurusEggs.NAMES[v - 9];
             TEX[v][s] = new ResourceLocation(ProdigyCreatures.MODID, "textures/entity/" + name + "_" + s + ".png");
         }
     }
@@ -50,7 +50,7 @@ public final class StegosaurusNestRenderer implements BlockEntityRenderer<Stegos
         if (!st.hasProperty(StegosaurusNestBlock.EGG)) return;
         int egg = st.getValue(StegosaurusNestBlock.EGG);
         if (egg <= 0) return;
-        int v = Math.max(0, Math.min(8, egg - 1));
+        int v = Math.max(0, Math.min(13, egg - 1));
         float prog = Math.min(be.total, be.shown + pt);
         float left = be.total > 0 ? Math.max(0.0F, be.total - prog) : 1.0E9F;
         float frac = be.total > 0 ? Mth.clamp(prog / be.total, 0.0F, 1.0F) : 0.0F;

@@ -36,10 +36,10 @@ import java.util.List;
 /**
  * Nido de estegosaurio (crafteable). Clic derecho con un huevo lo coloca dentro y empieza la incubacion (5-10 min);
  * el huevo se dibuja con un BlockEntityRenderer, con temporizador encima. Agachado + mano vacia lo saca.
- * Estado EGG: 0 = vacio, 1..5 = huevo de estegosaurio de la variante adulta (EGG-1), 6..9 = huevo de carnotauro del color (EGG-6).
+ * Estado EGG: 0 = vacio, 1..5 = huevo de estegosaurio de la variante adulta (EGG-1), 6..9 = huevo de carnotauro del color (EGG-6), 10..14 = huevo de dilofosaurio de la variante (EGG-10).
  */
 public final class StegosaurusNestBlock extends BaseEntityBlock {
-    public static final IntegerProperty EGG = IntegerProperty.create("egg", 0, 9);
+    public static final IntegerProperty EGG = IntegerProperty.create("egg", 0, 14);
     /** Huevo silvestre dormido (generado en un nido natural): no incuba hasta que se reclame y se ponga en un nido propio. */
     public static final BooleanProperty WILD = BooleanProperty.create("wild");
     private static final VoxelShape SHAPE = Block.box(0.0, 0.0, 0.0, 16.0, 6.0, 16.0);
@@ -93,7 +93,8 @@ public final class StegosaurusNestBlock extends BaseEntityBlock {
             return InteractionResult.sidedSuccess(level.isClientSide);
         }
         int put = held.getItem() instanceof StegosaurusEggItem ei ? ei.variant() + 1
-            : held.getItem() instanceof CarnotaurusEggItem ci ? CarnotaurusEggs.NEST_BASE + ci.variant() : 0;
+            : held.getItem() instanceof CarnotaurusEggItem ci ? CarnotaurusEggs.NEST_BASE + ci.variant()
+            : held.getItem() instanceof DilophosaurusEggItem di ? DilophosaurusEggs.NEST_BASE + di.variant() : 0;
         if (egg == 0 && put > 0) { // meter el huevo en el nido (de estegosaurio o de carnotauro)
             if (!level.isClientSide) {
                 level.setBlock(pos, state.setValue(EGG, put), 3);

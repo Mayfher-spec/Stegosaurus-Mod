@@ -275,6 +275,13 @@ public final class DilophosaurusModel<T extends DilophosaurusEntity> extends Ent
                 neck1.rotX(0.35F * crouch - 0.30F * fly + 0.25F * hit); neck2.rotX(-0.12F * crouch + 0.10F * fly); head.rotX(0.22F * crouch - 0.10F * fly);
                 jaw.rotX(0.95F * fly * (1.0F - hit) + 0.25F * crouch);
                 for (int i = 0; i < 5; i++) tail[i].rotX(-0.10F * fly - 0.06F * crouch);
+            } else if (kind == DilophosaurusEntity.K_SPIT) {   // escupitajo: echa la cabeza atras con la membrana abierta y la lanza hacia delante
+                float wind = win(p, 0.0F, 0.30F, 0.44F, 0.52F), snap = win(p, 0.44F, 0.52F, 0.60F, 1.0F);
+                body.move(3.0F * wind); body.rotX(-0.10F * wind + 0.05F * snap);
+                for (int s = 0; s < 2; s++) { thigh[s].rotX(-0.18F * wind); shin[s].rotX(0.22F * wind); foot[s].rotX(0.10F * wind); arm[s].rotX(-0.35F * wind); }
+                neck1.rotX(-0.30F * wind + 0.30F * snap); neck2.rotX(-0.26F * wind + 0.22F * snap); head.rotX(-0.45F * wind + 0.30F * snap);
+                jaw.rotX(0.80F * wind + 0.55F * snap);
+                tail[0].rotX(-0.10F * wind);
             } else if (kind == DilophosaurusEntity.K_FRENZY || kind == DilophosaurusEntity.K_ROAR) {
                 // activacion del frenesi / rugido intimidante: se detiene, baja el cuerpo, levanta la cabeza, abre la membrana y chilla
                 float coil = win(p, 0.0F, 0.18F, 0.18F, 0.30F);
