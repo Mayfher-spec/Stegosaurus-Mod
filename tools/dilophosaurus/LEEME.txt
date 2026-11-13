@@ -1,0 +1,12 @@
+DILOFOSAURIO — herramientas de generación (deterministas)
+
+  python3 tools/dilophosaurus/dexport.py .      -> texturas (5 variantes, brillo, ojos cerrados) y DilophosaurusLayers.java
+  python3 tools/dilophosaurus/sounds.py src/main/resources/assets/prodigycreatures/sounds/dilophosaurus   -> sonidos .ogg propios (síntesis, sin material con copyright)
+
+Archivos: drig.py (esqueleto/geometría: cuerpo, dos crestas, membrana articulada de 7 paneles), dlayers.py (capas Java),
+dpaint.py (pintado de las variantes), dexport.py (salida), sounds.py (audio).
+
+Configuración (config/prodigycreatures-dilophosaurus.toml): duración, recarga, daño y velocidad del Frenesí jurásico, daños y recargas de
+mordida/zarpazo/salto, comidas necesarias para domar (adulto/cría) y para que crezca la cría.
+
+Teclas (Controles de Minecraft): K abre el menú · Z mordida · X zarpazo · C salto · G frenesí; montado, clic izq. = mordida y clic der. = zarpazo.
