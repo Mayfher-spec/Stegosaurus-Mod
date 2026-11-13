@@ -117,8 +117,8 @@ public final class DiloMountHud {
         RenderSystem.defaultBlendFunc();
 
         // ---- marco con retrato, nombre, vida y XP (encima de la barra de objetos, a la derecha)
-        final float fw = 176.0F, k = fw / TW, fh = TH * k;
-        float fx = w / 2.0F + 2.0F, fy = h - 28.0F - fh;
+        final float fw = 92.0F, k = fw / TW, fh = TH * k;   // mismo orden de tamano que el marco del carnotauro (84 px)
+        float fx = w / 2.0F + 2.0F, fy = h - 31.0F - fh;
         tex(g, FRAME[variant], fx, fy, fw, fh, TW, TH);
         float hp = Math.max(0.0F, d.getHealth()), max = Math.max(1.0F, d.getMaxHealth()), frac = Math.min(1.0F, hp / max);
         int bx0 = Math.round(fx + 231.0F * k), bx1 = Math.round(fx + 680.0F * k), by0 = Math.round(fy + 96.5F * k), by1 = Math.round(fy + 123.5F * k);
@@ -145,16 +145,19 @@ public final class DiloMountHud {
             }
         }
         String name = d.hasCustomName() ? d.getCustomName().getString() : "Dilofosaurio";
-        String sub = (d.isAdultStage() ? "Adulto" : "Cria") + " / " + lvl;
-        fitText(g, font, name + " / " + sub, fx + 447.0F * k, fy + 70.0F * k, 400.0F * k, 0.62F, 0xFFF2DDA8);
+        String sub = "Nv " + lvl;
+        fitText(g, font, name + "  " + sub, fx + 447.0F * k, fy + 70.0F * k, 420.0F * k, 0.5F, 0xFFF2DDA8);
 
         // ---- poderes: discos con la recarga; mordida (clic izq), zarpazo (clic der), salto, frenesi y, con el talento, escupitajo
         String[] keys = {"Izq", "Der", key(ClientKeys.DILO_POUNCE.getTranslatedKeyMessage().getString()), key(ClientKeys.DILO_FRENZY.getTranslatedKeyMessage().getString()), key(ClientKeys.DILO_SPIT.getTranslatedKeyMessage().getString())};
         int n = d.getProgress().rank("S7") > 0 ? 5 : 4;
-        final float bs = 26.0F, step = bs + 4.0F;
-        float sx0 = fx + 40.0F, sy0 = fy - bs - 6.0F;
+        // como el carnotauro: en fila a la derecha de la barra si cabe; si no, en dos columnas contra la esquina
+        final float bs = 22.0F, step = bs + 3.0F;
+        boolean row = w - n * step - 3.0F >= w / 2.0F + 98.0F;
+        float sx0 = row ? w - n * step - 1.0F : w - 2 * step - 1.0F;
+        float sy0 = row ? h - 4.0F - bs : h - 4.0F - bs - ((n + 1) / 2 - 1) * (bs + 3.0F);
         for (int i = 0; i < n; i++) {
-            float x = sx0 + i * step, y = sy0;
+            float x = row ? sx0 + i * step : sx0 + (i % 2) * step, y = row ? sy0 : sy0 + (i / 2) * (bs + 3.0F);
             boolean active = i == 3 && d.isFrenzied();
             float ccx = x + bs / 2.0F, ccy = y + bs / 2.0F;
             tex(g, ICON[i], x, y, bs, bs, 128, 128);
@@ -172,7 +175,7 @@ public final class DiloMountHud {
             text(g, font, kk, kx, ky, 0.5F, active ? 0xFFFFE066 : 0xFFF2D27A, false);
         }
         if (d.isFrenzied()) {
-            int fx0 = Math.round(sx0), fw2 = Math.round(n * step - 4.0F), fy2 = Math.round(sy0 - 4.0F);
+            int fx0 = Math.round(fx), fw2 = Math.round(fw), fy2 = Math.round(fy - 4.0F);
             int total = Math.max(1, com.prodigytown.creatures.DiloConfig.get(com.prodigytown.creatures.DiloConfig.FRENZY_SECONDS, 10) * 20 + 60);
             g.fill(fx0, fy2, fx0 + fw2, fy2 + 2, 0xAA000000);
             g.fill(fx0, fy2, fx0 + Math.round(fw2 * Math.min(1.0F, d.frenzyLeft() / (float) total)), fy2 + 2, 0xFFFFE066);
