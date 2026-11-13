@@ -88,7 +88,7 @@ public class ProdigyCreatures {
         EntityType.Builder.<DiloSpitEntity>of(DiloSpitEntity::new, MobCategory.MISC).sized(0.3f, 0.3f).clientTrackingRange(4).updateInterval(10).build(MODID + ":dilophosaurus_spit"));
     public static final RegistryObject<EntityType<DilophosaurusEntity>> DILOPHOSAURUS = ENTITIES.register("dilophosaurus", () ->
         EntityType.Builder.of(DilophosaurusEntity::new, MobCategory.CREATURE)
-            .sized(1.2f, 2.6f).clientTrackingRange(10).build(MODID + ":dilophosaurus"));
+            .sized(0.9f, 1.9f).clientTrackingRange(10).build(MODID + ":dilophosaurus"));
     public static final RegistryObject<Item> DILOPHOSAURUS_SPAWN_EGG = ITEMS.register("dilophosaurus_spawn_egg", () ->
         new ForgeSpawnEggItem(() -> DILOPHOSAURUS.get(), 0x3E6B3A, 0xE08A2E, new Item.Properties()));
     public static final RegistryObject<Item> CARNOTAURUS_EGG = ITEMS.register("carnotaurus_spawn_egg", () ->

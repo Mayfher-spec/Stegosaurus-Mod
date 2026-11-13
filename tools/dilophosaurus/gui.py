@@ -1,5 +1,5 @@
 """Recursos graficos del Dilophosaurus a partir de las maquetas del usuario (HUD: barra de vida y botones de habilidad).
-Uso: python3 gui.py <repo> <hpbar.png> <abil.png>
+Uso: python3 gui.py <repo> <hpbar.png> <abil.png> [<armaduras.png>]
  - hud_frame_{0..4}.png : marco con retrato por variante (sin texto, sin relleno de vida y sin segmentos de XP: eso lo dibuja el codigo)
  - ab_{bite,claw,pounce,frenzy,spit}.png : discos de habilidad (anillo incluido) con mascara circular
 Determinista: no usa aleatoriedad."""
@@ -136,6 +136,32 @@ def build_abilities(repo, ab_path):
     icons['spit'] = spit
     for k, arr in icons.items(): save(repo, 'ab_%s.png' % k, arr)
 
+
+def build_screen_bg(repo, armor_path):
+    """Fondo de la pantalla del Dilo: el marco dorado con follaje de la maqueta de armaduras, con el contenido interior vaciado
+    (titulo, retrato, tarjetas y pestanas se dibujan en vivo). Salida 840x?: se estira al panel (400x252 + 10 de margen por lado)."""
+    im = np.array(Image.open(armor_path).convert('RGB'))
+    def tile(dst_x0, dst_x1, src_x0, src_x1, y0, y1):
+        strip = im[y0:y1, src_x0:src_x1].copy(); w = src_x1 - src_x0; x = dst_x0; k = 0
+        while x < dst_x1:
+            piece = strip[:, ::-1] if k % 2 else strip
+            n = min(w, dst_x1 - x); im[y0:y1, x:x + n] = piece[:, :n]; x += n; k += 1
+    tile(335, 1115, 1150, 1322, 100, 200)      # rotulo del titulo -> borde superior limpio
+    tile(66, 196, 214, 274, 100, 275)          # bandera del retrato
+    tile(1330, 1420, 1190, 1322, 100, 200)     # boton X
+    # interior vaciado con degradado oscuro y un poco de ruido determinista
+    x0, x1, y0, y1 = 36, 1418, 152, 985
+    h, w = y1 - y0, x1 - x0
+    yy = np.linspace(0, 1, h)[:, None, None]; xx = np.linspace(-1, 1, w)[None, :, None]
+    base = (np.array([27, 33, 36]) * (1 - yy) + np.array([14, 18, 20]) * yy) * (1.0 - 0.18 * xx ** 2)
+    rng = np.random.RandomState(7); base = base + rng.normal(0, 1.6, (h, w, 1))
+    im[y0:y1, x0:x1] = np.clip(base, 0, 255).astype(np.uint8)
+    out = im[112:1050]
+    sm = cv2.resize(out, (840, int(round(840 * out.shape[0] / out.shape[1]))), interpolation=cv2.INTER_AREA)
+    print('screen bg', sm.shape)
+    save(repo, 'screen_bg.png', sm)
+
 if __name__ == '__main__':
     repo, hp, ab = sys.argv[1], sys.argv[2], sys.argv[3]
     build_hud(repo, hp); build_abilities(repo, ab)
+    if len(sys.argv) > 4: build_screen_bg(repo, sys.argv[4])

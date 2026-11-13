@@ -6,11 +6,15 @@ import com.prodigytown.creatures.PetOrders;
 import com.prodigytown.creatures.net.ModNetwork;
 import com.prodigytown.creatures.progress.ProdigyProgress;
 import com.prodigytown.creatures.progress.Talent;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import net.minecraft.resources.ResourceLocation;
+import com.prodigytown.creatures.DiloArmorItem;
+import com.prodigytown.creatures.ProdigyCreatures;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.ItemStack;
@@ -32,11 +36,37 @@ public final class DiloScreen extends Screen {
         "Un mordisco rápido y preciso. El daño llega justo en el momento del impacto.",
         "Dos zarpazos seguidos en un arco corto frente a ti. No atraviesan paredes.",
         "Un gran salto hacia delante: empuja un poco a los que alcanza y deja un impacto al aterrizar. Sirve montado.",
-        "Durante unos segundos: más daño y velocidad, la membrana del cuello se despliega y un rugido intimida a los enemigos cercanos."};
+        "Durante unos segundos: más daño y velocidad, la membrana del cuello se despliega y un rugido intimida a los enemigos cercanos.",
+        "Despliega la membrana y escupe veneno a distancia: daño leve y veneno. Se desbloquea con el talento Glándula venenosa."};
     private static final String[] VARIANT_DESC = {
         "Verde oliva con vientre claro. La más común.", "Azul eléctrico con vetas luminosas. Frecuente en bosques.",
         "Rojo magma con brillo de brasa. Rara.", "Arena del desierto. Habitual en sabanas y tierras áridas.",
         "Esmeralda espectral, con brillo fantasmal. La más rara."};
+
+    private static final ResourceLocation BG = new ResourceLocation(ProdigyCreatures.MODID, "textures/gui/dilo/screen_bg.png");
+
+    /** Constructor de botones con el estilo del mod (en lugar de los grises de vanilla). */
+    private static final class TB {
+        private final Component msg; private final Button.OnPress press; private int x, y, w, h;
+        private TB(Component msg, Button.OnPress press) { this.msg = msg; this.press = press; }
+        static TB builder(Component msg, Button.OnPress press) { return new TB(msg, press); }
+        TB bounds(int x, int y, int w, int h) { this.x = x; this.y = y; this.w = w; this.h = h; return this; }
+        Button build() { return new Themed(x, y, w, h, msg, press); }
+    }
+
+    private static final class Themed extends Button {
+        boolean selected;
+        Themed(int x, int y, int w, int h, Component msg, OnPress press) { super(x, y, w, h, msg, press, DEFAULT_NARRATION); }
+        @Override public void renderWidget(GuiGraphics g, int mx, int my, float pt) {
+            boolean hover = this.isHoveredOrFocused() && this.active;
+            int top = selected ? 0xFF3A2C0E : hover ? 0xFF26302C : 0xFF171D1B, bot = selected ? 0xFF1E1606 : hover ? 0xFF161C1A : 0xFF0C100F;
+            g.fillGradient(getX(), getY(), getX() + width, getY() + height, top, bot);
+            int edge = selected ? 0xFFFFD35A : !active ? 0xFF2C3330 : hover ? 0xFFE8C46A : 0xFF8A7A44;
+            g.renderOutline(getX(), getY(), width, height, edge);
+            int col = !active ? 0xFF6A706C : selected ? 0xFFFFE9A8 : 0xFFEDE6D0;
+            g.drawCenteredString(Minecraft.getInstance().font, getMessage(), getX() + width / 2, getY() + (height - 8) / 2, col);
+        }
+    }
 
     private final DilophosaurusEntity pet;
     private int tab = 0, selTalent = -1;
@@ -64,12 +94,12 @@ public final class DiloScreen extends Screen {
         int tw = (W - 8) / TABS.length;
         for (int i = 0; i < TABS.length; i++) {
             final int t = i;
-            Button b = Button.builder(Component.literal(TABS[i]), x -> { tab = t; rebuild(); })
+            Button b = TB.builder(Component.literal(TABS[i]), x -> { tab = t; rebuild(); })
                 .bounds(left + 4 + i * tw, top + 4, tw - 2, 16).build();
-            b.active = tab != i;
+            ((Themed) b).selected = tab == i;
             this.addRenderableWidget(b);
         }
-        this.addRenderableWidget(Button.builder(Component.literal("x"), x -> onClose()).bounds(left + W - 18, top - 14, 16, 12).build());
+        this.addRenderableWidget(TB.builder(Component.literal("x"), x -> onClose()).bounds(left + W - 18, top - 14, 16, 12).build());
         switch (tab) {
             case 0 -> buildCommands();
             case 3 -> buildTalents();
@@ -83,7 +113,7 @@ public final class DiloScreen extends Screen {
         for (int i = 0; i < PetOrders.DILO_COUNT; i++) {
             final int ord = i;
             int col = i % 4, row = i / 4;
-            Button b = Button.builder(Component.literal(PetOrders.DILO_NAMES[i]), x -> {
+            Button b = TB.builder(Component.literal(PetOrders.DILO_NAMES[i]), x -> {
                 ModNetwork.CHANNEL.sendToServer(new ModNetwork.SetOrder(pet.getId(), ord));
                 if (ord == PetOrders.ATTACK) onClose();
             }).bounds(left + 150 + col * 61, top + 36 + row * 22, 59, 18).build();
@@ -94,9 +124,9 @@ public final class DiloScreen extends Screen {
         nameBox.setMaxLength(32);
         nameBox.setValue(pet.hasCustomName() ? pet.getCustomName().getString() : "");
         this.addRenderableWidget(nameBox);
-        this.addRenderableWidget(Button.builder(Component.literal("Renombrar"), x ->
+        this.addRenderableWidget(TB.builder(Component.literal("Renombrar"), x ->
             ModNetwork.CHANNEL.sendToServer(new ModNetwork.RenamePet(pet.getId(), nameBox.getValue()))).bounds(left + 304, top + 147, 70, 18).build());
-        Button chibi = Button.builder(Component.literal(System.currentTimeMillis() < chibiUntil ? "¿Seguro? Pulsa otra vez" : "Volver a cría"), x -> {
+        Button chibi = TB.builder(Component.literal(System.currentTimeMillis() < chibiUntil ? "¿Seguro? Pulsa otra vez" : "Volver a cría"), x -> {
             if (System.currentTimeMillis() < chibiUntil) { ModNetwork.CHANNEL.sendToServer(new ModNetwork.TalentAction(pet.getId(), 5, 0)); chibiUntil = 0L; }
             else chibiUntil = System.currentTimeMillis() + 3000L;
             rebuild();
@@ -117,17 +147,17 @@ public final class DiloScreen extends Screen {
             int x = c == 3 ? left + 12 + 2 * 124 : left + 12 + c * 124, y = c == 3 ? top + 168 : top + 46 + row * 17;
             int r = prog().rank(i);
             String label = t.name + " " + r + "/" + t.maxRank;
-            Button b = Button.builder(Component.literal(label), bt -> { selTalent = idx; rebuild(); }).bounds(x, y, 120, 15).build();
+            Button b = TB.builder(Component.literal(label), bt -> { selTalent = idx; rebuild(); }).bounds(x, y, 120, 15).build();
             b.active = selTalent != i;
             this.addRenderableWidget(b);
         }
         if (selTalent >= 0) {
-            Button up = Button.builder(Component.literal("Subir rango"), x -> ModNetwork.CHANNEL.sendToServer(new ModNetwork.TalentAction(pet.getId(), 0, selTalent)))
+            Button up = TB.builder(Component.literal("Subir rango"), x -> ModNetwork.CHANNEL.sendToServer(new ModNetwork.TalentAction(pet.getId(), 0, selTalent)))
                 .bounds(left + 12, top + 228, 80, 16).build();
             up.active = prog().whyNotUnlock(selTalent) == null;
             this.addRenderableWidget(up);
         }
-        this.addRenderableWidget(Button.builder(Component.literal(System.currentTimeMillis() < resetUntil ? "¿Seguro?" : "Restablecer"), x -> {
+        this.addRenderableWidget(TB.builder(Component.literal(System.currentTimeMillis() < resetUntil ? "¿Seguro?" : "Restablecer"), x -> {
             if (System.currentTimeMillis() < resetUntil) { ModNetwork.CHANNEL.sendToServer(new ModNetwork.TalentAction(pet.getId(), 1, 0)); resetUntil = 0L; }
             else resetUntil = System.currentTimeMillis() + 3000L;
             rebuild();
@@ -140,12 +170,12 @@ public final class DiloScreen extends Screen {
     }
 
     private void buildGear() {
-        Button sad = Button.builder(Component.literal("Quitar silla"), x -> ModNetwork.CHANNEL.sendToServer(new ModNetwork.TalentAction(pet.getId(), 3, 0)))
-            .bounds(left + 150, top + 64, 110, 18).build();
+        Button sad = TB.builder(Component.literal("Quitar silla"), x -> ModNetwork.CHANNEL.sendToServer(new ModNetwork.TalentAction(pet.getId(), 3, 0)))
+            .bounds(left + 290, top + 164, 100, 18).build();
         sad.active = pet.isSaddled();
         this.addRenderableWidget(sad);
-        Button arm = Button.builder(Component.literal("Quitar armadura"), x -> ModNetwork.CHANNEL.sendToServer(new ModNetwork.TalentAction(pet.getId(), 4, 0)))
-            .bounds(left + 150, top + 112, 110, 18).build();
+        Button arm = TB.builder(Component.literal("Quitar armadura"), x -> ModNetwork.CHANNEL.sendToServer(new ModNetwork.TalentAction(pet.getId(), 4, 0)))
+            .bounds(left + 290, top + 186, 100, 18).build();
         arm.active = pet.getArmorTier() > 0;
         this.addRenderableWidget(arm);
     }
@@ -161,9 +191,12 @@ public final class DiloScreen extends Screen {
 
     @Override public void render(GuiGraphics g, int mx, int my, float pt) {
         this.renderBackground(g);
-        g.fill(left, top, left + W, top + H, PANEL);
         int accent = DiloMountHud.ACCENT[Math.max(0, Math.min(4, pet.getVariant()))];
-        g.renderOutline(left, top, W, H, accent);
+        g.pose().pushPose();
+        g.pose().translate(left - 10, top - 10, 0.0F);
+        g.pose().scale((W + 20) / 840.0F, (H + 20) / 544.0F, 1.0F);
+        g.blit(BG, 0, 0, 840, 544, 0.0F, 0.0F, 840, 544, 840, 544);
+        g.pose().popPose();
         g.fill(left + 4, top + 22, left + W - 4, top + 23, accent);
         switch (tab) {
             case 0 -> drawCommands(g, accent);
@@ -238,22 +271,37 @@ public final class DiloScreen extends Screen {
         g.drawString(this.font, pet.isAdultStage() ? "Los números son los reales de la criatura (talentos y equipo incluidos)." : "Crece con carne cruda hasta ser adulto (nivel 30).", x, top + 214, DIM, false);
     }
 
+    private static final ResourceLocation[] AB_ICON = new ResourceLocation[5];
+    static {
+        String[] n = {"bite", "claw", "pounce", "frenzy", "spit"};
+        for (int i = 0; i < 5; i++) AB_ICON[i] = new ResourceLocation(ProdigyCreatures.MODID, "textures/gui/dilo/ab_" + n[i] + ".png");
+    }
+
     private void drawAbilities(GuiGraphics g, int accent) {
-        g.drawString(this.font, pet.isAdultStage() ? "Habilidades" : "Habilidades (el adulto las usa todas; la cría solo muerde)", left + 12, top + 28, GOLD, false);
+        g.drawString(this.font, pet.isAdultStage() ? "Habilidades" : "Habilidades (el adulto las usa todas; la cría solo muerde)", left + 12, top + 27, GOLD, false);
         String[] keys = {"Clic izq. / " + ClientKeys.DILO_BITE.getTranslatedKeyMessage().getString(), "Clic der. / " + ClientKeys.DILO_CLAW.getTranslatedKeyMessage().getString(),
-            ClientKeys.DILO_POUNCE.getTranslatedKeyMessage().getString(), ClientKeys.DILO_FRENZY.getTranslatedKeyMessage().getString()};
-        double[] cd = {DiloConfig.get(DiloConfig.BITE_COOLDOWN_TICKS, 14) / 20.0, DiloConfig.get(DiloConfig.CLAW_COOLDOWN_SECONDS, 4), DiloConfig.get(DiloConfig.POUNCE_COOLDOWN_SECONDS, 9), DiloConfig.get(DiloConfig.FRENZY_COOLDOWN_SECONDS, 45)};
-        for (int i = 0; i < 4; i++) {
-            int y = top + 42 + i * 51;
-            g.fill(left + 10, y, left + W - 10, y + 47, 0xFF0B100E);
-            g.renderOutline(left + 10, y, W - 20, 47, i == 3 ? GOLD : accent);
-            g.drawString(this.font, DilophosaurusEntity.ABILITY_NAMES[i], left + 16, y + 4, GOLD, false);
-            g.drawString(this.font, "Tecla: " + keys[i] + "   ·   Recarga base: " + String.format("%.1f", cd[i]) + " s", left + 16, y + 15, TEXT, false);
-            List<net.minecraft.util.FormattedCharSequence> lines = this.font.split(Component.literal(ABILITY_DESC[i]), W - 120);
-            for (int k = 0; k < lines.size() && k < 2; k++) g.drawString(this.font, lines.get(k), left + 16, y + 27 + k * 10, DIM, false);
+            ClientKeys.DILO_POUNCE.getTranslatedKeyMessage().getString(), ClientKeys.DILO_FRENZY.getTranslatedKeyMessage().getString(), ClientKeys.DILO_SPIT.getTranslatedKeyMessage().getString()};
+        double[] cd = {DiloConfig.get(DiloConfig.BITE_COOLDOWN_TICKS, 14) / 20.0, DiloConfig.get(DiloConfig.CLAW_COOLDOWN_SECONDS, 4), DiloConfig.get(DiloConfig.POUNCE_COOLDOWN_SECONDS, 9),
+            DiloConfig.get(DiloConfig.FRENZY_COOLDOWN_SECONDS, 45), DiloConfig.get(DiloConfig.SPIT_COOLDOWN_SECONDS, 8)};
+        boolean spitOn = prog().rank("S7") > 0;
+        for (int i = 0; i < 5; i++) {
+            int y = top + 38 + i * 42;
+            g.fill(left + 10, y, left + W - 10, y + 39, 0xB0080C0B);
+            g.renderOutline(left + 10, y, W - 20, 39, i == 3 ? GOLD : accent);
+            g.pose().pushPose();
+            g.pose().translate(left + 14, y + 4, 0.0F);
+            g.pose().scale(31.0F / 128.0F, 31.0F / 128.0F, 1.0F);
+            g.blit(AB_ICON[i], 0, 0, 128, 128, 0.0F, 0.0F, 128, 128, 128, 128);
+            g.pose().popPose();
+            int tx = left + 52;
+            g.drawString(this.font, DilophosaurusEntity.ABILITY_NAMES[i], tx, y + 3, GOLD, false);
+            g.drawString(this.font, "Tecla: " + keys[i] + "  ·  Recarga base: " + String.format("%.1f", cd[i]) + " s", tx, y + 13, TEXT, false);
+            List<net.minecraft.util.FormattedCharSequence> lines = this.font.split(Component.literal(ABILITY_DESC[i]), W - 150);
+            for (int k = 0; k < lines.size() && k < 2; k++) g.drawString(this.font, lines.get(k), tx, y + 23 + k * 9, DIM, false);
             float l = pet.cooldownLeft(i);
-            String st = !pet.isAdultStage() && i != 0 ? "Bloqueada" : l > 0 ? pet.cooldownSeconds(i) + " s" : "Lista";
-            g.drawString(this.font, st, left + W - 16 - this.font.width(st), y + 4, l > 0 || st.equals("Bloqueada") ? 0xFFE0A040 : 0xFF6FD05A, false);
+            boolean locked = i == 4 ? !spitOn : !pet.isAdultStage() && i != 0;
+            String st = locked ? "Bloqueada" : l > 0 ? pet.cooldownSeconds(i) + " s" : "Lista";
+            g.drawString(this.font, st, left + W - 16 - this.font.width(st), y + 3, l > 0 || locked ? 0xFFE0A040 : 0xFF6FD05A, false);
         }
     }
 
@@ -276,18 +324,41 @@ public final class DiloScreen extends Screen {
         } else g.drawString(this.font, "Elige un talento para ver su efecto.", left + 12, top + 160, DIM, false);
     }
 
+    private static final String[] TIER_NAME = {"Hierro", "Oro", "Diamante", "Netherita"};
+    private static final int[] TIER_COLOR = {0xFFB8BCC8, 0xFFE8B83A, 0xFF4EE0E8, 0xFFB060F0};
+
     private void drawGear(GuiGraphics g, int accent) {
         drawPortrait(g, left + 10, top + 30, left + 140, top + 190, accent);
         drawHeader(g, left + 12, top + 194);
-        g.drawString(this.font, "Silla", left + 150, top + 30, GOLD, false);
-        g.renderItem(new ItemStack(Items.SADDLE), left + 150, top + 42);
-        g.drawString(this.font, pet.isSaddled() ? "Equipada (montable)" : pet.isAdultStage() ? "Sin silla: usa una silla sobre él" : "Solo el adulto lleva silla", left + 172, top + 46, TEXT, false);
-        g.drawString(this.font, "Armadura", left + 150, top + 90, GOLD, false);
-        String[] tiers = {"Sin armadura", "Hierro", "Oro", "Diamante", "Netherita"};
-        g.renderItem(new ItemStack(new net.minecraft.world.item.Item[]{Items.LEATHER_CHESTPLATE, Items.IRON_CHESTPLATE, Items.GOLDEN_CHESTPLATE, Items.DIAMOND_CHESTPLATE, Items.NETHERITE_CHESTPLATE}[Math.max(0, Math.min(4, pet.getArmorTier()))].asItem()), left + 150, top + 102 - 12 + 12);
-        g.drawString(this.font, tiers[Math.max(0, Math.min(4, pet.getArmorTier()))], left + 172, top + 94 + 12, TEXT, false);
-        g.drawString(this.font, "Armadura total: " + String.format("%.1f", pet.getAttributeValue(Attributes.ARMOR)), left + 150, top + 140, DIM, false);
-        g.drawString(this.font, "La armadura no cubre las crestas ni la membrana.", left + 150, top + 152, DIM, false);
+        g.drawString(this.font, "Armaduras ligeras (no cubren crestas ni membrana)", left + 150, top + 27, GOLD, false);
+        int cur = pet.getArmorTier();
+        for (int t = 1; t <= 4; t++) {
+            int x = left + 150 + (t - 1) * 62, y = top + 38, w = 59, h = 112;
+            boolean on = cur == t;
+            g.fill(x, y, x + w, y + h, 0xC00A0F0E);
+            g.renderOutline(x, y, w, h, on ? GOLD : TIER_COLOR[t - 1]);
+            if (on) g.renderOutline(x + 1, y + 1, w - 2, h - 2, GOLD);
+            g.drawCenteredString(this.font, TIER_NAME[t - 1], x + w / 2, y + 4, TIER_COLOR[t - 1]);
+            g.pose().pushPose();
+            g.pose().translate(x + w / 2.0F - 16.0F, y + 16.0F, 0.0F);
+            g.pose().scale(2.0F, 2.0F, 1.0F);
+            g.renderItem(new ItemStack(ProdigyCreatures.DILO_ARMOR_ITEMS.get(t - 1).get()), 0, 0);
+            g.pose().popPose();
+            String[] lines = {"Armadura +" + (int) DiloArmorItem.ARMOR[t], "Dureza +" + (int) DiloArmorItem.TOUGHNESS[t], "Vida +" + (int) DiloArmorItem.HEALTH[t],
+                "Ataque +" + DiloArmorItem.ATTACK[t], "Veloc. " + Math.round(DiloArmorItem.SPEED[t] * 100) + "%"};
+            for (int i = 0; i < lines.length; i++) {
+                g.pose().pushPose();
+                g.pose().translate(x + 5, y + 52 + i * 11, 0.0F);
+                g.pose().scale(0.8F, 0.8F, 1.0F);
+                g.drawString(this.font, lines[i], 0, 0, i == 1 && DiloArmorItem.TOUGHNESS[t] == 0 ? 0xFF5A605C : TEXT, false);
+                g.pose().popPose();
+            }
+        }
+        g.drawString(this.font, "Silla", left + 150, top + 158, GOLD, false);
+        g.renderItem(new ItemStack(Items.SADDLE), left + 150, top + 168);
+        g.drawString(this.font, pet.isSaddled() ? "Equipada (montable)" : pet.isAdultStage() ? "Sin silla (usa una)" : "Solo el adulto", left + 170, top + 172, TEXT, false);
+        g.drawString(this.font, "Armadura total: " + String.format("%.1f", pet.getAttributeValue(Attributes.ARMOR)), left + 150, top + 188, DIM, false);
+        g.drawString(this.font, "Equipa con clic derecho sosteniendo la pieza.", left + 150, top + 204, DIM, false);
     }
 
     private void drawVariants(GuiGraphics g, int accent) {
