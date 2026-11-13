@@ -89,6 +89,7 @@ public final class ClientKeys {
             while (CHARGE.consumeClick()) ModNetwork.CHANNEL.sendToServer(new ModNetwork.UseAbility(0));
             while (TAIL.consumeClick()) ModNetwork.CHANNEL.sendToServer(new ModNetwork.UseAbility(1));
             while (ULTIMATE.consumeClick()) ModNetwork.CHANNEL.sendToServer(new ModNetwork.UseAbility(3));
+            com.prodigytown.creatures.DilophosaurusEntity.clientJumpHeld = mc.options.keyJump.isDown() && player.getVehicle() instanceof com.prodigytown.creatures.DilophosaurusEntity;
             while (DILO_BITE.consumeClick()) ModNetwork.CHANNEL.sendToServer(new ModNetwork.UseAbility(10));
             while (DILO_CLAW.consumeClick()) ModNetwork.CHANNEL.sendToServer(new ModNetwork.UseAbility(11));
             while (DILO_POUNCE.consumeClick()) ModNetwork.CHANNEL.sendToServer(new ModNetwork.UseAbility(12));

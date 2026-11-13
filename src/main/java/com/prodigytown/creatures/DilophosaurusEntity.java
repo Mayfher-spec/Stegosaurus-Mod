@@ -155,6 +155,8 @@ public class DilophosaurusEntity extends TamableAnimal implements PetOrders.Hold
     /** Comer visual: ticks desde que empezo (-1 = no come). */
     public int eatT = -1, eatTO = -1;
 
+    /** Lo pone el cliente cada tick: la tecla de salto esta pulsada mientras monta (solo la lee el cliente que controla la montura). */
+    public static boolean clientJumpHeld;
     private int growth;
     @Nullable private BlockPos orderHome;
     private int cdBite, cdClaw, cdPounce, cdFrenzy;
@@ -1508,7 +1510,7 @@ public class DilophosaurusEntity extends TamableAnimal implements PetOrders.Hold
             if (forward <= 0.0F) forward *= 0.3F;
             if (this.isControlledByLocalInstance()) {
                 this.setSpeed((float) this.getAttributeValue(Attributes.MOVEMENT_SPEED) * 0.95F);
-                if (rider.jumping && this.onGround()) this.jumpFromGround();   // salto del jinete
+                if (clientJumpHeld && this.onGround()) this.jumpFromGround();   // salto del jinete (tecla de salto del cliente que controla)
                 super.travel(new Vec3(strafe, travelVector.y, forward));
             } else this.setDeltaMovement(Vec3.ZERO);
             this.calculateEntityAnimation(false);
