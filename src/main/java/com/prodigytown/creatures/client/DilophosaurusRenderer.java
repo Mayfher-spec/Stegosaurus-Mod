@@ -34,6 +34,8 @@ public final class DilophosaurusRenderer extends MobRenderer<DilophosaurusEntity
         super(context, new DilophosaurusModel<>(context.bakeLayer(DilophosaurusModel.LAYER_ADULT), true), 1.0F);
         this.adultModel = this.model;
         this.chibiModel = new DilophosaurusModel<>(context.bakeLayer(DilophosaurusModel.LAYER_CHIBI), false);
+        this.addLayer(new DilophosaurusSaddleLayer(this));
+        this.addLayer(new DilophosaurusArmorLayer(this));
         this.addLayer(new DilophosaurusGlowLayer(this));
         this.addLayer(new DilophosaurusFlashLayer(this));
     }

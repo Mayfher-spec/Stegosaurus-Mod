@@ -110,5 +110,9 @@
   "item.prodigycreatures.dilophosaurus_egg_desert": "Dilophosaurus Egg (Desert Sand)",
   "item.prodigycreatures.dilophosaurus_egg_spectral": "Dilophosaurus Egg (Spectral Emerald)",
   "entity.prodigycreatures.dilophosaurus_spit": "Venom Spit",
-  "key.prodigycreatures.dilo_spit": "Dilophosaurus: Venom Spit"
+  "key.prodigycreatures.dilo_spit": "Dilophosaurus: Venom Spit",
+  "item.prodigycreatures.dilophosaurus_armor_iron": "Iron Dilophosaurus Armor",
+  "item.prodigycreatures.dilophosaurus_armor_gold": "Golden Dilophosaurus Armor",
+  "item.prodigycreatures.dilophosaurus_armor_diamond": "Diamond Dilophosaurus Armor",
+  "item.prodigycreatures.dilophosaurus_armor_netherite": "Netherite Dilophosaurus Armor"
 }

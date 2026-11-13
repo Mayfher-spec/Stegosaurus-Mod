@@ -119,6 +119,7 @@ def make_atlas(var, closed=False):
                 ly = np.clip((loc[:, 1] - c['y0']) / max(1e-6, c['h']), 0.0, 1.0)
                 ctx = dict(qs=qs, opt=c['opt'], grp=c['grp'], part=c['part'], role=c['role'], sv=c['sv'], stage=st)
                 role = c['role']; op = c['opt']
+                if role in drig.GEAR_ROLES: continue   # silla y armadura: texels transparentes aqui
                 if role in ('skin', 'belly'): col, gl = skin(var, P, Nw, ly, ctx, face)
                 elif role == 'crest': col, gl = crest_tex(var, ly, ctx)
                 elif role == 'frill':

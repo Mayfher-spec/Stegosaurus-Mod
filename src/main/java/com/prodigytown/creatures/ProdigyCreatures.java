@@ -124,6 +124,16 @@ public class ProdigyCreatures {
         }
     }
 
+    /** Armaduras ligeras del dilofosaurio adulto: DILO_ARMOR_ITEMS.get(tier - 1). */
+    public static final java.util.List<RegistryObject<Item>> DILO_ARMOR_ITEMS = new java.util.ArrayList<>();
+    static {
+        for (int i = 0; i < ARMOR_NAMES.length; i++) {
+            final int tier = i + 1;
+            DILO_ARMOR_ITEMS.add(ITEMS.register("dilophosaurus_armor_" + ARMOR_NAMES[i],
+                () -> new DiloArmorItem(tier, new Item.Properties().stacksTo(1))));
+        }
+    }
+
     public ProdigyCreatures() {
         var bus = FMLJavaModLoadingContext.get().getModEventBus();
         GeckoLib.initialize();
@@ -162,6 +172,7 @@ public class ProdigyCreatures {
             if (event.getTabKey() == CreativeModeTabs.COMBAT) {
                 for (RegistryObject<Item> armor : ARMOR_ITEMS) event.accept(armor.get());
                 for (RegistryObject<Item> armor : CARNO_ARMOR_ITEMS) event.accept(armor.get());
+                for (RegistryObject<Item> armor : DILO_ARMOR_ITEMS) event.accept(armor.get());
             }
         }
 

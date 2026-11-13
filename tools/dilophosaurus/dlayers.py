@@ -8,6 +8,7 @@ def fit_hy(stage):
     """altura del pivote del cuerpo para que el punto mas bajo de la pose de reposo toque el suelo."""
     out, H = drig.get_all(); spec, cubes = out[stage]; fr = cpaint.frames(spec); lo = 1e9
     for c in cubes:
+        if c['role'] in drig.GEAR_ROLES: continue
         R, T = fr[c['part']]
         for x in (c['x0'], c['x0'] + c['w']):
             for y in (c['y0'], c['y0'] + c['h']):

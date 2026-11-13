@@ -1,20 +1,26 @@
 """Exporta el Dilophosaurus: DilophosaurusLayers.java + texturas (5 variantes + brillo). Uso: python3 dexport.py <repo>"""
 import os, sys
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
-import dlayers, dpaint
+import dlayers, dpaint, dgear
 from PIL import Image
 repo = sys.argv[1] if len(sys.argv) > 1 else '.'
 tex = os.path.join(repo, 'src/main/resources/assets/prodigycreatures/textures/entity')
 os.makedirs(tex, exist_ok=True)
 src, hy, H = dlayers.layers_java()
 open(os.path.join(repo, 'src/main/java/com/prodigytown/creatures/client/DilophosaurusLayers.java'), 'w').write(src)
+GM = dgear.gear_mask()
 for var in dpaint.VARIANTS:
     a, g = dpaint.make_atlas(var)
-    a = dpaint.cp.dilate(a)
+    a = dpaint.cp.dilate(a); a[GM] = 0
     Image.fromarray(a).save(os.path.join(tex, 'dilophosaurus_%s.png' % var), optimize=True)
     Image.fromarray(g).save(os.path.join(tex, 'dilophosaurus_%s_glow.png' % var), optimize=True)
     a, g = dpaint.make_atlas(var, closed=True)   # ojos cerrados: parpadeo y sueno
-    a = dpaint.cp.dilate(a)
+    a = dpaint.cp.dilate(a); a[GM] = 0
     Image.fromarray(a).save(os.path.join(tex, 'dilophosaurus_%s_closed.png' % var), optimize=True)
     Image.fromarray(g).save(os.path.join(tex, 'dilophosaurus_%s_closed_glow.png' % var), optimize=True)
+Image.fromarray(dgear.make_saddle()).save(os.path.join(tex, 'dilophosaurus_saddle.png'), optimize=True)
+for tier in dpaint.cp.ARMOR_TIERS:
+    a, g = dgear.make_armor(tier)
+    Image.fromarray(dpaint.cp.dilate(a)).save(os.path.join(tex, 'dilophosaurus_armor_%s.png' % tier), optimize=True)
+    if tier == dpaint.cp.ARMOR_TIERS[0]: Image.fromarray(g).save(os.path.join(tex, 'dilophosaurus_armor_glow.png'), optimize=True)
 print('H', H, 'hy', hy)

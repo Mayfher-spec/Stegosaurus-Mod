@@ -62,7 +62,60 @@ def build_spec(stage='adult'):
             (-2.3, 0, -0.5, 4.6, 5, 1.0, 'frill', dict(k=0, rib=k)),
             (-4.0, 5, -0.5, 8.0, 6, 1.0, 'frill', dict(k=1, rib=k)),
             (-6.5, 11, -0.5, 13.0, 7, 1.0, 'frill', dict(k=2, rib=k))], 'frill')
+    if stage == 'adult': add_gear(P)
     return P
+
+# ---- silla ligera y armadura 3D (solo adulto). Se pintan unicamente en dilophosaurus_saddle.png / dilophosaurus_armor_<nivel>.png:
+# en la piel esos texels quedan transparentes, asi que sin equipo no se ven. Unidades de diseno de cada hueso.
+SADDLE_ROLES = crig.SADDLE_ROLES
+ARMOR_ROLES = crig.ARMOR_ROLES
+GEAR_ROLES = tuple(SADDLE_ROLES) + tuple(ARMOR_ROLES)
+
+def _a(x0, y0, z0, w, h, d, **o): return (x0, y0, z0, w, h, d, 'armor', o)
+
+def add_gear(P):
+    byn = {p['name']: p for p in P}
+    def add(part, cubes): byn[part]['cubes'] += list(cubes)
+    mir, box = crig._mir, crig._box
+    # --- silla ligera: manta corta, asiento con borrelete y pomo, cincha por los flancos y estribos
+    c = []
+    c += box(-9.6, 9.6, 11.9, 13.0, -15, 9, 'cloth', dict(piece='top'))
+    c += mir(10.0, 11.2, 2.0, 12.9, -14, 8, 'cloth', dict(piece='drape'))
+    c += box(-6.5, 6.5, 13.0, 14.4, -12, 6, 'leather', dict(tree=1))
+    c += box(-5.2, 5.2, 14.2, 16.2, -9, 3, 'leather', dict(seat=1))
+    c += box(-6.8, 6.8, 14.2, 19.0, -12.5, -9.5, 'leather', dict(cantle=1))
+    c += box(-1.6, 1.6, 14.2, 18.0, 3.0, 5.4, 'leather', dict(pommel=1))
+    c += box(-2.2, 2.2, 17.8, 19.0, 2.4, 6.0, 'metal', dict(cap=1))
+    c += mir(10.0, 11.4, -13.5, 12.8, -1.5, 1.5, 'leather', dict(strap=1))
+    c += box(-11.4, 11.4, -14.9, -13.7, -1.5, 1.5, 'leather', dict(strap=1))
+    c += mir(11.3, 12.0, -1.0, 3.0, -1.0, 1.0, 'metal', dict(buckle=1))
+    c += mir(11.4, 12.4, -4.0, 2.0, -1.2, -0.2, 'leather', dict(strap=1))
+    c += mir(11.4, 13.4, -6.5, -4.0, -3.4, 1.0, 'metal', dict(iron=1))
+    add('body', c)
+    # --- armadura ligera: no cubre las crestas ni la membrana
+    add('head', [
+        _a(-1.9, 6.0, 0.0, 3.8, 0.9, 10.0, kind='plate', role2='helm'),            # entre las dos crestas
+        _a(-3.0, 5.0, 12.5, 6.0, 1.0, 9.0, kind='plate', role2='nose'),
+        _a(-1.3, 6.8, 2.0, 2.6, 1.3, 2.6, kind='gem'),
+        _a(-6.9, -3.2, 1.0, 0.9, 6.6, 9.0, kind='plate', role2='cheek'),
+        _a(6.0, -3.2, 1.0, 0.9, 6.6, 9.0, kind='plate', role2='cheek'),
+        _a(-4.2, -3.0, 22.5, 8.4, 1.2, 1.0, kind='band')])
+    add('neck1', [_a(-6.9, -6.4, 8.0, 13.8, 13.3, 3.0, kind='band')])
+    add('chest', [
+        _a(-11.5, -11.9, 1.5, 23.0, 24.8, 7.0, kind='plate', role2='breast'),
+        _a(10.8, 3.5, 7.5, 1.6, 8.0, 7.5, kind='plate', role2='pauld'),
+        _a(-12.4, 3.5, 7.5, 1.6, 8.0, 7.5, kind='plate', role2='pauld')])
+    add('body', [
+        _a(12.0, 3.0, -20.0, 0.9, 8.5, 11.0, kind='plate', role2='rump'),
+        _a(-12.9, 3.0, -20.0, 0.9, 8.5, 11.0, kind='plate', role2='rump'),
+        _a(12.0, 3.0, 8.0, 0.9, 8.5, 12.0, kind='plate', role2='side'),
+        _a(-12.9, 3.0, 8.0, 0.9, 8.5, 12.0, kind='plate', role2='side')])
+    add('thigh_l', [_a(5.5, -18.0, -5.0, 0.9, 12.0, 10.0, kind='plate', role2='thigh')])
+    add('thigh_r', [_a(-6.4, -18.0, -5.0, 0.9, 12.0, 10.0, kind='plate', role2='thigh')])
+    for n in ('l', 'r'):
+        add('shin_' + n, [_a(-4.6, -14.0, -4.6, 9.2, 5.0, 9.2, kind='band')])
+    add('tail1', [_a(-6.9, -6.9, -14.0, 13.8, 13.8, 3.0, kind='band')])
+    add('tail2', [_a(-5.7, -5.7, -12.0, 11.4, 11.4, 2.8, kind='band')])
 
 STAGES = {
     'chibi': dict(body=0.58, tail=0.52, neck=0.60, head=1.05, crest=0.75, arm=0.70, leg=0.58, frill=0.95),

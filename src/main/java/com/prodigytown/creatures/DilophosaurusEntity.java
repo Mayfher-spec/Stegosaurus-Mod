@@ -102,6 +102,9 @@ public class DilophosaurusEntity extends TamableAnimal implements PetOrders.Hold
     private static final UUID M_KB_ADD = UUID.fromString("d1a0f0de-0005-4d1e-9a10-5e90a5a20005");
     private static final UUID M_SPD_MUL = UUID.fromString("d1a0f0de-0006-4d1e-9a10-5e90a5a20006");
     private static final UUID M_ARM_GEAR = UUID.fromString("d1a0f0de-0007-4d1e-9a10-5e90a5a20007");
+    private static final UUID M_HP_GEAR = UUID.fromString("d1a0f0de-0107-4d1e-9a10-5e90a5a20107");
+    private static final UUID M_DMG_GEAR = UUID.fromString("d1a0f0de-0207-4d1e-9a10-5e90a5a20207");
+    private static final UUID M_SPD_GEAR = UUID.fromString("d1a0f0de-0307-4d1e-9a10-5e90a5a20307");
     private static final UUID M_TGH_GEAR = UUID.fromString("d1a0f0de-0008-4d1e-9a10-5e90a5a20008");
     private static final UUID FRENZY_DMG_ID = UUID.fromString("d1a0f0de-0009-4d1e-9a10-5e90a5a20009");
     private static final UUID FRENZY_SPD_ID = UUID.fromString("d1a0f0de-000a-4d1e-9a10-5e90a5a2000a");
@@ -348,8 +351,11 @@ public class DilophosaurusEntity extends TamableAnimal implements PetOrders.Hold
         setMod(Attributes.KNOCKBACK_RESISTANCE, M_KB_ADD, adult ? 0.05 * progress.rank("S5") : 0.0, AttributeModifier.Operation.ADDITION);
         setMod(Attributes.MOVEMENT_SPEED, M_SPD_MUL, adult ? 0.02 * progress.rank("M1") + 0.05 * progress.rank("P1") : 0.0, AttributeModifier.Operation.MULTIPLY_TOTAL);
         int gear = adult ? getArmorTier() : 0;
-        setMod(Attributes.ARMOR, M_ARM_GEAR, StegosaurusEntity.ARMOR_VALUE[gear], AttributeModifier.Operation.ADDITION);
-        setMod(Attributes.ARMOR_TOUGHNESS, M_TGH_GEAR, StegosaurusEntity.TOUGHNESS_VALUE[gear], AttributeModifier.Operation.ADDITION);
+        setMod(Attributes.ARMOR, M_ARM_GEAR, DiloArmorItem.ARMOR[gear], AttributeModifier.Operation.ADDITION);
+        setMod(Attributes.ARMOR_TOUGHNESS, M_TGH_GEAR, DiloArmorItem.TOUGHNESS[gear], AttributeModifier.Operation.ADDITION);
+        setMod(Attributes.MAX_HEALTH, M_HP_GEAR, DiloArmorItem.HEALTH[gear], AttributeModifier.Operation.ADDITION);
+        setMod(Attributes.ATTACK_DAMAGE, M_DMG_GEAR, DiloArmorItem.ATTACK[gear], AttributeModifier.Operation.ADDITION);
+        setMod(Attributes.MOVEMENT_SPEED, M_SPD_GEAR, DiloArmorItem.SPEED[gear], AttributeModifier.Operation.MULTIPLY_TOTAL);
     }
     private void setMod(Attribute attr, UUID id, double amount, AttributeModifier.Operation op) {
         AttributeInstance inst = this.getAttribute(attr);
@@ -1245,8 +1251,18 @@ public class DilophosaurusEntity extends TamableAnimal implements PetOrders.Hold
         this.entityData.set(SADDLED, false);
     }
 
+    /** Equipa una armadura (la anterior cae al suelo). Solo servidor y solo el adulto. */
+    public void equipArmor(int tier) {
+        if (this.level().isClientSide || !isAdultStage()) return;
+        int old = getArmorTier();
+        this.entityData.set(ARMOR_TIER, Math.max(0, Math.min(4, tier)));
+        if (old > 0 && old != tier) this.spawnAtLocation(new ItemStack(ProdigyCreatures.DILO_ARMOR_ITEMS.get(old - 1).get()));
+        applyStageStats(true);
+    }
+
     public void removeArmor() {
         if (this.level().isClientSide || getArmorTier() == 0) return;
+        this.spawnAtLocation(new ItemStack(ProdigyCreatures.DILO_ARMOR_ITEMS.get(getArmorTier() - 1).get()));
         this.entityData.set(ARMOR_TIER, 0);
         applyStageStats(true);
     }
@@ -1393,6 +1409,16 @@ public class DilophosaurusEntity extends TamableAnimal implements PetOrders.Hold
                 return InteractionResult.sidedSuccess(client);
             }
             return InteractionResult.PASS; // ya esta recuperado y no hay nada mas que hacer: no se gasta la carne
+        }
+        if (held.getItem() instanceof DiloArmorItem armor) {
+            if (!isAdultStage()) {
+                if (!client) player.displayClientMessage(Component.literal("Solo un dilofosaurio adulto puede llevar armadura"), true);
+            } else if (!client && armor.tier != getArmorTier()) {
+                equipArmor(armor.tier);
+                if (!player.getAbilities().instabuild) held.shrink(1);
+                this.playSound(net.minecraft.sounds.SoundEvents.ARMOR_EQUIP_IRON, 1.0F, 1.2F);
+            }
+            return InteractionResult.sidedSuccess(client);
         }
         if (isAdultStage() && held.is(Items.SADDLE) && !isSaddled()) {
             if (!client) {
@@ -1568,6 +1594,7 @@ public class DilophosaurusEntity extends TamableAnimal implements PetOrders.Hold
         if (!this.isTame() && isFemale() && isAdultStage() && recentlyHit && this.random.nextBoolean())
             this.spawnAtLocation(new ItemStack(ProdigyCreatures.DILO_EGG_ITEMS.get(com.prodigytown.creatures.egg.DilophosaurusEggs.rollVariant(this.random, getVariant())).get()));
         if (isSaddled()) this.spawnAtLocation(Items.SADDLE);
+        if (getArmorTier() > 0) this.spawnAtLocation(new ItemStack(ProdigyCreatures.DILO_ARMOR_ITEMS.get(getArmorTier() - 1).get()));
     }
 
     // ------------------------------------------------------------------ sonidos y varios

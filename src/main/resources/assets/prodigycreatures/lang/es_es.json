@@ -110,5 +110,9 @@
   "item.prodigycreatures.dilophosaurus_egg_desert": "Huevo de dilofosaurio del desierto",
   "item.prodigycreatures.dilophosaurus_egg_spectral": "Huevo de dilofosaurio esmeralda espectral",
   "entity.prodigycreatures.dilophosaurus_spit": "Escupitajo venenoso",
-  "key.prodigycreatures.dilo_spit": "Dilofosaurio: Escupitajo venenoso"
+  "key.prodigycreatures.dilo_spit": "Dilofosaurio: Escupitajo venenoso",
+  "item.prodigycreatures.dilophosaurus_armor_iron": "Armadura de hierro para dilofosaurio",
+  "item.prodigycreatures.dilophosaurus_armor_gold": "Armadura de oro para dilofosaurio",
+  "item.prodigycreatures.dilophosaurus_armor_diamond": "Armadura de diamante para dilofosaurio",
+  "item.prodigycreatures.dilophosaurus_armor_netherite": "Armadura de netherita para dilofosaurio"
 }
