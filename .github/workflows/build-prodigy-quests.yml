@@ -1,0 +1,29 @@
+name: Build independent Prodigy Quests (Cronista)
+on:
+  push:
+    branches: [feature/cronista-mutante-quests]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.8'
+      - name: Verify independent source
+        run: |
+          test -f prodigy-quests/build.gradle || { echo 'Prodigy Quests standalone sources have not been uploaded to this branch yet'; exit 1; }
+      - name: Compile Forge standalone mod
+        working-directory: prodigy-quests
+        run: gradle --no-daemon build
+      - name: Upload JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: prodigyquests-forge-1.20.1
+          path: prodigy-quests/build/libs/*.jar
+          if-no-files-found: error
