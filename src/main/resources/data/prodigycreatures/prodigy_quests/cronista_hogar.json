@@ -1,0 +1,31 @@
+{
+  "title": "Un hogar para la Cronista",
+  "description": "La Cronista viaja sin rumbo. Prepárale un hogar cerca de ti: una cama, un atril para sus crónicas, luz y un techo sobre la cama. Luego habla con ella.",
+  "category": "Prodigy",
+  "order": 5,
+  "type": "home",
+  "count": 4,
+  "rewards": {
+    "xp": 400,
+    "items": [
+      {
+        "item": "minecraft:diamond",
+        "count": 3
+      },
+      {
+        "item": "minecraft:emerald",
+        "count": 16
+      },
+      {
+        "item": "minecraft:golden_apple",
+        "count": 2
+      },
+      {
+        "item": "minecraft:experience_bottle",
+        "count": 6
+      }
+    ]
+  },
+  "icon": "minecraft:red_bed",
+  "objective": "Preparar un hogar: cama, atril, luz y techo"
+}

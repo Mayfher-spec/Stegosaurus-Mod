@@ -2,6 +2,7 @@ package com.prodigytown.creatures.quests;
 
 import com.prodigytown.creatures.net.ModNetwork;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
@@ -86,11 +87,16 @@ public final class QuestData {
     /** Fuerza una mision a completada (comando de operador). */
     public static void complete(ServerPlayer p, QuestDef q) {
         if (state(p, q) == AVAILABLE || state(p, q) == LOCKED) { CompoundTag s = st(p, q.id); s.putBoolean("accepted", true); }
+        if (q.type == QuestDef.Type.HOME) { CompoundTag s = st(p, q.id); s.putBoolean("forced", true); s.putInt("flags", HomeCheck.ALL); }
         if (state(p, q) == ACTIVE) add(p, q, q.target);
     }
 
     public static boolean claim(ServerPlayer p, QuestDef q) {
         if (state(p, q) != READY) return false;
+        if (q.type == QuestDef.Type.HOME && !homeStillValid(p, q)) {
+            p.displayClientMessage(Component.literal("Tu hogar ya no cumple los requisitos: revisa la cama, el atril, la luz y el techo").withStyle(ChatFormatting.RED), true);
+            return false;
+        }
         st(p, q.id).putBoolean("claimed", true);   // primero se marca: pedirlo dos veces nunca duplica el botin
         for (ItemStack proto : q.items) {
             ItemStack stack = proto.copy();
@@ -99,7 +105,70 @@ public final class QuestData {
         if (q.xp > 0) p.giveExperiencePoints(q.xp);
         p.playNotifySound(SoundEvents.PLAYER_LEVELUP, SoundSource.PLAYERS, 0.9F, 1.0F);
         p.displayClientMessage(Component.literal("Recompensa reclamada: " + q.title).withStyle(ChatFormatting.GREEN), true);
+        if (q.type == QuestDef.Type.HOME) settleCronista(p, q);
         return true;
+    }
+
+    // ------------------------------------------------------------------ mision del hogar
+
+    /** Antes de reclamar se vuelve a comprobar el hogar guardado (si sus chunks estan cargados; si no, se confia en lo ultimo visto). */
+    private static boolean homeStillValid(ServerPlayer p, QuestDef q) {
+        CompoundTag s = st(p, q.id);
+        if (s.getBoolean("forced") || !s.contains("home", 4)) return true;
+        ServerLevel level = p.serverLevel();
+        if (!level.dimension().location().toString().equals(s.getString("homeDim"))) return true;
+        BlockPos h = BlockPos.of(s.getLong("home"));
+        if (!HomeCheck.loaded(level, h)) return true;
+        int f = HomeCheck.evaluate(level, h);
+        s.putInt("flags", f);
+        s.putInt("progress", Integer.bitCount(f));
+        return f == HomeCheck.ALL;
+    }
+
+    /** Actualiza las banderas del hogar (cama, atril, luz, techo). El progreso aqui SI puede bajar si el jugador desmonta algo. */
+    private static boolean updateHome(ServerPlayer p, QuestDef q) {
+        CompoundTag s = st(p, q.id);
+        if (s.getBoolean("forced")) return false;
+        ServerLevel level = p.serverLevel();
+        String dim = level.dimension().location().toString();
+        HomeCheck.Result r = HomeCheck.scan(level, p.blockPosition());
+        if (r.bed() != null) {
+            s.putLong("home", r.bed().asLong());
+            s.putString("homeDim", dim);
+        } else if (s.contains("home", 4) && dim.equals(s.getString("homeDim"))) {
+            BlockPos h = BlockPos.of(s.getLong("home"));
+            if (!HomeCheck.loaded(level, h)) return false;   // lejos del hogar: se mantiene lo ultimo visto
+            r = new HomeCheck.Result(HomeCheck.evaluate(level, h), h);
+        } else {
+            return false;
+        }
+        int flags = r.flags(), before = s.getInt("progress"), oldFlags = s.getInt("flags");
+        int now = Math.min(q.target, Integer.bitCount(flags));
+        s.putInt("flags", flags);
+        s.putInt("progress", now);
+        if (now >= q.target && before < q.target) {
+            p.displayClientMessage(Component.literal("Hogar listo: vuelve con el Cronista para reclamar").withStyle(ChatFormatting.GOLD), true);
+            p.playNotifySound(SoundEvents.PLAYER_LEVELUP, SoundSource.PLAYERS, 0.6F, 1.4F);
+        }
+        return now != before || flags != oldFlags;
+    }
+
+    /** Tras reclamar la mision del hogar: el jugador deja de recibir visitas y el Cronista cercano se muda a la cama. */
+    private static void settleCronista(ServerPlayer p, QuestDef q) {
+        CompoundTag s = st(p, q.id);
+        s.putInt("flags", HomeCheck.ALL);
+        ChroniclerVisits.markSettled(p);
+        CronistaEntity npc = null;
+        double best = Double.MAX_VALUE;
+        for (CronistaEntity c : p.serverLevel().getEntitiesOfClass(CronistaEntity.class, p.getBoundingBox().inflate(24.0))) {
+            double d = c.distanceToSqr(p);
+            if (d < best) { best = d; npc = c; }
+        }
+        if (npc == null) return;
+        BlockPos home = npc.blockPosition();
+        if (s.contains("home", 4) && p.serverLevel().dimension().location().toString().equals(s.getString("homeDim"))) home = BlockPos.of(s.getLong("home"));
+        npc.settle(home);
+        p.sendSystemMessage(Component.literal("El Cronista Mutante se muda a tu hogar. A partir de ahora vivirá aquí.").withStyle(ChatFormatting.GOLD));
     }
 
     // ------------------------------------------------------------------ eventos del juego
@@ -153,9 +222,11 @@ public final class QuestData {
      * se detectan por propiedad; (2) misiones de aldea de MCA (poblacion, edificios, nivel).
      */
     public static void poll(ServerPlayer p) {
-        boolean tame = false, village = false;
+        boolean tame = false, village = false, home = false;
         for (QuestDef q : QuestManager.all()) {
-            if (state(p, q) != ACTIVE) continue;
+            int stt = state(p, q);
+            if (q.type == QuestDef.Type.HOME && (stt == ACTIVE || stt == READY)) home = true;
+            if (stt != ACTIVE) continue;
             if (q.type == QuestDef.Type.TAME) tame = true;
             else if (q.type == QuestDef.Type.VILLAGE) village = true;
         }
@@ -178,6 +249,13 @@ public final class QuestData {
                 }
             }
         }
+        if (home) {
+            for (QuestDef q : QuestManager.all()) {
+                if (q.type != QuestDef.Type.HOME) continue;
+                int stt = state(p, q);
+                if (stt == ACTIVE || stt == READY) changed |= updateHome(p, q);
+            }
+        }
         if (changed) sync(p, -1);
     }
 
@@ -188,9 +266,14 @@ public final class QuestData {
         for (QuestDef q : QuestManager.all()) {
             QuestDef req = q.requires == null ? null : QuestManager.get(q.requires);
             out.add(new QuestPackets.QuestView(q.id, q.title, q.description, q.category, q.type.ordinal(), q.target,
-                Math.min(q.target, progress(p, q)), state(p, q), req == null ? "" : req.title, q.items, q.xp, q.tab, iconOf(q), q.objective));
+                Math.min(q.target, progress(p, q)), state(p, q), req == null ? "" : req.title, q.items, q.xp, q.tab, iconOf(q), q.objective, q.type == QuestDef.Type.HOME ? homeFlags(p, q) : 0));
         }
         return out;
+    }
+
+    private static int homeFlags(ServerPlayer p, QuestDef q) {
+        if (claimedFlag(p, q.id)) return HomeCheck.ALL;
+        return root(p).contains(q.id, 10) ? root(p).getCompound(q.id).getInt("flags") : 0;
     }
 
     private static ItemStack iconOf(QuestDef q) {

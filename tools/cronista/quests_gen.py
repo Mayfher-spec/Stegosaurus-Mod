@@ -15,6 +15,7 @@ def q(id, order, cat, title, desc, type, entity, count, xp, items, requires=None
     if building: d["building"] = building
     Q.append((id, d))
 C1, C2, C3, C4, C5 = "Cazador", "Domador", "Asedio", "Jefes", "Prodigy"
+q("cronista_hogar", 5, C5, "Un hogar para la Cronista", "La Cronista viaja sin rumbo. Prepárale un hogar cerca de ti: una cama, un atril para sus crónicas, luz y un techo sobre la cama. Luego habla con ella.", "home", None, 4, 400, [it("minecraft:diamond", 3), it("minecraft:emerald", 16), it("minecraft:golden_apple", 2), it("minecraft:experience_bottle", 6)])
 q("zombis", 10, C1, "Limpieza de zombis", "Los muertos vivientes rondan de noche. Derrota 15 zombis.", "kill", "minecraft:zombie", 15, 120, [it("minecraft:bread", 8), it("minecraft:iron_ingot", 4)])
 q("esqueletos", 20, C1, "Huesos y flechas", "Los arqueros esqueleto acechan las cuevas. Derrota 12 esqueletos.", "kill", "minecraft:skeleton", 12, 140, [it("minecraft:arrow", 32), it("minecraft:bow")], "zombis")
 q("aranas", 30, C1, "Plaga de aranas", "Sus telas cubren las minas. Elimina 12 aranas.", "kill", "minecraft:spider", 12, 140, [it("minecraft:string", 16), it("minecraft:golden_carrot", 6)], "zombis")
@@ -103,7 +104,7 @@ q("ror_gran_cazador", 1230, CR, "Gran cazador", "Derrota a 30 criaturas de Raxio
 
 # ---------------------------------------------------------------- presentacion: icono y texto del objetivo
 ICONS = {
- "zombis": "rotten_flesh", "esqueletos": "bone", "aranas": "spider_eye", "creepers": "gunpowder", "endermen": "ender_pearl", "brujas": "potion", "saqueadores": "crossbow",
+ "cronista_hogar": "red_bed", "zombis": "rotten_flesh", "esqueletos": "bone", "aranas": "spider_eye", "creepers": "gunpowder", "endermen": "ender_pearl", "brujas": "potion", "saqueadores": "crossbow",
  "lobo": "bone", "domador_novato": "lead", "domar_stego": M + "stegosaurus_spawn_egg", "domar_carno": M + "carnotaurus_spawn_egg", "domar_dilo": M + "dilophosaurus_spawn_egg", "domar_dragon": "dragon_egg",
  "carno_salvaje": M + "carnotaurus_spawn_egg", "asedio1": "shield", "asedio3": "totem_of_undying", "guardian_anciano": "prismarine_shard", "warden": "echo_shard", "wither": "nether_star", "dragon_ender": "dragon_head", "dragon_mod": "dragon_breath",
  "mca_poblacion_5": "emerald", "mca_casas_5": "oak_door", "mca_herrero": "anvil", "mca_posada": "cake", "mca_biblioteca": "bookshelf", "mca_poblacion_10": "emerald", "mca_edificios_8": "bricks", "mca_variedad_6": "clock", "mca_poblacion_20": "emerald_block",
@@ -132,6 +133,7 @@ BN = {"house": ("casa completa", "casas completas"), "blacksmith": ("herreria co
 SPN = {"martial": "marcial", "scholar": "erudito", "industrious": "industrial", "pastoral": "pastoral", "nautical": "nautico"}
 def objective(id, d):
     t, c, e = d["type"], d["count"], d.get("entity", "*")
+    if t == "home": return "Preparar un hogar: cama, atril, luz y techo"
     if t == "raid": return "Vencer %d asedio%s" % (c, "s" if c > 1 else "")
     if t == "village":
         m = d.get("metric", "population")

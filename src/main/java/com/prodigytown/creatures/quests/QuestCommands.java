@@ -31,9 +31,15 @@ public final class QuestCommands {
                 if (npc != null) npc.setYRot(p.getYRot() + 180.0F);
                 return npc == null ? 0 : 1;
             }))
+            .then(Commands.literal("arrive").then(Commands.argument("jugador", EntityArgument.player()).executes(ctx -> {
+                ServerPlayer t = EntityArgument.getPlayer(ctx, "jugador");
+                boolean ok = ChroniclerVisits.tryArrive(t);
+                if (!ok) ctx.getSource().sendFailure(Component.literal("No se encontro un sitio adecuado (solo en el Overworld)"));
+                return ok ? 1 : 0;
+            })))
             .then(Commands.literal("reset").then(Commands.argument("jugador", EntityArgument.player()).executes(ctx -> {
                 ServerPlayer t = EntityArgument.getPlayer(ctx, "jugador");
-                QuestData.reset(t); QuestData.sync(t, -1);
+                QuestData.reset(t); t.getPersistentData().remove(ChroniclerVisits.KEY); QuestData.sync(t, -1);
                 ctx.getSource().sendSuccess(() -> Component.literal("Misiones reiniciadas para " + t.getName().getString()), true);
                 return 1;
             })))

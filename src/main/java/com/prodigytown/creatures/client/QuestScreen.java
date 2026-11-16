@@ -364,12 +364,22 @@ public final class QuestScreen extends Screen {
         item(g, stack(Items.TARGET), x, oy2 - 3, 0.75F);
         g.drawString(this.font, Component.literal("Objetivos").withStyle(ChatFormatting.BOLD), x + 16, oy2, INK, false);
         boolean done = v.state() >= QuestData.READY;
-        checkbox(g, x + 2, oy2 + 14, done);
-        String obj = (v.objective().isEmpty() ? "Cumple el objetivo" : v.objective()) + (v.state() == QuestData.LOCKED || v.state() == QuestData.AVAILABLE ? " (0/" + v.target() + ")" : " (" + v.progress() + "/" + v.target() + ")");
-        g.drawString(this.font, ell(obj, 230), x + 16, oy2 + 15, INK, false);
-        if (v.state() >= QuestData.ACTIVE) bar(g, x + 16, oy2 + 27, 200, 6, v.progress(), v.target(), done);
+        boolean home = v.type() == QuestDef.Type.HOME.ordinal();
+        if (home) {   // el hogar se compone de 4 requisitos que se marcan solos
+            String[] labels = {"Una cama", "Un atril", "Luz junto a la cama (antorcha, farol...)", "Techo sobre la cama"};
+            for (int i = 0; i < 4; i++) {
+                boolean ok = v.state() >= QuestData.READY || (v.flags() & (1 << i)) != 0;
+                checkbox(g, x + 2, oy2 + 13 + i * 10, ok);
+                g.drawString(this.font, ell(labels[i], 230), x + 16, oy2 + 14 + i * 10, ok ? INK : INK2, false);
+            }
+        } else {
+            checkbox(g, x + 2, oy2 + 14, done);
+            String obj = (v.objective().isEmpty() ? "Cumple el objetivo" : v.objective()) + (v.state() == QuestData.LOCKED || v.state() == QuestData.AVAILABLE ? " (0/" + v.target() + ")" : " (" + v.progress() + "/" + v.target() + ")");
+            g.drawString(this.font, ell(obj, 230), x + 16, oy2 + 15, INK, false);
+            if (v.state() >= QuestData.ACTIVE) bar(g, x + 16, oy2 + 27, 200, 6, v.progress(), v.target(), done);
+        }
 
-        int ry = 166;
+        int ry = home ? 182 : 166;
         item(g, stack(Items.CHEST), x, ry - 3, 0.75F);
         g.drawString(this.font, Component.literal("Recompensas").withStyle(ChatFormatting.BOLD), x + 16, ry, INK, false);
         if (v.items().isEmpty() && v.xp() <= 0) g.drawString(this.font, "(sin recompensa)", x + 4, ry + 18, DIM, false);

@@ -13,7 +13,8 @@ import java.util.List;
 
 /** Definicion de una mision (cargada desde data/<ns>/prodigy_quests/*.json). */
 public final class QuestDef {
-    public enum Type { KILL, TAME, RAID, MANUAL, VILLAGE }
+    /** HOME: preparar un hogar (cama, atril, luz y techo) para el Cronista; siempre vale 4 puntos (uno por requisito). */
+    public enum Type { KILL, TAME, RAID, MANUAL, VILLAGE, HOME }
 
     public final String id, title, description, category;
     public final int order, target, xp;
@@ -39,7 +40,7 @@ public final class QuestDef {
     public QuestDef(String id, String title, String description, String category, int order, Type type, String entity,
                     int target, boolean boss, @Nullable String requires, List<ItemStack> items, int xp, String metric, String building) {
         this.id = id; this.title = title; this.description = description; this.category = category; this.order = order;
-        this.type = type; this.entity = entity == null ? "*" : entity; this.target = Math.max(1, target); this.boss = boss;
+        this.type = type; this.entity = entity == null ? "*" : entity; this.target = type == Type.HOME ? 4 : Math.max(1, target); this.boss = boss;
         this.requires = requires; this.items = items; this.xp = Math.max(0, xp);
         this.metric = metric == null ? "population" : metric; this.building = building == null ? "" : building;
         for (String raw : this.entity.split(",")) {

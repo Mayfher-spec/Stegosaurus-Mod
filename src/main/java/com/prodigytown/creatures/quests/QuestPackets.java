@@ -17,13 +17,13 @@ public final class QuestPackets {
     private QuestPackets() {}
 
     public record QuestView(String id, String title, String description, String category, int type, int target, int progress,
-                            int state, String requiresTitle, List<ItemStack> items, int xp, int tab, ItemStack icon, String objective) {
+                            int state, String requiresTitle, List<ItemStack> items, int xp, int tab, ItemStack icon, String objective, int flags) {
         void encode(FriendlyByteBuf b) {
             b.writeUtf(id); b.writeUtf(title); b.writeUtf(description, 2048); b.writeUtf(category);
             b.writeVarInt(type); b.writeVarInt(target); b.writeVarInt(progress); b.writeVarInt(state); b.writeUtf(requiresTitle);
             b.writeVarInt(items.size());
             for (ItemStack s : items) b.writeItem(s);
-            b.writeVarInt(xp); b.writeVarInt(tab); b.writeItem(icon); b.writeUtf(objective, 512);
+            b.writeVarInt(xp); b.writeVarInt(tab); b.writeItem(icon); b.writeUtf(objective, 512); b.writeVarInt(flags);
         }
         static QuestView decode(FriendlyByteBuf b) {
             String id = b.readUtf(), title = b.readUtf(), desc = b.readUtf(2048), cat = b.readUtf();
@@ -34,7 +34,8 @@ public final class QuestPackets {
             for (int i = 0; i < n; i++) items.add(b.readItem());
             int xp = b.readVarInt(), tab = b.readVarInt();
             ItemStack icon = b.readItem();
-            return new QuestView(id, title, desc, cat, type, target, progress, state, req, items, xp, tab, icon, b.readUtf(512));
+            String objective = b.readUtf(512);
+            return new QuestView(id, title, desc, cat, type, target, progress, state, req, items, xp, tab, icon, objective, b.readVarInt());
         }
     }
 
