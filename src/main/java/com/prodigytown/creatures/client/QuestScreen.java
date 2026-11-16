@@ -3,6 +3,7 @@ package com.prodigytown.creatures.client;
 import com.prodigytown.creatures.ProdigyCreatures;
 import com.prodigytown.creatures.net.ModNetwork;
 import com.prodigytown.creatures.quests.CronistaEntity;
+import com.prodigytown.creatures.quests.QuestDef;
 import com.prodigytown.creatures.quests.QuestData;
 import com.prodigytown.creatures.quests.QuestPackets;
 import net.minecraft.ChatFormatting;
