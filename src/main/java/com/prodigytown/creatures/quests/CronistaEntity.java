@@ -14,6 +14,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
@@ -34,6 +35,7 @@ import net.minecraft.world.entity.ai.navigation.GroundPathNavigation;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
+import net.minecraft.world.entity.animal.horse.AbstractHorse;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -59,7 +61,7 @@ public class CronistaEntity extends PathfinderMob {
     @Nullable private BlockPos home;
     /** Visitante: tiempo restante en ticks antes de marcharse (-1 = permanente: huevo, comando o ya instalada). */
     private int visitTicks = -1;
-    private final List<UUID> llamas = new ArrayList<>();
+    private final List<UUID> companions = new ArrayList<>();
 
     public CronistaEntity(EntityType<? extends CronistaEntity> type, Level level) {
         super(type, level);
@@ -170,32 +172,33 @@ public class CronistaEntity extends PathfinderMob {
     /** La Cronista llega de visita (como el mercader errante): se queda {@code ticks} y luego se marcha si nadie le ha dado un hogar. */
     public void makeVisitor(int ticks) { this.visitTicks = ticks; }
 
-    public void addLlama(UUID id) { this.llamas.add(id); }
+    public void addCompanion(UUID id) { this.companions.add(id); }
 
-    /** Se muda a la cama indicada: ya no se marcha, duerme de noche y se queda cerca. Las llamas se quedan como regalo, sin correa. */
+    /** Se muda a la cama indicada: ya no se marcha, duerme de noche y se queda cerca. Las companions se quedan como regalo, sin correa. */
     public void settle(BlockPos bed) {
         this.settled = true;
         this.home = bed.immutable();
         this.visitTicks = -1;
         this.restrictTo(this.home, HOME_RADIUS);
-        releaseLlamas(false);
+        releaseCompanions(false, owner);
         if (this.level() instanceof ServerLevel sl) {
             sl.sendParticles(ParticleTypes.HAPPY_VILLAGER, this.getX(), this.getY() + 1.2, this.getZ(), 14, 0.4, 0.6, 0.4, 0.02);
             this.playSound(SoundEvents.VILLAGER_CELEBRATE, 1.0F, 0.75F);
         }
     }
 
-    private void releaseLlamas(boolean discard) {
+    private void releaseCompanions(boolean discard, @Nullable ServerPlayer owner) {
         if (this.level() instanceof ServerLevel sl) {
-            for (UUID id : this.llamas) {
+            for (UUID id : this.companions) {
                 Entity e = sl.getEntity(id);
                 if (e instanceof Mob m) {
                     if (m.isLeashed()) m.dropLeash(true, false);
+                    if (!discard && owner != null && m instanceof AbstractHorse horse) { horse.tameWithName(owner); horse.equipSaddle(SoundSource.NEUTRAL); }
                     if (discard) { sl.sendParticles(ParticleTypes.POOF, m.getX(), m.getY() + 0.8, m.getZ(), 10, 0.3, 0.4, 0.3, 0.02); m.discard(); }
                 }
             }
         }
-        this.llamas.clear();
+        this.companions.clear();
     }
 
     private void farewell() {
@@ -204,7 +207,7 @@ public class CronistaEntity extends PathfinderMob {
             for (ServerPlayer sp : sl.players()) {
                 if (sp.distanceToSqr(this) < 96.0 * 96.0) sp.sendSystemMessage(Component.literal("El Cronista Mutante sigue su camino. Volverá a visitarte si aún no tiene un hogar.").withStyle(net.minecraft.ChatFormatting.GRAY));
             }
-            releaseLlamas(true);
+            releaseCompanions(true, null);
         }
         this.discard();
     }
@@ -234,8 +237,8 @@ public class CronistaEntity extends PathfinderMob {
         if (this.home != null) tag.putLong("Home", this.home.asLong());
         tag.putInt("VisitTicks", this.visitTicks);
         ListTag list = new ListTag();
-        for (UUID id : this.llamas) list.add(NbtUtils.createUUID(id));
-        tag.put("Llamas", list);
+        for (UUID id : this.companions) list.add(NbtUtils.createUUID(id));
+        tag.put("Companions", list);
     }
 
     @Override
@@ -244,8 +247,8 @@ public class CronistaEntity extends PathfinderMob {
         this.settled = tag.getBoolean("Settled");
         this.home = tag.contains("Home", 4) ? BlockPos.of(tag.getLong("Home")) : null;
         this.visitTicks = tag.contains("VisitTicks", 3) ? tag.getInt("VisitTicks") : -1;
-        this.llamas.clear();
-        for (Tag t : tag.getList("Llamas", 11)) this.llamas.add(NbtUtils.loadUUID(t));
+        this.companions.clear();
+        for (Tag t : tag.getList("Companions", 11)) this.companions.add(NbtUtils.loadUUID(t));
         if (this.settled && this.home != null) this.restrictTo(this.home, HOME_RADIUS);   // la restriccion no se guarda sola
     }
 

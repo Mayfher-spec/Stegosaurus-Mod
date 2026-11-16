@@ -167,7 +167,7 @@ public final class QuestData {
         if (npc == null) return;
         BlockPos home = npc.blockPosition();
         if (s.contains("home", 4) && p.serverLevel().dimension().location().toString().equals(s.getString("homeDim"))) home = BlockPos.of(s.getLong("home"));
-        npc.settle(home);
+        npc.settle(home, p);
         p.sendSystemMessage(Component.literal("El Cronista Mutante se muda a tu hogar. A partir de ahora vivirá aquí.").withStyle(ChatFormatting.GOLD));
     }
 
