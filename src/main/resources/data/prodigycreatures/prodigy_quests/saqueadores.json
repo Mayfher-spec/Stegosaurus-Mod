@@ -1,0 +1,23 @@
+{
+  "title": "Frente a los saqueadores",
+  "description": "Los illagers vigilan las aldeas. Derrota 10 saqueadores.",
+  "category": "Cazador",
+  "order": 70,
+  "type": "kill",
+  "count": 10,
+  "rewards": {
+    "xp": 300,
+    "items": [
+      {
+        "item": "minecraft:crossbow",
+        "count": 1
+      },
+      {
+        "item": "minecraft:emerald",
+        "count": 8
+      }
+    ]
+  },
+  "entity": "minecraft:pillager",
+  "requires": "esqueletos"
+}

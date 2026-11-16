@@ -1,0 +1,23 @@
+{
+  "title": "Veneno y plumas",
+  "description": "Doma un Dilophosaurus. Cuidado con su escupitajo.",
+  "category": "Domador",
+  "order": 140,
+  "type": "tame",
+  "count": 1,
+  "rewards": {
+    "xp": 450,
+    "items": [
+      {
+        "item": "prodigycreatures:dilophosaurus_armor_iron",
+        "count": 1
+      },
+      {
+        "item": "minecraft:cooked_chicken",
+        "count": 8
+      }
+    ]
+  },
+  "entity": "prodigycreatures:dilophosaurus",
+  "requires": "domar_carno"
+}

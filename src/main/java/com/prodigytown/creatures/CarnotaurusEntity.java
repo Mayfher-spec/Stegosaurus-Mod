@@ -1145,6 +1145,7 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
                 int odds = isAdultStage() ? 8 : 3;
                 if (isRaw(held) && (player.getAbilities().instabuild || this.random.nextInt(odds) == 0)) {
                     this.tame(player);
+                    if (player instanceof net.minecraft.server.level.ServerPlayer qsp) com.prodigytown.creatures.quests.QuestData.onTame(qsp, this);
                     this.setPersistenceRequired();
                     PetOrders.setOrder(this, PetOrders.FOLLOW);
                     this.setTarget(null);

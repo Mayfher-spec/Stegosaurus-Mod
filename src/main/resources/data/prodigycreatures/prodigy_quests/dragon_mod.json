@@ -1,0 +1,28 @@
+{
+  "title": "Cazadragones",
+  "description": "Derrota a un dragon de cualquier mod. Su tesoro es tuyo.",
+  "category": "Jefes",
+  "order": 440,
+  "type": "kill",
+  "count": 1,
+  "rewards": {
+    "xp": 3000,
+    "items": [
+      {
+        "item": "minecraft:netherite_ingot",
+        "count": 3
+      },
+      {
+        "item": "minecraft:diamond_block",
+        "count": 2
+      },
+      {
+        "item": "prodigycreatures:stegosaurus_armor_netherite",
+        "count": 1
+      }
+    ]
+  },
+  "entity": "*dragon*",
+  "boss": true,
+  "requires": "domar_dragon"
+}

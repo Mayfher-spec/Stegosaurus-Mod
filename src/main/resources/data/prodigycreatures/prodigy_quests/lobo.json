@@ -1,0 +1,22 @@
+{
+  "title": "Un amigo peludo",
+  "description": "Todo explorador necesita compania. Doma un lobo.",
+  "category": "Domador",
+  "order": 100,
+  "type": "tame",
+  "count": 1,
+  "rewards": {
+    "xp": 80,
+    "items": [
+      {
+        "item": "minecraft:bone",
+        "count": 8
+      },
+      {
+        "item": "minecraft:cooked_beef",
+        "count": 8
+      }
+    ]
+  },
+  "entity": "minecraft:wolf"
+}

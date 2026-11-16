@@ -1,0 +1,23 @@
+{
+  "title": "Rey de los cuernos",
+  "description": "Doma un Carnotaurus. Que no te vea con hambre.",
+  "category": "Domador",
+  "order": 130,
+  "type": "tame",
+  "count": 1,
+  "rewards": {
+    "xp": 450,
+    "items": [
+      {
+        "item": "prodigycreatures:carnotaurus_armor_iron",
+        "count": 1
+      },
+      {
+        "item": "prodigycreatures:golden_mutton",
+        "count": 4
+      }
+    ]
+  },
+  "entity": "prodigycreatures:carnotaurus",
+  "requires": "domar_stego"
+}

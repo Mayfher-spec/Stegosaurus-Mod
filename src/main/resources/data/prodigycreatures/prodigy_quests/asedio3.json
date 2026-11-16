@@ -1,0 +1,26 @@
+{
+  "title": "Veterano de asedios",
+  "description": "Vence 3 asedios. La aldea ya conoce tu nombre.",
+  "category": "Asedio",
+  "order": 310,
+  "type": "raid",
+  "count": 3,
+  "rewards": {
+    "xp": 1500,
+    "items": [
+      {
+        "item": "minecraft:diamond",
+        "count": 10
+      },
+      {
+        "item": "minecraft:enchanted_golden_apple",
+        "count": 2
+      },
+      {
+        "item": "prodigycreatures:dilophosaurus_armor_gold",
+        "count": 1
+      }
+    ]
+  },
+  "requires": "asedio1"
+}

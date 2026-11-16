@@ -32,6 +32,7 @@ public final class ModNetwork {
         CHANNEL.registerMessage(2, RenamePet.class, RenamePet::encode, RenamePet::decode, RenamePet::handle);
         CHANNEL.registerMessage(3, SetOrder.class, SetOrder::encode, SetOrder::decode, SetOrder::handle);
         CHANNEL.registerMessage(4, ShrinkDragon.class, ShrinkDragon::encode, ShrinkDragon::decode, ShrinkDragon::handle);
+        com.prodigytown.creatures.quests.QuestPackets.register();
     }
 
     /** action 0 = subir rango de un talento (index), 1 = restablecer, 2 = sentar/levantar, 3 = quitar silla, 4 = quitar armadura, 5 = volver a chibi. */

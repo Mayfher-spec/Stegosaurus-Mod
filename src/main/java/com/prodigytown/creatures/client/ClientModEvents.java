@@ -12,6 +12,7 @@ public final class ClientModEvents {
         event.registerEntityRenderer(ProdigyCreatures.STEGOSAURUS.get(), StegosaurusRenderer::new);
         event.registerEntityRenderer(ProdigyCreatures.CARNOTAURUS.get(), CarnotaurusRenderer::new);
         event.registerEntityRenderer(ProdigyCreatures.DILOPHOSAURUS.get(), DilophosaurusRenderer::new);
+        event.registerEntityRenderer(ProdigyCreatures.CRONISTA.get(), CronistaRenderer::new);
         event.registerEntityRenderer(ProdigyCreatures.DILO_SPIT.get(), net.minecraft.client.renderer.entity.LlamaSpitRenderer::new);
         event.registerBlockEntityRenderer(ProdigyCreatures.NEST_BE.get(), StegosaurusNestRenderer::new);
     }
@@ -37,6 +38,7 @@ public final class ClientModEvents {
         };
     }
     @SubscribeEvent public static void registerLayers(EntityRenderersEvent.RegisterLayerDefinitions event) {
+        event.registerLayerDefinition(CronistaModel.LAYER, CronistaModel::createLayer);
         event.registerLayerDefinition(CarnotaurusModel.LAYER_ADULT, CarnotaurusModel::createAdultLayer);
         event.registerLayerDefinition(CarnotaurusModel.LAYER_CHIBI, CarnotaurusModel::createChibiLayer);
         event.registerLayerDefinition(DilophosaurusModel.LAYER_ADULT, DilophosaurusModel::createAdultLayer);

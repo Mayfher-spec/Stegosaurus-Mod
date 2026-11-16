@@ -1,0 +1,22 @@
+{
+  "title": "Primera defensa",
+  "description": "Una banda de saqueadores asalta la aldea. Sobrevive y vence 1 asedio.",
+  "category": "Asedio",
+  "order": 300,
+  "type": "raid",
+  "count": 1,
+  "rewards": {
+    "xp": 600,
+    "items": [
+      {
+        "item": "minecraft:totem_of_undying",
+        "count": 1
+      },
+      {
+        "item": "minecraft:emerald",
+        "count": 24
+      }
+    ]
+  },
+  "requires": "saqueadores"
+}

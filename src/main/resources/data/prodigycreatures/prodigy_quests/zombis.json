@@ -1,0 +1,22 @@
+{
+  "title": "Limpieza de zombis",
+  "description": "Los muertos vivientes rondan de noche. Derrota 15 zombis.",
+  "category": "Cazador",
+  "order": 10,
+  "type": "kill",
+  "count": 15,
+  "rewards": {
+    "xp": 120,
+    "items": [
+      {
+        "item": "minecraft:bread",
+        "count": 8
+      },
+      {
+        "item": "minecraft:iron_ingot",
+        "count": 4
+      }
+    ]
+  },
+  "entity": "minecraft:zombie"
+}

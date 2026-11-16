@@ -1,0 +1,23 @@
+{
+  "title": "Gigante de placas",
+  "description": "Doma un Stegosaurus. Su ensalada especial ayuda.",
+  "category": "Domador",
+  "order": 120,
+  "type": "tame",
+  "count": 1,
+  "rewards": {
+    "xp": 400,
+    "items": [
+      {
+        "item": "prodigycreatures:stegosaurus_armor_iron",
+        "count": 1
+      },
+      {
+        "item": "prodigycreatures:stegosaurus_feed",
+        "count": 16
+      }
+    ]
+  },
+  "entity": "prodigycreatures:stegosaurus",
+  "requires": "domador_novato"
+}

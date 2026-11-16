@@ -1,0 +1,32 @@
+{
+  "title": "El fin del Fin",
+  "description": "Derrota al Dragon del Ender.",
+  "category": "Jefes",
+  "order": 430,
+  "type": "kill",
+  "count": 1,
+  "rewards": {
+    "xp": 5000,
+    "items": [
+      {
+        "item": "minecraft:elytra",
+        "count": 1
+      },
+      {
+        "item": "minecraft:netherite_ingot",
+        "count": 4
+      },
+      {
+        "item": "prodigycreatures:dilophosaurus_armor_netherite",
+        "count": 1
+      },
+      {
+        "item": "prodigycreatures:carnotaurus_armor_netherite",
+        "count": 1
+      }
+    ]
+  },
+  "entity": "minecraft:ender_dragon",
+  "boss": true,
+  "requires": "wither"
+}

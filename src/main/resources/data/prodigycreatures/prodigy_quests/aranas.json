@@ -1,0 +1,23 @@
+{
+  "title": "Plaga de aranas",
+  "description": "Sus telas cubren las minas. Elimina 12 aranas.",
+  "category": "Cazador",
+  "order": 30,
+  "type": "kill",
+  "count": 12,
+  "rewards": {
+    "xp": 140,
+    "items": [
+      {
+        "item": "minecraft:string",
+        "count": 16
+      },
+      {
+        "item": "minecraft:golden_carrot",
+        "count": 6
+      }
+    ]
+  },
+  "entity": "minecraft:spider",
+  "requires": "zombis"
+}

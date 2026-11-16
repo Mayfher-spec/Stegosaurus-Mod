@@ -1,0 +1,27 @@
+{
+  "title": "Aliento de leyenda",
+  "description": "Doma un dragon (de cualquier mod). Solo los mas valientes lo logran.",
+  "category": "Domador",
+  "order": 150,
+  "type": "tame",
+  "count": 1,
+  "rewards": {
+    "xp": 1500,
+    "items": [
+      {
+        "item": "minecraft:netherite_ingot",
+        "count": 2
+      },
+      {
+        "item": "minecraft:diamond",
+        "count": 12
+      },
+      {
+        "item": "minecraft:experience_bottle",
+        "count": 24
+      }
+    ]
+  },
+  "entity": "*dragon*",
+  "requires": "domar_dilo"
+}

@@ -89,6 +89,12 @@ public class ProdigyCreatures {
     public static final RegistryObject<EntityType<DilophosaurusEntity>> DILOPHOSAURUS = ENTITIES.register("dilophosaurus", () ->
         EntityType.Builder.of(DilophosaurusEntity::new, MobCategory.CREATURE)
             .sized(0.9f, 1.9f).clientTrackingRange(10).build(MODID + ":dilophosaurus"));
+    /** El Cronista de Prodigy: NPC de misiones (humanoide con cola de dinosaurio). */
+    public static final RegistryObject<EntityType<com.prodigytown.creatures.quests.CronistaEntity>> CRONISTA = ENTITIES.register("cronista", () ->
+        EntityType.Builder.of(com.prodigytown.creatures.quests.CronistaEntity::new, MobCategory.MISC)
+            .sized(0.6f, 1.95f).clientTrackingRange(10).build(MODID + ":cronista"));
+    public static final RegistryObject<Item> CRONISTA_SPAWN_EGG = ITEMS.register("cronista_spawn_egg", () ->
+        new ForgeSpawnEggItem(() -> CRONISTA.get(), 0x22382A, 0xD8CFA8, new Item.Properties()));
     public static final RegistryObject<Item> DILOPHOSAURUS_SPAWN_EGG = ITEMS.register("dilophosaurus_spawn_egg", () ->
         new ForgeSpawnEggItem(() -> DILOPHOSAURUS.get(), 0x3E6B3A, 0xE08A2E, new Item.Properties()));
     public static final RegistryObject<Item> CARNOTAURUS_EGG = ITEMS.register("carnotaurus_spawn_egg", () ->
@@ -159,6 +165,7 @@ public class ProdigyCreatures {
                 event.accept(STEGOSAURUS_EGG.get());
                 event.accept(CARNOTAURUS_EGG.get());
                 event.accept(DILOPHOSAURUS_SPAWN_EGG.get());
+                event.accept(CRONISTA_SPAWN_EGG.get());
                 event.accept(NEST_ITEM.get());
                 for (RegistryObject<Item> egg : EGG_ITEMS) event.accept(egg.get());
                 for (RegistryObject<Item> egg : CARNO_EGG_ITEMS) event.accept(egg.get());
@@ -221,6 +228,7 @@ public class ProdigyCreatures {
             event.put(STEGOSAURUS.get(), StegosaurusEntity.createAttributes().build());
             event.put(CARNOTAURUS.get(), CarnotaurusEntity.createAttributes().build());
             event.put(DILOPHOSAURUS.get(), DilophosaurusEntity.createAttributes().build());
+            event.put(CRONISTA.get(), com.prodigytown.creatures.quests.CronistaEntity.createAttributes().build());
             event.put(ChibiAlpha.STEGO.get(), ChibiStego.attributes().build());
         }
     }

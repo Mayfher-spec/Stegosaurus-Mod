@@ -1,0 +1,23 @@
+{
+  "title": "Huesos y flechas",
+  "description": "Los arqueros esqueleto acechan las cuevas. Derrota 12 esqueletos.",
+  "category": "Cazador",
+  "order": 20,
+  "type": "kill",
+  "count": 12,
+  "rewards": {
+    "xp": 140,
+    "items": [
+      {
+        "item": "minecraft:arrow",
+        "count": 32
+      },
+      {
+        "item": "minecraft:bow",
+        "count": 1
+      }
+    ]
+  },
+  "entity": "minecraft:skeleton",
+  "requires": "zombis"
+}

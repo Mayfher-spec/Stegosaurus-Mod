@@ -1,0 +1,23 @@
+{
+  "title": "Silencio, por favor",
+  "description": "Un creeper menos es una casa a salvo. Derrota 8 creepers.",
+  "category": "Cazador",
+  "order": 40,
+  "type": "kill",
+  "count": 8,
+  "rewards": {
+    "xp": 180,
+    "items": [
+      {
+        "item": "minecraft:gunpowder",
+        "count": 16
+      },
+      {
+        "item": "minecraft:diamond",
+        "count": 1
+      }
+    ]
+  },
+  "entity": "minecraft:creeper",
+  "requires": "esqueletos"
+}

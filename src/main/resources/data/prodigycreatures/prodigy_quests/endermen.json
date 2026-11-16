@@ -1,0 +1,23 @@
+{
+  "title": "Los altos del vacio",
+  "description": "Mira sus pies, no sus ojos. Derrota 6 endermen.",
+  "category": "Cazador",
+  "order": 50,
+  "type": "kill",
+  "count": 6,
+  "rewards": {
+    "xp": 260,
+    "items": [
+      {
+        "item": "minecraft:ender_pearl",
+        "count": 4
+      },
+      {
+        "item": "minecraft:experience_bottle",
+        "count": 6
+      }
+    ]
+  },
+  "entity": "minecraft:enderman",
+  "requires": "creepers"
+}

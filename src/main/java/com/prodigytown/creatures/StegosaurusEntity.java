@@ -390,6 +390,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
             if (!player.getAbilities().instabuild) return InteractionResult.PASS;
             if (!this.level().isClientSide) {
                 this.tame(player);
+                if (player instanceof net.minecraft.server.level.ServerPlayer qsp) com.prodigytown.creatures.quests.QuestData.onTame(qsp, this);
                 PetOrders.setOrder(this, PetOrders.FOLLOW);
                 this.level().broadcastEntityEvent(this, (byte)7);
                 this.heal(this.getMaxHealth());

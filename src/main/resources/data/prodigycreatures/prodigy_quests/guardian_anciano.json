@@ -1,0 +1,28 @@
+{
+  "title": "Pesadilla del oceano",
+  "description": "Derrota a un Guardian Anciano en su monumento.",
+  "category": "Jefes",
+  "order": 400,
+  "type": "kill",
+  "count": 1,
+  "rewards": {
+    "xp": 800,
+    "items": [
+      {
+        "item": "minecraft:sponge",
+        "count": 4
+      },
+      {
+        "item": "minecraft:diamond",
+        "count": 6
+      },
+      {
+        "item": "minecraft:heart_of_the_sea",
+        "count": 1
+      }
+    ]
+  },
+  "entity": "minecraft:elder_guardian",
+  "boss": true,
+  "requires": "creepers"
+}

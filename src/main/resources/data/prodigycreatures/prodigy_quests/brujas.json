@@ -1,0 +1,23 @@
+{
+  "title": "Cazabrujas",
+  "description": "Sus pociones envenenan los pantanos. Derrota 3 brujas.",
+  "category": "Cazador",
+  "order": 60,
+  "type": "kill",
+  "count": 3,
+  "rewards": {
+    "xp": 220,
+    "items": [
+      {
+        "item": "minecraft:glistering_melon_slice",
+        "count": 4
+      },
+      {
+        "item": "minecraft:golden_apple",
+        "count": 2
+      }
+    ]
+  },
+  "entity": "minecraft:witch",
+  "requires": "esqueletos"
+}

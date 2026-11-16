@@ -1,0 +1,23 @@
+{
+  "title": "Domador novato",
+  "description": "Doma 3 animales de cualquier especie (lobos, gatos, caballos, loros...).",
+  "category": "Domador",
+  "order": 110,
+  "type": "tame",
+  "count": 3,
+  "rewards": {
+    "xp": 200,
+    "items": [
+      {
+        "item": "minecraft:saddle",
+        "count": 1
+      },
+      {
+        "item": "minecraft:golden_carrot",
+        "count": 10
+      }
+    ]
+  },
+  "entity": "*",
+  "requires": "lobo"
+}

@@ -114,5 +114,7 @@
   "item.prodigycreatures.dilophosaurus_armor_iron": "Armadura de hierro para dilofosaurio",
   "item.prodigycreatures.dilophosaurus_armor_gold": "Armadura de oro para dilofosaurio",
   "item.prodigycreatures.dilophosaurus_armor_diamond": "Armadura de diamante para dilofosaurio",
-  "item.prodigycreatures.dilophosaurus_armor_netherite": "Armadura de netherita para dilofosaurio"
+  "item.prodigycreatures.dilophosaurus_armor_netherite": "Armadura de netherita para dilofosaurio",
+  "entity.prodigycreatures.cronista": "El Cronista de Prodigy",
+  "item.prodigycreatures.cronista_spawn_egg": "Generar Cronista"
 }

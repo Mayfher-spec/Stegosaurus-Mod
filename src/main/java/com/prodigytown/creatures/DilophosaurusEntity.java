@@ -1464,6 +1464,7 @@ public class DilophosaurusEntity extends TamableAnimal implements PetOrders.Hold
         int need = trustNeeded();
         if (player.getAbilities().instabuild || trust >= need) {
             this.tame(player);
+            if (player instanceof net.minecraft.server.level.ServerPlayer qsp) com.prodigytown.creatures.quests.QuestData.onTame(qsp, this);
             this.setPersistenceRequired();
             PetOrders.setOrder(this, PetOrders.FOLLOW);
             this.setTarget(null);

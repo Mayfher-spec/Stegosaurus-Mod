@@ -114,5 +114,7 @@
   "item.prodigycreatures.dilophosaurus_armor_iron": "Iron Dilophosaurus Armor",
   "item.prodigycreatures.dilophosaurus_armor_gold": "Golden Dilophosaurus Armor",
   "item.prodigycreatures.dilophosaurus_armor_diamond": "Diamond Dilophosaurus Armor",
-  "item.prodigycreatures.dilophosaurus_armor_netherite": "Netherite Dilophosaurus Armor"
+  "item.prodigycreatures.dilophosaurus_armor_netherite": "Netherite Dilophosaurus Armor",
+  "entity.prodigycreatures.cronista": "Prodigy Chronicler",
+  "item.prodigycreatures.cronista_spawn_egg": "Chronicler Spawn Egg"
 }
