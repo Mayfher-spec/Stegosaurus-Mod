@@ -34,7 +34,6 @@ public final class QuestScreen extends Screen {
         BTN_G = tex("btn_green.png"), BTN_N = tex("btn_grey.png"), ROW = tex("row.png"), ROW_S = tex("row_sel.png");
     private static final int INK = 0xFF2B1B0C, INK2 = 0xFF5B4630, GOLD = 0xFFFFD35A, WHITE = 0xFFF6EEDC, DIM = 0xFF8A7A62, GREEN = 0xFF2F8A24, OKTXT = 0xFF1F6A18;
     private static final String[] TAB_NAMES = {"Fundación", "Combate", "Dinosaurios", "Jefes"};
-    private static final int[] TAB_W = {74, 64, 82, 46};
 
     private enum Mode { MAIN, LIST, DETAIL, PROGRESS, REWARDS }
 
@@ -175,9 +174,15 @@ public final class QuestScreen extends Screen {
         boolean hv = hover(x, y, w, 22);
         nine(g, selected ? BTN_G : BTN_N, selected ? 249 : 243, 49, 22, 14, x, y, w, 22);
         if (hv && !selected) g.renderOutline(x, y, w, 22, 0xFFE8C46A);
-        item(g, icon, x + 5, y + 5, 0.75F);
-        g.drawString(this.font, label, x + 19, y + 7, selected ? WHITE : 0xFFD9D2C0, true);
+        if (icon != null) item(g, icon, x + 5, y + 5, 0.75F);
+        g.drawString(this.font, label, x + (icon != null ? 19 : (w - this.font.width(label)) / 2), y + 7, selected ? WHITE : 0xFFE6DFCC, true);
         hits.add(new Hit(x, y, w, 22, run));
+    }
+
+    /** Recorta con puntos suspensivos para que el texto nunca se corte a media palabra sin avisar. */
+    private String ell(String s, int w) {
+        if (this.font.width(s) <= w) return s;
+        return this.font.plainSubstrByWidth(s, w - this.font.width("…")) + "…";
     }
 
     private static ItemStack stack(net.minecraft.world.level.ItemLike i) { return new ItemStack(i); }
@@ -305,8 +310,13 @@ public final class QuestScreen extends Screen {
     private void drawList(GuiGraphics g) {
         plate(g, "Misiones Disponibles", stack(Items.PAPER));
         ItemStack[] icons = {stack(Items.OAK_DOOR), stack(Items.IRON_SWORD), stack(Items.BONE), stack(Items.GOLDEN_HELMET)};
+        int[] tw = new int[4];
+        int total = 6;
+        for (int i = 0; i < 4; i++) { tw[i] = 15 + this.font.width(TAB_NAMES[i]) + 7; total += tw[i]; }
+        boolean withIcons = total <= 266;
+        if (!withIcons) for (int i = 0; i < 4; i++) tw[i] = this.font.width(TAB_NAMES[i]) + 12;
         int tx = 134;
-        for (int i = 0; i < 4; i++) { final int t = i; tab(g, TAB_NAMES[i], icons[i], tx, 52, TAB_W[i], listTab == i, () -> { listTab = t; scroll = 0; }); tx += TAB_W[i] + 2; }
+        for (int i = 0; i < 4; i++) { final int t = i; tab(g, TAB_NAMES[i], withIcons ? icons[i] : null, tx, 52, tw[i], listTab == i, () -> { listTab = t; scroll = 0; }); tx += tw[i] + 2; }
         parchment(g, 134, 76, 266, 186);
         List<QuestPackets.QuestView> list = listItems();
         if (list.isEmpty()) g.drawCenteredString(this.font, "No hay misiones disponibles en esta categoría.", 267, 160, INK2);
@@ -316,13 +326,12 @@ public final class QuestScreen extends Screen {
             QuestPackets.QuestView v = list.get(idx);
             int y = 84 + r * 34;
             boolean locked = v.state() == QuestData.LOCKED, sel = hover(140, y, 244, 30) && !locked;
-            g.setColor(1.0F, 1.0F, 1.0F, locked ? 0.7F : 1.0F);
             nine(g, sel ? ROW_S : ROW, 506, sel ? 61 : 62, 18, 16, 140, y, 244, 30);
-            g.setColor(1.0F, 1.0F, 1.0F, 1.0F);
+            if (locked) g.fill(142, y + 2, 382, y + 28, 0x30401810);   // velo suave: se nota bloqueada pero el texto sigue legible
             item(g, v.icon(), 148, y + 3, 1.5F);
-            g.drawString(this.font, Component.literal(this.font.plainSubstrByWidth(v.title(), 176)).withStyle(ChatFormatting.BOLD), 180, y + 6, locked ? DIM : 0xFF1A0F05, false);
+            g.drawString(this.font, Component.literal(ell(v.title(), 178)).withStyle(ChatFormatting.BOLD), 180, y + 6, locked ? 0xFF4A3A2A : 0xFF1A0F05, false);
             String sub = locked ? "Requiere: " + v.requiresTitle() : v.description();
-            g.drawString(this.font, this.font.plainSubstrByWidth(sub, 176), 180, y + 17, locked ? 0xFFA05A2A : INK2, false);
+            g.drawString(this.font, ell(sub, 178), 180, y + 17, locked ? 0xFF8A2A12 : INK2, false);
             // flecha
             int ax = 370, ay = y + 11;
             for (int i = 0; i < 4; i++) g.fill(ax + i, ay + i, ax + i + 1, ay + 8 - i, locked ? 0xFF8A7A62 : 0xFF3A3A32);
@@ -336,7 +345,7 @@ public final class QuestScreen extends Screen {
     private void drawDetail(GuiGraphics g) {
         QuestPackets.QuestView v = find(selId);
         if (v == null) { mode = Mode.LIST; return; }
-        plate(g, this.font.plainSubstrByWidth(v.title(), 200), v.icon());
+        plate(g, ell(v.title(), 200), v.icon());
         parchment(g, 134, 56, 266, 182);
         int x = 144;
         item(g, stack(Items.BOOK), x, 62, 0.75F);
@@ -357,7 +366,7 @@ public final class QuestScreen extends Screen {
         boolean done = v.state() >= QuestData.READY;
         checkbox(g, x + 2, oy2 + 14, done);
         String obj = (v.objective().isEmpty() ? "Cumple el objetivo" : v.objective()) + (v.state() == QuestData.LOCKED || v.state() == QuestData.AVAILABLE ? " (0/" + v.target() + ")" : " (" + v.progress() + "/" + v.target() + ")");
-        g.drawString(this.font, this.font.plainSubstrByWidth(obj, 230), x + 16, oy2 + 15, INK, false);
+        g.drawString(this.font, ell(obj, 230), x + 16, oy2 + 15, INK, false);
         if (v.state() >= QuestData.ACTIVE) bar(g, x + 16, oy2 + 27, 200, 6, v.progress(), v.target(), done);
 
         int ry = 166;
@@ -378,7 +387,11 @@ public final class QuestScreen extends Screen {
             case QuestData.CLAIMED -> button(g, "Completada", 187, 243, 160, 20, false, false, null, null);
             default -> button(g, "Bloqueada", 187, 243, 160, 20, false, false, null, null);
         }
-        if (v.state() == QuestData.LOCKED) g.drawCenteredString(this.font, "Requiere: " + v.requiresTitle(), 267, 232, 0xFFE0A040);
+        if (v.state() == QuestData.LOCKED) {
+            g.fill(142, 205, 392, 221, 0x40A04020);
+            g.renderOutline(142, 205, 250, 16, 0x80803010);
+            g.drawCenteredString(this.font, ell("Completa antes: " + v.requiresTitle(), 240), 267, 209, 0xFF6A1E0A);
+        }
     }
 
     // ---- 4. progreso (y recompensas por reclamar)
@@ -403,13 +416,13 @@ public final class QuestScreen extends Screen {
             boolean ready = v.state() == QuestData.READY, claimed = v.state() == QuestData.CLAIMED;
             nine(g, ready ? ROW_S : ROW, 506, ready ? 61 : 62, 18, 16, x, y, w, cardH);
             item(g, v.icon(), x + 7, y + 5, 1.0F);
-            g.drawString(this.font, Component.literal(this.font.plainSubstrByWidth(v.title(), 120)).withStyle(ChatFormatting.BOLD), x + 28, y + 6, 0xFF1A0F05, false);
+            g.drawString(this.font, Component.literal(ell(v.title(), 120)).withStyle(ChatFormatting.BOLD), x + 28, y + 6, 0xFF1A0F05, false);
             String st = claimed ? "Reclamada" : ready ? "Completada" : "En progreso";
             g.drawString(this.font, st, x + w - 8 - this.font.width(st), y + 6, ready || claimed ? OKTXT : INK2, false);
             boolean done = ready || claimed;
             checkbox(g, x + 29, y + 18, done);
             String obj = (v.objective().isEmpty() ? "Cumple el objetivo" : v.objective()) + " (" + v.progress() + "/" + v.target() + ")";
-            g.drawString(this.font, this.font.plainSubstrByWidth(obj, 196), x + 43, y + 19, INK, false);
+            g.drawString(this.font, ell(obj, 196), x + 43, y + 19, INK, false);
             bar(g, x + 29, y + 31, w - 78, 6, v.progress(), v.target(), done);
             g.drawString(this.font, (100 * Math.min(v.progress(), v.target()) / Math.max(1, v.target())) + "%", x + w - 44, y + 30, INK, false);
             // recompensas
