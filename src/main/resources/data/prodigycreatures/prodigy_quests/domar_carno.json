@@ -19,5 +19,7 @@
     ]
   },
   "entity": "prodigycreatures:carnotaurus",
-  "requires": "domar_stego"
+  "requires": "domar_stego",
+  "icon": "prodigycreatures:carnotaurus_spawn_egg",
+  "objective": "Domar Carnotaurus salvaje"
 }

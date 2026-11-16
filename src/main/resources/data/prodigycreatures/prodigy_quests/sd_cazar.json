@@ -19,5 +19,7 @@
     ]
   },
   "entity": "saintsdragons:*,saints_dragons:*",
-  "requires_mod": "saintsdragons,saints_dragons"
+  "requires_mod": "saintsdragons,saints_dragons",
+  "icon": "minecraft:iron_sword",
+  "objective": "Derrotar 5 criaturas de Saint's Dragons"
 }

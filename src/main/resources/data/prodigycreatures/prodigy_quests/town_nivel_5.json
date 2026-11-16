@@ -1,12 +1,12 @@
 {
   "title": "Capital de Prodigy",
-  "description": "Lleva tu aldea al nivel 10: una verdadera capital.",
+  "description": "Lleva tu aldea al nivel 5, el máximo espíritu de aldea.",
   "category": "Aldeas MCA",
-  "order": 610,
+  "order": 660,
   "type": "village",
-  "count": 10,
+  "count": 5,
   "rewards": {
-    "xp": 2500,
+    "xp": 3000,
     "items": [
       {
         "item": "minecraft:netherite_ingot",
@@ -22,7 +22,9 @@
       }
     ]
   },
-  "requires": "mca_nivel_6",
-  "requires_mod": "mca",
-  "metric": "level"
+  "requires": "town_nivel_4",
+  "requires_mod": "townstead",
+  "metric": "level",
+  "icon": "minecraft:beacon",
+  "objective": "Alcanzar el nivel 5 de espíritu de aldea"
 }

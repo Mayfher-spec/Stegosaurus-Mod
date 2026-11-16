@@ -20,5 +20,7 @@
   },
   "entity": "ror:*",
   "requires": "ror_domar",
-  "requires_mod": "ror"
+  "requires_mod": "ror",
+  "icon": "minecraft:lead",
+  "objective": "Domar 3 criaturas de Raxiors of Raxor"
 }

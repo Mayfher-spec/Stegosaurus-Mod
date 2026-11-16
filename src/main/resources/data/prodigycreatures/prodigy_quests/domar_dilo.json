@@ -19,5 +19,7 @@
     ]
   },
   "entity": "prodigycreatures:dilophosaurus",
-  "requires": "domar_carno"
+  "requires": "domar_carno",
+  "icon": "prodigycreatures:dilophosaurus_spawn_egg",
+  "objective": "Domar Dilophosaurus"
 }

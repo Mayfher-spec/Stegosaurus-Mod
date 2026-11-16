@@ -1,6 +1,6 @@
 {
   "title": "De todo un poco",
-  "description": "Reune 6 tipos distintos de edificio (casa, herreria, posada, biblioteca, granja...).",
+  "description": "Reune 6 tipos distintos de edificio (casa, herrería, posada, biblioteca, granja...).",
   "category": "Aldeas MCA",
   "order": 570,
   "type": "village",
@@ -20,5 +20,7 @@
   },
   "requires": "mca_edificios_8",
   "requires_mod": "mca",
-  "metric": "building_types"
+  "metric": "building_types",
+  "icon": "minecraft:clock",
+  "objective": "Reunir 6 tipos de edificio distintos"
 }

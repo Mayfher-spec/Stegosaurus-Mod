@@ -25,5 +25,7 @@
   "entity": "legendary_monsters:*skeletosaurus*,legendary_monsters:*possessed_paladin*,legendary_monsters:*overgrown_colossus*,legendary_monsters:*cumulonimbus*,legendary_monsters:*dune_sentinel*,legendary_monsters:*frostbitten_golem*,legendary_monsters:*withered_abomination*,legendary_monsters:*lava_eater*,legendary_monsters:*chorusent*,legendary_monsters:*obliterator*,legendary_monsters:*shulker_mimic*,legendary_monsters:*ancient_guardian*",
   "boss": true,
   "requires": "lm_cazador",
-  "requires_mod": "legendary_monsters"
+  "requires_mod": "legendary_monsters",
+  "icon": "minecraft:nether_star",
+  "objective": "Derrotar 5 jefes de Legendary Monsters"
 }

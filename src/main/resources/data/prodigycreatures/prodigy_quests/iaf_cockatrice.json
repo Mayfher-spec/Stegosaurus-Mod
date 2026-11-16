@@ -19,5 +19,7 @@
     ]
   },
   "entity": "iceandfire:cockatrice",
-  "requires_mod": "iceandfire"
+  "requires_mod": "iceandfire",
+  "icon": "minecraft:egg",
+  "objective": "Derrotar 3 cocatrices"
 }

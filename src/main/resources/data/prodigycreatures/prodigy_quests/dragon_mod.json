@@ -1,6 +1,6 @@
 {
   "title": "Cazadragones",
-  "description": "Derrota a un dragon de cualquier mod. Su tesoro es tuyo.",
+  "description": "Derrota a un dragón de cualquier mod. Su tesoro es tuyo.",
   "category": "Jefes",
   "order": 440,
   "type": "kill",
@@ -24,5 +24,7 @@
   },
   "entity": "*dragon*",
   "boss": true,
-  "requires": "domar_dragon"
+  "requires": "domar_dragon",
+  "icon": "minecraft:dragon_breath",
+  "objective": "Derrotar dragón"
 }

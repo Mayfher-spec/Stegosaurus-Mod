@@ -1,0 +1,27 @@
+{
+  "title": "Aldea nautica",
+  "description": "Haz que el espíritu nautica de tu aldea llegue al nivel 2 (60 puntos).",
+  "category": "Aldeas MCA",
+  "order": 710,
+  "type": "village",
+  "count": 2,
+  "rewards": {
+    "xp": 700,
+    "items": [
+      {
+        "item": "minecraft:diamond",
+        "count": 4
+      },
+      {
+        "item": "minecraft:experience_bottle",
+        "count": 10
+      }
+    ]
+  },
+  "requires": "town_nivel_1",
+  "requires_mod": "townstead",
+  "metric": "spirit",
+  "building": "nautical",
+  "icon": "minecraft:fishing_rod",
+  "objective": "Alcanzar el nivel 2 de espíritu náutico"
+}

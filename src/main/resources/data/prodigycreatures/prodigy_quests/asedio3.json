@@ -22,5 +22,7 @@
       }
     ]
   },
-  "requires": "asedio1"
+  "requires": "asedio1",
+  "icon": "minecraft:totem_of_undying",
+  "objective": "Vencer 3 asedios"
 }

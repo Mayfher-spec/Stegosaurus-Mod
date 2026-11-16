@@ -21,5 +21,7 @@
   "requires": "mca_casas_5",
   "requires_mod": "mca",
   "metric": "building",
-  "building": "library"
+  "building": "library",
+  "icon": "minecraft:bookshelf",
+  "objective": "Tener 1 biblioteca completa"
 }

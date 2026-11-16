@@ -1,6 +1,6 @@
 {
   "title": "Primer vuelo",
-  "description": "Doma un dragon de Saint's Dragons.",
+  "description": "Doma un dragón de Saint's Dragons.",
   "category": "Dragones de Saint",
   "order": 910,
   "type": "tame",
@@ -23,5 +23,7 @@
     ]
   },
   "entity": "saintsdragons:*,saints_dragons:*",
-  "requires_mod": "saintsdragons,saints_dragons"
+  "requires_mod": "saintsdragons,saints_dragons",
+  "icon": "minecraft:dragon_egg",
+  "objective": "Domar criatura de Saint's Dragons"
 }

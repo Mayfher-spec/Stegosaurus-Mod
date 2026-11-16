@@ -1,6 +1,6 @@
 {
-  "title": "Paladin poseido",
-  "description": "Derrota al Paladin Poseido.",
+  "title": "Paladín poseido",
+  "description": "Derrota al Paladín Poseido.",
   "category": "Monstruos Legendarios",
   "order": 1020,
   "type": "kill",
@@ -21,5 +21,7 @@
   "entity": "legendary_monsters:*possessed_paladin*",
   "boss": true,
   "requires": "lm_cazador",
-  "requires_mod": "legendary_monsters"
+  "requires_mod": "legendary_monsters",
+  "icon": "minecraft:iron_chestplate",
+  "objective": "Derrotar a Paladín Poseido"
 }

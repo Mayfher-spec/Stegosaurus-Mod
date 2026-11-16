@@ -1,5 +1,5 @@
 {
-  "title": "Alas de leon",
+  "title": "Alas de león",
   "description": "Doma un hipogrifo.",
   "category": "Hielo y Fuego",
   "order": 700,
@@ -19,5 +19,7 @@
     ]
   },
   "entity": "iceandfire:hippogryph",
-  "requires_mod": "iceandfire"
+  "requires_mod": "iceandfire",
+  "icon": "minecraft:feather",
+  "objective": "Domar hipogrifo"
 }

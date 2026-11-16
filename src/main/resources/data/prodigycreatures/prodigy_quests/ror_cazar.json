@@ -19,5 +19,7 @@
     ]
   },
   "entity": "ror:*",
-  "requires_mod": "ror"
+  "requires_mod": "ror",
+  "icon": "minecraft:iron_sword",
+  "objective": "Derrotar 10 criaturas de Raxiors of Raxor"
 }

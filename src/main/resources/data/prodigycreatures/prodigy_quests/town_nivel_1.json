@@ -1,0 +1,26 @@
+{
+  "title": "Aldea con identidad",
+  "description": "Tu aldea de Townstead debe alcanzar el nivel 1 de espíritu (25 puntos en un mismo espíritu).",
+  "category": "Aldeas MCA",
+  "order": 620,
+  "type": "village",
+  "count": 1,
+  "rewards": {
+    "xp": 250,
+    "items": [
+      {
+        "item": "minecraft:emerald",
+        "count": 16
+      },
+      {
+        "item": "minecraft:bread",
+        "count": 16
+      }
+    ]
+  },
+  "requires": "mca_casas_5",
+  "requires_mod": "townstead",
+  "metric": "level",
+  "icon": "minecraft:lectern",
+  "objective": "Alcanzar el nivel 1 de espíritu de aldea"
+}

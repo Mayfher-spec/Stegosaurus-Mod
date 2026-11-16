@@ -21,5 +21,7 @@
   "requires": "mca_casas_5",
   "requires_mod": "mca",
   "metric": "building",
-  "building": "inn"
+  "building": "inn",
+  "icon": "minecraft:cake",
+  "objective": "Tener 1 posada completa"
 }

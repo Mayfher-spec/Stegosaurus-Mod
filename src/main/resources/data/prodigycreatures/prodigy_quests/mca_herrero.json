@@ -1,6 +1,6 @@
 {
   "title": "El yunque de la aldea",
-  "description": "Levanta una herreria completa dentro de la aldea.",
+  "description": "Levanta una herrería completa dentro de la aldea.",
   "category": "Aldeas MCA",
   "order": 520,
   "type": "village",
@@ -21,5 +21,7 @@
   "requires": "mca_casas_5",
   "requires_mod": "mca",
   "metric": "building",
-  "building": "blacksmith"
+  "building": "blacksmith",
+  "icon": "minecraft:anvil",
+  "objective": "Tener 1 herrería completa"
 }

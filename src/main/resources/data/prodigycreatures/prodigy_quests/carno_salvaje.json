@@ -1,6 +1,6 @@
 {
   "title": "El cuerno salvaje",
-  "description": "Derrota a un Carnotaurus salvaje. Debe ser el mas fuerte de la manada.",
+  "description": "Derrota a un Carnotaurus salvaje. Debe ser el más fuerte de la manada.",
   "category": "Jefes",
   "order": 200,
   "type": "kill",
@@ -19,5 +19,7 @@
     ]
   },
   "entity": "prodigycreatures:carnotaurus",
-  "requires": "creepers"
+  "requires": "creepers",
+  "icon": "prodigycreatures:carnotaurus_spawn_egg",
+  "objective": "Derrotar Carnotaurus salvaje"
 }

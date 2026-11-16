@@ -20,5 +20,7 @@
   },
   "entity": "iceandfire:gorgon",
   "requires": "iaf_sirena",
-  "requires_mod": "iceandfire"
+  "requires_mod": "iceandfire",
+  "icon": "minecraft:ender_eye",
+  "objective": "Derrotar gorgona"
 }

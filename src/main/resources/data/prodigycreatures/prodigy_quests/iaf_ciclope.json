@@ -21,5 +21,7 @@
   "entity": "iceandfire:cyclops",
   "boss": true,
   "requires": "iaf_trol",
-  "requires_mod": "iceandfire"
+  "requires_mod": "iceandfire",
+  "icon": "minecraft:iron_block",
+  "objective": "Derrotar cíclope"
 }

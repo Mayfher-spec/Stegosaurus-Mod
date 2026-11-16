@@ -1,0 +1,26 @@
+{
+  "title": "Gran población",
+  "description": "Lleva tu aldea al nivel 4 de espíritu.",
+  "category": "Aldeas MCA",
+  "order": 650,
+  "type": "village",
+  "count": 4,
+  "rewards": {
+    "xp": 1600,
+    "items": [
+      {
+        "item": "minecraft:diamond",
+        "count": 10
+      },
+      {
+        "item": "minecraft:totem_of_undying",
+        "count": 1
+      }
+    ]
+  },
+  "requires": "town_nivel_3",
+  "requires_mod": "townstead",
+  "metric": "level",
+  "icon": "minecraft:beacon",
+  "objective": "Alcanzar el nivel 4 de espíritu de aldea"
+}

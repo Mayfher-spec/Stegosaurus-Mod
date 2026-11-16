@@ -19,5 +19,7 @@
     ]
   },
   "entity": "minecraft:pillager",
-  "requires": "esqueletos"
+  "requires": "esqueletos",
+  "icon": "minecraft:crossbow",
+  "objective": "Derrotar 10 saqueadores"
 }

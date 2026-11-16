@@ -188,9 +188,21 @@ public final class QuestData {
         for (QuestDef q : QuestManager.all()) {
             QuestDef req = q.requires == null ? null : QuestManager.get(q.requires);
             out.add(new QuestPackets.QuestView(q.id, q.title, q.description, q.category, q.type.ordinal(), q.target,
-                Math.min(q.target, progress(p, q)), state(p, q), req == null ? "" : req.title, q.items, q.xp));
+                Math.min(q.target, progress(p, q)), state(p, q), req == null ? "" : req.title, q.items, q.xp, q.tab, iconOf(q), q.objective));
         }
         return out;
+    }
+
+    private static ItemStack iconOf(QuestDef q) {
+        net.minecraft.resources.ResourceLocation rl = q.iconId.isEmpty() ? null : net.minecraft.resources.ResourceLocation.tryParse(q.iconId);
+        if (rl != null && net.minecraftforge.registries.ForgeRegistries.ITEMS.containsKey(rl)) return new ItemStack(net.minecraftforge.registries.ForgeRegistries.ITEMS.getValue(rl));
+        net.minecraft.world.item.Item it = switch (q.type) {
+            case TAME -> net.minecraft.world.item.Items.BONE;
+            case RAID -> net.minecraft.world.item.Items.SHIELD;
+            case VILLAGE -> net.minecraft.world.item.Items.EMERALD;
+            default -> q.boss ? net.minecraft.world.item.Items.NETHER_STAR : net.minecraft.world.item.Items.IRON_SWORD;
+        };
+        return new ItemStack(it);
     }
 
     /** npcId >= 0 abre la pantalla de misiones; -1 solo refresca los datos. */

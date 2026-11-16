@@ -1,6 +1,6 @@
 {
   "title": "Matadragones",
-  "description": "Derrota a un dragon de Hielo y Fuego salvaje.",
+  "description": "Derrota a un dragón de Hielo y Fuego salvaje.",
   "category": "Hielo y Fuego",
   "order": 790,
   "type": "kill",
@@ -25,5 +25,7 @@
   "entity": "iceandfire:fire_dragon,iceandfire:ice_dragon,iceandfire:lightning_dragon",
   "boss": true,
   "requires": "iaf_hidra",
-  "requires_mod": "iceandfire"
+  "requires_mod": "iceandfire",
+  "icon": "minecraft:netherite_sword",
+  "objective": "Derrotar dragón de Hielo y Fuego"
 }

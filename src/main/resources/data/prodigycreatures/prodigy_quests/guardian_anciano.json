@@ -1,6 +1,6 @@
 {
-  "title": "Pesadilla del oceano",
-  "description": "Derrota a un Guardian Anciano en su monumento.",
+  "title": "Pesadilla del océano",
+  "description": "Derrota a un Guardián Anciano en su monumento.",
   "category": "Jefes",
   "order": 400,
   "type": "kill",
@@ -24,5 +24,7 @@
   },
   "entity": "minecraft:elder_guardian",
   "boss": true,
-  "requires": "creepers"
+  "requires": "creepers",
+  "icon": "minecraft:prismarine_shard",
+  "objective": "Derrotar Guardián Anciano"
 }

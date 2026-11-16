@@ -1,5 +1,5 @@
 {
-  "title": "Compania prehistorica",
+  "title": "Compañía prehistorica",
   "description": "Doma una criatura de Raxiors of Raxor.",
   "category": "Raxiors of Raxor",
   "order": 1200,
@@ -19,5 +19,7 @@
     ]
   },
   "entity": "ror:*",
-  "requires_mod": "ror"
+  "requires_mod": "ror",
+  "icon": "minecraft:saddle",
+  "objective": "Domar criatura de Raxiors of Raxor"
 }

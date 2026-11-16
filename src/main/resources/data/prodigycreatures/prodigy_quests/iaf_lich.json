@@ -21,5 +21,7 @@
   "entity": "iceandfire:dread_lich",
   "boss": true,
   "requires": "iaf_matadragones",
-  "requires_mod": "iceandfire"
+  "requires_mod": "iceandfire",
+  "icon": "minecraft:wither_skeleton_skull",
+  "objective": "Derrotar Dread Lich"
 }

@@ -1,0 +1,26 @@
+{
+  "title": "Aldea consolidada",
+  "description": "Lleva tu aldea al nivel 3 de espíritu.",
+  "category": "Aldeas MCA",
+  "order": 640,
+  "type": "village",
+  "count": 3,
+  "rewards": {
+    "xp": 900,
+    "items": [
+      {
+        "item": "minecraft:diamond",
+        "count": 6
+      },
+      {
+        "item": "minecraft:golden_apple",
+        "count": 3
+      }
+    ]
+  },
+  "requires": "town_nivel_2",
+  "requires_mod": "townstead",
+  "metric": "level",
+  "icon": "minecraft:beacon",
+  "objective": "Alcanzar el nivel 3 de espíritu de aldea"
+}

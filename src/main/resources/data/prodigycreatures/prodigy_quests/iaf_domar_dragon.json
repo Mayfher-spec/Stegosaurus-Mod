@@ -1,6 +1,6 @@
 {
-  "title": "Amo del dragon",
-  "description": "Consigue un dragon de Hielo y Fuego como tuyo (cria o doma uno).",
+  "title": "Amo del dragón",
+  "description": "Consigue un dragón de Hielo y Fuego como tuyo (cría o doma uno).",
   "category": "Hielo y Fuego",
   "order": 780,
   "type": "tame",
@@ -24,5 +24,7 @@
   },
   "entity": "iceandfire:fire_dragon,iceandfire:ice_dragon,iceandfire:lightning_dragon",
   "requires": "iaf_hipogrifo",
-  "requires_mod": "iceandfire"
+  "requires_mod": "iceandfire",
+  "icon": "minecraft:dragon_egg",
+  "objective": "Domar dragón de Hielo y Fuego"
 }

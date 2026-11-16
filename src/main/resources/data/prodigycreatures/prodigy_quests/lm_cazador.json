@@ -19,5 +19,7 @@
     ]
   },
   "entity": "legendary_monsters:*",
-  "requires_mod": "legendary_monsters"
+  "requires_mod": "legendary_monsters",
+  "icon": "minecraft:iron_sword",
+  "objective": "Derrotar 10 criaturas de Legendary Monsters"
 }

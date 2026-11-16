@@ -19,5 +19,7 @@
     ]
   },
   "entity": "*",
-  "requires": "lobo"
+  "requires": "lobo",
+  "icon": "minecraft:lead",
+  "objective": "Domar 3 animales de cualquier especie"
 }

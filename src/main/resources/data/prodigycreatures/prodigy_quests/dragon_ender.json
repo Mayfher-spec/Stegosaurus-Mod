@@ -1,6 +1,6 @@
 {
   "title": "El fin del Fin",
-  "description": "Derrota al Dragon del Ender.",
+  "description": "Derrota al Dragón del Ender.",
   "category": "Jefes",
   "order": 430,
   "type": "kill",
@@ -28,5 +28,7 @@
   },
   "entity": "minecraft:ender_dragon",
   "boss": true,
-  "requires": "wither"
+  "requires": "wither",
+  "icon": "minecraft:dragon_head",
+  "objective": "Derrotar Dragón del Ender"
 }

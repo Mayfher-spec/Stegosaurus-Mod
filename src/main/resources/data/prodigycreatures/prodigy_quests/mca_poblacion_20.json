@@ -24,5 +24,7 @@
   },
   "requires": "mca_poblacion_10",
   "requires_mod": "mca",
-  "metric": "population"
+  "metric": "population",
+  "icon": "minecraft:emerald_block",
+  "objective": "Tener 20 habitantes en la aldea"
 }

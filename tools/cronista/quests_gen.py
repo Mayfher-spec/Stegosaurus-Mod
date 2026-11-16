@@ -51,10 +51,16 @@ q("mca_biblioteca", 540, CM, "Saber en estantes", "Construye una biblioteca comp
 q("mca_poblacion_10", 550, CM, "Una aldea en marcha", "Alcanza 10 habitantes en la aldea.", "village", None, 10, 400, [it("minecraft:diamond", 3), it("minecraft:golden_apple", 2)], "mca_poblacion_5", mod="mca", metric="population")
 q("mca_edificios_8", 560, CM, "Arquitecto de la aldea", "Ten 8 edificios completos registrados en una misma aldea.", "village", None, 8, 450, [it("minecraft:emerald", 24), it("minecraft:diamond", 3)], "mca_casas_5", mod="mca", metric="buildings")
 q("mca_variedad_6", 570, CM, "De todo un poco", "Reune 6 tipos distintos de edificio (casa, herreria, posada, biblioteca, granja...).", "village", None, 6, 600, [it("minecraft:diamond", 5), it("minecraft:experience_bottle", 12)], "mca_edificios_8", mod="mca", metric="building_types")
-q("mca_nivel_3", 580, CM, "Aldea nivel 3", "Lleva tu aldea al nivel 3 (nivel = 1 + poblacion/4 + tipos de edificio distintos/2).", "village", None, 3, 350, [it("minecraft:emerald", 20), it("minecraft:iron_block", 2)], "mca_poblacion_5", mod="mca", metric="level")
-q("mca_nivel_6", 590, CM, "Aldea nivel 6", "Lleva tu aldea al nivel 6.", "village", None, 6, 900, [it("minecraft:diamond", 8), it("minecraft:totem_of_undying")], "mca_nivel_3", mod="mca", metric="level")
 q("mca_poblacion_20", 600, CM, "Ciudad de leyenda", "Alcanza 20 habitantes en la aldea.", "village", None, 20, 1500, [it("minecraft:enchanted_golden_apple", 2), it("minecraft:diamond", 12), it(M + "stegosaurus_armor_gold")], "mca_poblacion_10", mod="mca", metric="population")
-q("mca_nivel_10", 610, CM, "Capital de Prodigy", "Lleva tu aldea al nivel 10: una verdadera capital.", "village", None, 10, 2500, [it("minecraft:netherite_ingot", 2), it("minecraft:beacon"), it(M + "dilophosaurus_armor_diamond")], "mca_nivel_6", mod="mca", metric="level")
+# Nivel de aldea = espiritu de Townstead (1-5 segun los puntos de sus edificios: 25 / 60 / 140 / 300 / 600)
+CT = "Aldeas MCA"
+q("town_nivel_1", 620, CT, "Aldea con identidad", "Tu aldea de Townstead debe alcanzar el nivel 1 de espiritu (25 puntos en un mismo espiritu).", "village", None, 1, 250, [it("minecraft:emerald", 16), it("minecraft:bread", 16)], "mca_casas_5", mod="townstead", metric="level")
+q("town_nivel_2", 630, CT, "Aldea en ascenso", "Lleva tu aldea al nivel 2 de espiritu.", "village", None, 2, 500, [it("minecraft:emerald", 24), it("minecraft:diamond", 3)], "town_nivel_1", mod="townstead", metric="level")
+q("town_nivel_3", 640, CT, "Aldea consolidada", "Lleva tu aldea al nivel 3 de espiritu.", "village", None, 3, 900, [it("minecraft:diamond", 6), it("minecraft:golden_apple", 3)], "town_nivel_2", mod="townstead", metric="level")
+q("town_nivel_4", 650, CT, "Gran poblacion", "Lleva tu aldea al nivel 4 de espiritu.", "village", None, 4, 1600, [it("minecraft:diamond", 10), it("minecraft:totem_of_undying")], "town_nivel_3", mod="townstead", metric="level")
+q("town_nivel_5", 660, CT, "Capital de Prodigy", "Lleva tu aldea al nivel 5, el maximo espiritu de aldea.", "village", None, 5, 3000, [it("minecraft:netherite_ingot", 2), it("minecraft:beacon"), it(M + "dilophosaurus_armor_diamond")], "town_nivel_4", mod="townstead", metric="level")
+for sid, nm, b in (("martial", "marcial", "Guarnicion"), ("scholar", "erudita", "Escuela"), ("industrious", "industrial", "Forja"), ("pastoral", "pastoral", "Granja"), ("nautical", "nautica", "Puerto")):
+    q("town_" + sid, 670 + 10 * ["martial", "scholar", "industrious", "pastoral", "nautical"].index(sid), CT, "Aldea " + nm, "Haz que el espiritu " + nm + " de tu aldea llegue al nivel 2 (60 puntos).", "village", None, 2, 700, [it("minecraft:diamond", 4), it("minecraft:experience_bottle", 10)], "town_nivel_1", mod="townstead", metric="spirit", building=sid)
 
 # Ice and Fire
 CI = "Hielo y Fuego"
@@ -94,6 +100,76 @@ q("ror_domar", 1200, CR, "Compania prehistorica", "Doma una criatura de Raxiors 
 q("ror_cazar", 1210, CR, "Caza mayor", "Derrota a 10 criaturas de Raxiors of Raxor.", "kill", "ror:*", 10, 500, [it("minecraft:diamond", 4), it("minecraft:experience_bottle", 8)], mod="ror")
 q("ror_domar_3", 1220, CR, "Manada propia", "Ten 3 criaturas de Raxiors of Raxor domadas.", "tame", "ror:*", 3, 1200, [it("minecraft:diamond", 8), it(M + "stegosaurus_armor_iron")], "ror_domar", mod="ror")
 q("ror_gran_cazador", 1230, CR, "Gran cazador", "Derrota a 30 criaturas de Raxiors of Raxor.", "kill", "ror:*", 30, 1800, [it("minecraft:netherite_ingot"), it("minecraft:diamond", 10)], "ror_cazar", mod="ror")
+
+# ---------------------------------------------------------------- presentacion: icono y texto del objetivo
+ICONS = {
+ "zombis": "rotten_flesh", "esqueletos": "bone", "aranas": "spider_eye", "creepers": "gunpowder", "endermen": "ender_pearl", "brujas": "potion", "saqueadores": "crossbow",
+ "lobo": "bone", "domador_novato": "lead", "domar_stego": M + "stegosaurus_spawn_egg", "domar_carno": M + "carnotaurus_spawn_egg", "domar_dilo": M + "dilophosaurus_spawn_egg", "domar_dragon": "dragon_egg",
+ "carno_salvaje": M + "carnotaurus_spawn_egg", "asedio1": "shield", "asedio3": "totem_of_undying", "guardian_anciano": "prismarine_shard", "warden": "echo_shard", "wither": "nether_star", "dragon_ender": "dragon_head", "dragon_mod": "dragon_breath",
+ "mca_poblacion_5": "emerald", "mca_casas_5": "oak_door", "mca_herrero": "anvil", "mca_posada": "cake", "mca_biblioteca": "bookshelf", "mca_poblacion_10": "emerald", "mca_edificios_8": "bricks", "mca_variedad_6": "clock", "mca_poblacion_20": "emerald_block",
+ "town_nivel_1": "lectern", "town_nivel_2": "lectern", "town_nivel_3": "beacon", "town_nivel_4": "beacon", "town_nivel_5": "beacon",
+ "town_martial": "iron_sword", "town_scholar": "enchanted_book", "town_industrious": "iron_pickaxe", "town_pastoral": "wheat", "town_nautical": "fishing_rod",
+ "iaf_hipogrifo": "feather", "iaf_cockatrice": "egg", "iaf_sirena": "nautilus_shell", "iaf_trol": "iron_axe", "iaf_gorgona": "ender_eye", "iaf_ciclope": "iron_block", "iaf_hidra": "poisonous_potato", "iaf_serpiente": "heart_of_the_sea",
+ "iaf_domar_dragon": "dragon_egg", "iaf_matadragones": "netherite_sword", "iaf_lich": "wither_skeleton_skull",
+ "sd_cazar": "iron_sword", "sd_domar": "dragon_egg", "sd_domar_3": "dragon_egg",
+ "lm_cazador": "iron_sword", "lm_skeletosaurus": "bone", "lm_possessed_paladin": "iron_chestplate", "lm_overgrown_colossus": "mossy_cobblestone", "lm_dune_sentinel": "sandstone", "lm_frostbitten_golem": "packed_ice", "lm_withered_abomination": "wither_rose",
+ "lm_lava_eater": "magma_cream", "lm_cumulonimbus": "lightning_rod", "lm_chorusent": "chorus_fruit", "lm_shulker_mimic": "shulker_shell", "lm_ancient_guardian": "prismarine_crystals", "lm_obliterator": "end_crystal", "lm_cazaleyendas": "nether_star",
+ "ror_domar": "saddle", "ror_cazar": "iron_sword", "ror_domar_3": "lead", "ror_gran_cazador": "diamond_sword",
+}
+NOUN = {  # entidad -> (singular, plural)
+ "minecraft:zombie": ("zombi", "zombis"), "minecraft:skeleton": ("esqueleto", "esqueletos"), "minecraft:spider": ("arana", "aranas"), "minecraft:creeper": ("creeper", "creepers"), "minecraft:enderman": ("enderman", "endermen"),
+ "minecraft:witch": ("bruja", "brujas"), "minecraft:pillager": ("saqueador", "saqueadores"), "minecraft:wolf": ("lobo", "lobos"), "*": ("animal", "animales de cualquier especie"),
+ M + "stegosaurus": ("Stegosaurus", "Stegosaurus"), M + "carnotaurus": ("Carnotaurus salvaje", "Carnotaurus"), M + "dilophosaurus": ("Dilophosaurus", "Dilophosaurus"), "*dragon*": ("dragon", "dragones"),
+ "minecraft:elder_guardian": ("Guardian Anciano", "Guardianes Ancianos"), "minecraft:warden": ("Warden", "Wardens"), "minecraft:wither": ("Wither", "Withers"), "minecraft:ender_dragon": ("Dragon del Ender", "Dragones del Ender"),
+ "iceandfire:hippogryph": ("hipogrifo", "hipogrifos"), "iceandfire:cockatrice": ("cocatriz", "cocatrices"), "iceandfire:siren": ("sirena", "sirenas"), "iceandfire:troll": ("troll", "trolls"), "iceandfire:gorgon": ("gorgona", "gorgonas"),
+ "iceandfire:cyclops": ("ciclope", "ciclopes"), "iceandfire:hydra": ("hidra", "hidras"), "iceandfire:sea_serpent": ("serpiente marina", "serpientes marinas"), "iceandfire:dread_lich": ("Dread Lich", "Dread Lich"),
+ IAF_DRAGONS: ("dragon de Hielo y Fuego", "dragones de Hielo y Fuego"), SDE: ("criatura de Saint's Dragons", "criaturas de Saint's Dragons"),
+ "legendary_monsters:*": ("criatura de Legendary Monsters", "criaturas de Legendary Monsters"), LM_BOSSES: ("jefe de Legendary Monsters", "jefes de Legendary Monsters"), "ror:*": ("criatura de Raxiors of Raxor", "criaturas de Raxiors of Raxor"),
+}
+LMN = {"skeletosaurus": "Skeletosaurus", "possessed_paladin": "Paladin Poseido", "overgrown_colossus": "Coloso Cubierto", "dune_sentinel": "Centinela de las Dunas", "frostbitten_golem": "Golem Escarchado", "withered_abomination": "Abominacion Marchita",
+       "lava_eater": "Devoralava", "cumulonimbus": "Cumulonimbus", "chorusent": "Chorusent", "shulker_mimic": "Mimico Shulker", "ancient_guardian": "Guardian Ancestral", "obliterator": "Obliterador"}
+BN = {"house": ("casa completa", "casas completas"), "blacksmith": ("herreria completa", "herrerias completas"), "inn": ("posada completa", "posadas completas"), "library": ("biblioteca completa", "bibliotecas completas")}
+SPN = {"martial": "marcial", "scholar": "erudito", "industrious": "industrial", "pastoral": "pastoral", "nautical": "nautico"}
+def objective(id, d):
+    t, c, e = d["type"], d["count"], d.get("entity", "*")
+    if t == "raid": return "Vencer %d asedio%s" % (c, "s" if c > 1 else "")
+    if t == "village":
+        m = d.get("metric", "population")
+        if m == "population": return "Tener %d habitantes en la aldea" % c
+        if m == "buildings": return "Tener %d edificios completos" % c
+        if m == "building_types": return "Reunir %d tipos de edificio distintos" % c
+        if m == "building": sg, pl = BN.get(d.get("building"), ("edificio", "edificios")); return "Tener %d %s" % (c, pl if c > 1 else sg)
+        if m == "level": return "Alcanzar el nivel %d de espiritu de aldea" % c
+        if m == "spirit": return "Alcanzar el nivel %d de espiritu %s" % (c, SPN.get(d.get("building"), d.get("building")))
+    verb = "Domar" if t == "tame" else "Derrotar"
+    if id.startswith("lm_") and id not in ("lm_cazador", "lm_cazaleyendas"): return "Derrotar a " + LMN[id[3:]]
+    sg, pl = NOUN.get(e, ("objetivo", "objetivos"))
+    return "%s %s" % (verb, ("%s" % sg) if c == 1 else "%d %s" % (c, pl))
+
+import re
+ACC = [(r"\baranas\b", "arañas"), (r"\bAranas\b", "Arañas"), (r"\bGuardian\b", "Guardián"), (r"\bDragon\b", "Dragón"), (r"\bdragon\b", "dragón"), (r"\bMision\b", "Misión"), (r"\bmision\b", "misión"),
+       (r"\bespiritu\b", "espíritu"), (r"\bpoblacion\b", "población"), (r"\bherreria", "herrería"), (r"\bherrerias", "herrerías"), (r"\bPaladin\b", "Paladín"), (r"\bAbominacion\b", "Abominación"),
+       (r"\bMimico\b", "Mímico"), (r"\bciclope", "cíclope"), (r"\bnautico\b", "náutico"), (r"\bGolem\b", "Gólem"), (r"\bAncestral\b", "Ancestral"), (r"\bHeroe\b", "Héroe"), (r"\bbiblioteca", "biblioteca"),
+       (r"\bEscuadron\b", "Escuadrón"), (r"\bcompania\b", "compañía"), (r"\bCompania\b", "Compañía"), (r"\bCaza\b", "Caza"), (r"\bhipogrifo", "hipogrifo"), (r"\bGorgona\b", "Gorgona"),
+       (r"\bdefensa\b", "defensa"), (r"\bAbandonar\b", "Abandonar"), (r"\bpiedra eterna", "piedra eterna"), (r"\bTormenta\b", "Tormenta"), (r"\bun yunque", "un yunque"), (r"\bsuenos\b", "sueños"),
+       (r"\bSilencio\b", "Silencio"), (r"\bocéano\b", "océano"), (r"\boceano\b", "océano"), (r"\bmareas\b", "mareas"), (r"\bMirada de gallo", "Mirada de gallo"), (r"\bAmo\b", "Amo"), (r"\bPuente de trolls", "Puente de trolls"),
+       (r"\bpeludo\b", "peludo"), (r"\bAliento\b", "Aliento"), (r"\bdomadas\b", "domadas"), (r"\bcuerno\b", "cuerno"), (r"\bCuernos\b", "Cuernos"), (r"\bplacas\b", "placas"), (r"\bveneno\b", "veneno"),
+       (r"\bAsedio\b", "Asedio"), (r"\bun ojo\b", "un ojo"), (r"\bsaben\b", "saben"), (r"\bnunca\b", "nunca"), (r"\bAlas de leon\b", "Alas de león"), (r"\bleon\b", "león"), (r"\bcuentan\b", "cuentan"),
+       (r"\bestan\b", "están"), (r"\bsolo\b", "solo"), (r"\bAqui\b", "Aquí"), (r"\bmas\b", "más"), (r"\btu\b", "tu"), (r"\bmitico\b", "mítico"), (r"\bcria\b", "cría"), (r"\bcrea\b", "crea"),
+       (r"\bAcercate\b", "Acércate"), (r"\bAcercate a ella y espera: la poblacion", "Acércate a ella y espera: la población"), (r"\bcamas\b", "camas"), (r"\bAldeas\b", "Aldeas"), (r"\bPrimer vuelo", "Primer vuelo"),
+       (r"\bEscuadron de dragones", "Escuadrón de dragones"), (r"\bdominio\b", "dominio"), (r"\bTodo explorador", "Todo explorador"), (r"\bnecesita compania", "necesita compañía"), (r"\bleyenda\b", "leyenda"), (r"\bAsi\b", "Así"),
+       (r"\bpuntos\b", "puntos"), (r"\bnivel\b", "nivel"), (r"\bmaximo\b", "máximo"), (r"\bhacha\b", "hacha"), (r"\bGuarnicion\b", "Guarnición"), (r"\bForja\b", "Forja"), (r"\bPuerto\b", "Puerto"), (r"\bEscuela\b", "Escuela"),
+       (r"\bCabezas cortadas", "Cabezas cortadas"), (r"\bterror\b", "terror"), (r"\bPesadilla\b", "Pesadilla"), (r"\bprofundidades\b", "profundidades"), (r"\bduenio\b", "dueño"), (r"\bsalvaje\b", "salvaje"),
+       (r"\bdebe ser el mas fuerte", "debe ser el más fuerte"), (r"\bGigante de placas", "Gigante de placas"), (r"\bEnsalada especial ayuda", "Ensalada especial ayuda"), (r"\bRey de los cuernos", "Rey de los cuernos"),
+       (r"\bpara el Dragón del Ender", "para el Dragón del Ender"), (r"\bfin del Fin", "fin del Fin")]
+def accent(s):
+    for a, b in ACC: s = re.sub(a, b, s)
+    return s
+for id, d in Q:
+    for k in ("title", "description"): d[k] = accent(d[k])
+for id, d in Q:
+    if id in ICONS: d["icon"] = ICONS[id] if ":" in ICONS[id] else "minecraft:" + ICONS[id]
+    d["objective"] = accent(objective(id, d))
 
 for i, (id, d) in enumerate(Q):
     json.dump(d, open(os.path.join(out, id + '.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=2); open(os.path.join(out, id + '.json'), 'a').write('\n')

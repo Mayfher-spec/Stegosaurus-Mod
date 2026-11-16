@@ -1,6 +1,6 @@
 {
-  "title": "Golem de nubes",
-  "description": "Derrota a Cumulonimbus, el Golem de Nubes.",
+  "title": "Gólem de nubes",
+  "description": "Derrota a Cumulonimbus, el Gólem de Nubes.",
   "category": "Monstruos Legendarios",
   "order": 1080,
   "type": "kill",
@@ -25,5 +25,7 @@
   "entity": "legendary_monsters:*cumulonimbus*",
   "boss": true,
   "requires": "lm_cazador",
-  "requires_mod": "legendary_monsters"
+  "requires_mod": "legendary_monsters",
+  "icon": "minecraft:lightning_rod",
+  "objective": "Derrotar a Cumulonimbus"
 }

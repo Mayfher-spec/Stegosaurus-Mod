@@ -30,6 +30,9 @@ public final class QuestDef {
     public final List<ItemStack> items;
     /** Solo para el tipo VILLAGE (aldeas de MCA): "population", "buildings", "building_types", "level" o "building" (con {@link #building}). */
     public final String metric, building;
+    /** Presentacion: pestana (0 Fundacion, 1 Asedios, 2 Dinosaurios, 3 Jefes), icono (id de item) y texto del objetivo. Los rellena QuestManager. */
+    public int tab;
+    public String iconId = "", objective = "";
     private final List<String> terms = new ArrayList<>();
     private final List<TagKey<EntityType<?>>> tags = new ArrayList<>();
 

@@ -1,6 +1,6 @@
 {
   "title": "Un pueblo con vida",
-  "description": "Haz que tu aldea de MCA tenga 5 habitantes. Acercate a ella y espera: la poblacion crece sola si hay camas libres.",
+  "description": "Haz que tu aldea de MCA tenga 5 habitantes. Acércate a ella y espera: la población crece sola si hay camas libres.",
   "category": "Aldeas MCA",
   "order": 500,
   "type": "village",
@@ -19,5 +19,7 @@
     ]
   },
   "requires_mod": "mca",
-  "metric": "population"
+  "metric": "population",
+  "icon": "minecraft:emerald",
+  "objective": "Tener 5 habitantes en la aldea"
 }

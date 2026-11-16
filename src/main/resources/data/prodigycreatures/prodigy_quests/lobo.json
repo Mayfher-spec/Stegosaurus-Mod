@@ -1,6 +1,6 @@
 {
   "title": "Un amigo peludo",
-  "description": "Todo explorador necesita compania. Doma un lobo.",
+  "description": "Todo explorador necesita compañía. Doma un lobo.",
   "category": "Domador",
   "order": 100,
   "type": "tame",
@@ -18,5 +18,7 @@
       }
     ]
   },
-  "entity": "minecraft:wolf"
+  "entity": "minecraft:wolf",
+  "icon": "minecraft:bone",
+  "objective": "Domar lobo"
 }

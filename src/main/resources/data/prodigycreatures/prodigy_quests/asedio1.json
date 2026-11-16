@@ -18,5 +18,7 @@
       }
     ]
   },
-  "requires": "saqueadores"
+  "requires": "saqueadores",
+  "icon": "minecraft:shield",
+  "objective": "Vencer 1 asedio"
 }

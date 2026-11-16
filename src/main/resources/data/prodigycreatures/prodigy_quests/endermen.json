@@ -19,5 +19,7 @@
     ]
   },
   "entity": "minecraft:enderman",
-  "requires": "creepers"
+  "requires": "creepers",
+  "icon": "minecraft:ender_pearl",
+  "objective": "Derrotar 6 endermen"
 }

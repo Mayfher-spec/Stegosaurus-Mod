@@ -1,6 +1,6 @@
 {
-  "title": "Plaga de aranas",
-  "description": "Sus telas cubren las minas. Elimina 12 aranas.",
+  "title": "Plaga de arañas",
+  "description": "Sus telas cubren las minas. Elimina 12 arañas.",
   "category": "Cazador",
   "order": 30,
   "type": "kill",
@@ -19,5 +19,7 @@
     ]
   },
   "entity": "minecraft:spider",
-  "requires": "zombis"
+  "requires": "zombis",
+  "icon": "minecraft:spider_eye",
+  "objective": "Derrotar 12 arañas"
 }

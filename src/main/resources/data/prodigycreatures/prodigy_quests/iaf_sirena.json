@@ -20,5 +20,7 @@
   },
   "entity": "iceandfire:siren",
   "requires": "iaf_cockatrice",
-  "requires_mod": "iceandfire"
+  "requires_mod": "iceandfire",
+  "icon": "minecraft:nautilus_shell",
+  "objective": "Derrotar 3 sirenas"
 }

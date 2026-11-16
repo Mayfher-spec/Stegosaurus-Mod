@@ -1,5 +1,5 @@
 {
-  "title": "Escuadron de dragones",
+  "title": "Escuadrón de dragones",
   "description": "Ten 3 dragones domados de Saint's Dragons.",
   "category": "Dragones de Saint",
   "order": 920,
@@ -24,5 +24,7 @@
   },
   "entity": "saintsdragons:*,saints_dragons:*",
   "requires": "sd_domar",
-  "requires_mod": "saintsdragons,saints_dragons"
+  "requires_mod": "saintsdragons,saints_dragons",
+  "icon": "minecraft:dragon_egg",
+  "objective": "Domar 3 criaturas de Saint's Dragons"
 }

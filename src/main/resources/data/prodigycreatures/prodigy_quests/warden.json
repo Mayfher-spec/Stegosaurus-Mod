@@ -24,5 +24,7 @@
   },
   "entity": "minecraft:warden",
   "boss": true,
-  "requires": "endermen"
+  "requires": "endermen",
+  "icon": "minecraft:echo_shard",
+  "objective": "Derrotar Warden"
 }

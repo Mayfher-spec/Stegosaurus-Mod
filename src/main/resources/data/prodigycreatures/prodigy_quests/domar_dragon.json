@@ -1,6 +1,6 @@
 {
   "title": "Aliento de leyenda",
-  "description": "Doma un dragon (de cualquier mod). Solo los mas valientes lo logran.",
+  "description": "Doma un dragón (de cualquier mod). Solo los más valientes lo logran.",
   "category": "Domador",
   "order": 150,
   "type": "tame",
@@ -23,5 +23,7 @@
     ]
   },
   "entity": "*dragon*",
-  "requires": "domar_dilo"
+  "requires": "domar_dilo",
+  "icon": "minecraft:dragon_egg",
+  "objective": "Domar dragón"
 }

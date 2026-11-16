@@ -1,0 +1,26 @@
+{
+  "title": "Aldea en ascenso",
+  "description": "Lleva tu aldea al nivel 2 de espíritu.",
+  "category": "Aldeas MCA",
+  "order": 630,
+  "type": "village",
+  "count": 2,
+  "rewards": {
+    "xp": 500,
+    "items": [
+      {
+        "item": "minecraft:emerald",
+        "count": 24
+      },
+      {
+        "item": "minecraft:diamond",
+        "count": 3
+      }
+    ]
+  },
+  "requires": "town_nivel_1",
+  "requires_mod": "townstead",
+  "metric": "level",
+  "icon": "minecraft:lectern",
+  "objective": "Alcanzar el nivel 2 de espíritu de aldea"
+}

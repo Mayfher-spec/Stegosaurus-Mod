@@ -25,5 +25,7 @@
   "requires": "mca_poblacion_5",
   "requires_mod": "mca",
   "metric": "building",
-  "building": "house"
+  "building": "house",
+  "icon": "minecraft:oak_door",
+  "objective": "Tener 5 casas completas"
 }

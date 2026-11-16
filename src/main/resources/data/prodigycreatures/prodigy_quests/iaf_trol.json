@@ -20,5 +20,7 @@
   },
   "entity": "iceandfire:troll",
   "requires": "iaf_cockatrice",
-  "requires_mod": "iceandfire"
+  "requires_mod": "iceandfire",
+  "icon": "minecraft:iron_axe",
+  "objective": "Derrotar 5 trolls"
 }

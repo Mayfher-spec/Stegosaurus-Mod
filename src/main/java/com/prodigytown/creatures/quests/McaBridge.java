@@ -19,24 +19,28 @@ import java.util.Set;
  */
 public final class McaBridge {
     private static final Logger LOGGER = LogUtils.getLogger();
-    private static final String PKG = "net.mca.server.world.data.";
+    /** MCA 7.6 para Forge publica sus clases bajo "forge.net.mca"; otras compilaciones usan "net.mca". Se prueban ambas. */
+    private static final String[] PKGS = {"forge.net.mca.server.world.data.", "net.mca.server.world.data."};
     private static boolean failed;
     private static Method mgrGet, findNear, vPop, vBuildings, bType, bComplete;
+    // Townstead (opcional): espiritu de aldea. El nivel de aldea es el mayor nivel (1-5) entre sus espiritus.
+    private static boolean townsteadChecked;
+    private static Method spTotals, spTier, spPerSpirit, spTotal;
 
     private McaBridge() {}
 
     public static boolean available() { return !failed && ModList.get().isLoaded("mca"); }
 
     /** Resumen de la aldea de MCA mas cercana al jugador. */
-    public record VillageInfo(int population, int buildings, int buildingTypes, Map<String, Integer> byType) {
-        /** Nivel de aldea de Prodigy: 1 + poblacion/4 + tipos de edificio distintos/2. */
-        public int level() { return 1 + population / 4 + buildingTypes / 2; }
+    public record VillageInfo(int population, int buildings, int buildingTypes, Map<String, Integer> byType, int level, Map<String, Integer> spiritTier, int spiritPoints) {
 
         public int metric(QuestDef q) {
             return switch (q.metric) {
                 case "buildings" -> buildings;
                 case "building_types" -> buildingTypes;
-                case "level" -> level();
+                case "level" -> level;
+                case "spirit_points" -> spiritPoints;
+                case "spirit" -> spiritTier.getOrDefault(q.building, 0);
                 case "building" -> byType.getOrDefault(q.building, 0);
                 default -> population;
             };
@@ -50,7 +54,10 @@ public final class McaBridge {
 
     private static void init() throws Exception {
         if (mgrGet != null) return;
-        Class<?> vm = Class.forName(PKG + "VillageManager"), village = Class.forName(PKG + "Village"), building = Class.forName(PKG + "Building");
+        String pkg = null;
+        for (String candidate : PKGS) { try { Class.forName(candidate + "VillageManager"); pkg = candidate; break; } catch (ClassNotFoundException ignored) { } }
+        if (pkg == null) throw new ClassNotFoundException("MCA VillageManager");
+        Class<?> vm = Class.forName(pkg + "VillageManager"), village = Class.forName(pkg + "Village"), building = Class.forName(pkg + "Building");
         mgrGet = find(vm, "get", 1);
         findNear = find(vm, "findNearestVillage", 2);   // (BlockPos, margen)
         vPop = find(village, "getPopulation", 0);
@@ -59,13 +66,31 @@ public final class McaBridge {
         bComplete = find(building, "isComplete", 0);
     }
 
+    /** Townstead (opcional) por reflexion: niveles 1-5 por espiritu segun sus puntos. */
+    private static void initTownstead() {
+        if (townsteadChecked) return;
+        townsteadChecked = true;
+        if (!ModList.get().isLoaded("townstead")) return;
+        try {
+            String base = "com.aetherianartificer.townstead.spirit.";
+            Class<?> agg = Class.forName(base + "VillageSpiritAggregator"), totals = Class.forName(base + "SpiritTotals");
+            spTotals = find(agg, "totalsFor", 1);
+            spTier = find(agg, "tierForSpirit", 1);
+            spPerSpirit = find(totals, "perSpirit", 0);
+            spTotal = find(totals, "total", 0);
+        } catch (Throwable t) {
+            spTotals = null;
+            LOGGER.warn("[ProdigyQuests] no se pudo leer el espiritu de aldea de Townstead: {}", t.toString());
+        }
+    }
+
     @Nullable
     public static VillageInfo near(ServerPlayer sp) {
         if (!available()) return null;
         try {
             init();
             Object mgr = mgrGet.invoke(null, sp.serverLevel());
-            Optional<?> v = (Optional<?>) findNear.invoke(mgr, sp.blockPosition(), 48);
+            Optional<?> v = (Optional<?>) findNear.invoke(mgr, sp.blockPosition(), 48);   // (BlockPos, margen)
             if (v.isEmpty()) return null;
             Object village = v.get();
             int pop = ((Number) vPop.invoke(village)).intValue(), total = 0;
@@ -78,7 +103,21 @@ public final class McaBridge {
                 types.add(t);
                 byType.merge(t, 1, Integer::sum);
             }
-            return new VillageInfo(pop, total, types.size(), byType);
+            int level = 0, points = 0;
+            Map<String, Integer> tiers = new HashMap<>();
+            initTownstead();
+            if (spTotals != null) {
+                try {
+                    Object t = spTotals.invoke(null, village);
+                    points = ((Number) spTotal.invoke(t)).intValue();
+                    for (Map.Entry<?, ?> e : ((Map<?, ?>) spPerSpirit.invoke(t)).entrySet()) {
+                        int tier = ((Number) spTier.invoke(null, ((Number) e.getValue()).intValue())).intValue();
+                        tiers.put(String.valueOf(e.getKey()), tier);
+                        level = Math.max(level, tier);
+                    }
+                } catch (Throwable t) { spTotals = null; LOGGER.warn("[ProdigyQuests] Townstead: {}", t.toString()); }
+            }
+            return new VillageInfo(pop, total, types.size(), byType, level, tiers, points);
         } catch (Throwable t) {
             failed = true;   // no insistir: se registra una sola vez
             LOGGER.warn("[ProdigyQuests] no se pudo leer la aldea de MCA (las misiones de aldea quedan inactivas): {}", t.toString());

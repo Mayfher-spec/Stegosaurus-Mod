@@ -20,5 +20,7 @@
   },
   "entity": "ror:*",
   "requires": "ror_cazar",
-  "requires_mod": "ror"
+  "requires_mod": "ror",
+  "icon": "minecraft:diamond_sword",
+  "objective": "Derrotar 30 criaturas de Raxiors of Raxor"
 }

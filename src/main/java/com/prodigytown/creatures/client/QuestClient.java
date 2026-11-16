@@ -15,7 +15,7 @@ public final class QuestClient {
     public static void onSync(QuestPackets.QuestSync m) {
         views = m.views();
         Minecraft mc = Minecraft.getInstance();
-        if (m.npcId() >= 0) mc.setScreen(new QuestScreen());
+        if (m.npcId() >= 0) mc.setScreen(new QuestScreen(m.npcId()));
         else if (mc.screen instanceof QuestScreen qs) qs.refresh();
     }
 }

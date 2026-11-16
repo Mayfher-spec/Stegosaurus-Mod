@@ -19,5 +19,7 @@
     ]
   },
   "entity": "minecraft:skeleton",
-  "requires": "zombis"
+  "requires": "zombis",
+  "icon": "minecraft:bone",
+  "objective": "Derrotar 12 esqueletos"
 }

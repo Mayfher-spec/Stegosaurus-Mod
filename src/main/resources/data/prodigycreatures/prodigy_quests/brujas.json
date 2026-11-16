@@ -19,5 +19,7 @@
     ]
   },
   "entity": "minecraft:witch",
-  "requires": "esqueletos"
+  "requires": "esqueletos",
+  "icon": "minecraft:potion",
+  "objective": "Derrotar 3 brujas"
 }

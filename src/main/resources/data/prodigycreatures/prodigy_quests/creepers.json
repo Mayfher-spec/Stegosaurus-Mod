@@ -19,5 +19,7 @@
     ]
   },
   "entity": "minecraft:creeper",
-  "requires": "esqueletos"
+  "requires": "esqueletos",
+  "icon": "minecraft:gunpowder",
+  "objective": "Derrotar 8 creepers"
 }

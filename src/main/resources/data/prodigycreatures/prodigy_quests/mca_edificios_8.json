@@ -20,5 +20,7 @@
   },
   "requires": "mca_casas_5",
   "requires_mod": "mca",
-  "metric": "buildings"
+  "metric": "buildings",
+  "icon": "minecraft:bricks",
+  "objective": "Tener 8 edificios completos"
 }

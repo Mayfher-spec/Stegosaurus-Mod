@@ -21,5 +21,7 @@
   "entity": "iceandfire:hydra",
   "boss": true,
   "requires": "iaf_gorgona",
-  "requires_mod": "iceandfire"
+  "requires_mod": "iceandfire",
+  "icon": "minecraft:poisonous_potato",
+  "objective": "Derrotar hidra"
 }

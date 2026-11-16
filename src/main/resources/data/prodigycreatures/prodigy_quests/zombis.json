@@ -18,5 +18,7 @@
       }
     ]
   },
-  "entity": "minecraft:zombie"
+  "entity": "minecraft:zombie",
+  "icon": "minecraft:rotten_flesh",
+  "objective": "Derrotar 15 zombis"
 }
