@@ -174,8 +174,8 @@ public class CronistaEntity extends PathfinderMob {
 
     public void addCompanion(UUID id) { this.companions.add(id); }
 
-    /** Se muda a la cama indicada: ya no se marcha, duerme de noche y se queda cerca. Las companions se quedan como regalo, sin correa. */
-    public void settle(BlockPos bed) {
+    /** Se muda a la cama indicada: ya no se marcha, duerme de noche y se queda cerca. El caballo se queda como regalo: sin correa, domado por quien le dio el hogar y ensillado. */
+    public void settle(BlockPos bed, @Nullable ServerPlayer owner) {
         this.settled = true;
         this.home = bed.immutable();
         this.visitTicks = -1;
