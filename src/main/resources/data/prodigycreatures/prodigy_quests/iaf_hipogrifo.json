@@ -1,0 +1,23 @@
+{
+  "title": "Alas de leon",
+  "description": "Doma un hipogrifo.",
+  "category": "Hielo y Fuego",
+  "order": 700,
+  "type": "tame",
+  "count": 1,
+  "rewards": {
+    "xp": 300,
+    "items": [
+      {
+        "item": "minecraft:saddle",
+        "count": 1
+      },
+      {
+        "item": "minecraft:golden_carrot",
+        "count": 16
+      }
+    ]
+  },
+  "entity": "iceandfire:hippogryph",
+  "requires_mod": "iceandfire"
+}

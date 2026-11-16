@@ -26,8 +26,9 @@ import java.util.Map;
  * Carga las misiones desde los datapacks: data/&lt;namespace&gt;/prodigy_quests/&lt;id&gt;.json. Asi se pueden anadir o cambiar misiones sin tocar el codigo.
  * <pre>
  * { "title": "...", "description": "...", "category": "Jefes", "order": 100,
- *   "type": "kill" | "tame" | "raid" | "manual", "entity": "minecraft:wither" (o "#tag" o "*dragon*"), "count": 1, "boss": true,
- *   "requires": "otra_mision", "requires_mod": "saintsdragons",
+ *   "type": "kill" | "tame" | "raid" | "manual" | "village", "entity": "minecraft:wither" (o "#tag", "*dragon*", "mod:*", varios con coma), "count": 1, "boss": true,
+ *   "requires": "otra_mision", "requires_mod": "iceandfire" (varios con coma: basta uno),
+ *   (village, requiere MCA) "metric": "population" | "buildings" | "building_types" | "level" | "building", "building": "blacksmith",
  *   "rewards": { "xp": 500, "items": [ { "item": "minecraft:diamond", "count": 4 } ] } }
  * </pre>
  */
@@ -65,8 +66,12 @@ public final class QuestManager extends SimpleJsonResourceReloadListener {
 
     @Nullable
     private static QuestDef parse(String id, JsonObject o) {
-        String mod = GsonHelper.getAsString(o, "requires_mod", "");
-        if (!mod.isEmpty() && !ModList.get().isLoaded(mod)) return null;
+        String mod = GsonHelper.getAsString(o, "requires_mod", "");   // uno o varios ids separados por coma: basta que este cargado uno
+        if (!mod.isEmpty()) {
+            boolean any = false;
+            for (String m : mod.split(",")) if (!m.trim().isEmpty() && ModList.get().isLoaded(m.trim())) any = true;
+            if (!any) return null;
+        }
         QuestDef.Type type = QuestDef.Type.valueOf(GsonHelper.getAsString(o, "type", "manual").toUpperCase(java.util.Locale.ROOT));
         List<ItemStack> items = new ArrayList<>();
         int xp = 0;
@@ -86,6 +91,7 @@ public final class QuestManager extends SimpleJsonResourceReloadListener {
         return new QuestDef(id, GsonHelper.getAsString(o, "title"), GsonHelper.getAsString(o, "description", ""),
             GsonHelper.getAsString(o, "category", "General"), GsonHelper.getAsInt(o, "order", 1000), type,
             GsonHelper.getAsString(o, "entity", "*"), GsonHelper.getAsInt(o, "count", 1), GsonHelper.getAsBoolean(o, "boss", false),
-            o.has("requires") ? GsonHelper.getAsString(o, "requires") : null, List.copyOf(items), xp);
+            o.has("requires") ? GsonHelper.getAsString(o, "requires") : null, List.copyOf(items), xp,
+            GsonHelper.getAsString(o, "metric", "population"), GsonHelper.getAsString(o, "building", ""));
     }
 }

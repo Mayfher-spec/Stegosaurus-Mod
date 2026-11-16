@@ -1,0 +1,28 @@
+{
+  "title": "Ciudad de leyenda",
+  "description": "Alcanza 20 habitantes en la aldea.",
+  "category": "Aldeas MCA",
+  "order": 600,
+  "type": "village",
+  "count": 20,
+  "rewards": {
+    "xp": 1500,
+    "items": [
+      {
+        "item": "minecraft:enchanted_golden_apple",
+        "count": 2
+      },
+      {
+        "item": "minecraft:diamond",
+        "count": 12
+      },
+      {
+        "item": "prodigycreatures:stegosaurus_armor_gold",
+        "count": 1
+      }
+    ]
+  },
+  "requires": "mca_poblacion_10",
+  "requires_mod": "mca",
+  "metric": "population"
+}

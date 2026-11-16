@@ -1,0 +1,24 @@
+{
+  "title": "Puente de trolls",
+  "description": "Derrota a 5 trolls.",
+  "category": "Hielo y Fuego",
+  "order": 730,
+  "type": "kill",
+  "count": 5,
+  "rewards": {
+    "xp": 400,
+    "items": [
+      {
+        "item": "minecraft:iron_block",
+        "count": 2
+      },
+      {
+        "item": "minecraft:cooked_beef",
+        "count": 16
+      }
+    ]
+  },
+  "entity": "iceandfire:troll",
+  "requires": "iaf_cockatrice",
+  "requires_mod": "iceandfire"
+}

@@ -1,0 +1,27 @@
+{
+  "title": "Primer vuelo",
+  "description": "Doma un dragon de Saint's Dragons.",
+  "category": "Dragones de Saint",
+  "order": 910,
+  "type": "tame",
+  "count": 1,
+  "rewards": {
+    "xp": 1800,
+    "items": [
+      {
+        "item": "minecraft:netherite_scrap",
+        "count": 4
+      },
+      {
+        "item": "minecraft:diamond",
+        "count": 10
+      },
+      {
+        "item": "prodigycreatures:dilophosaurus_armor_diamond",
+        "count": 1
+      }
+    ]
+  },
+  "entity": "saintsdragons:*,saints_dragons:*",
+  "requires_mod": "saintsdragons,saints_dragons"
+}

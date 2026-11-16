@@ -1,0 +1,23 @@
+{
+  "title": "Compania prehistorica",
+  "description": "Doma una criatura de Raxiors of Raxor.",
+  "category": "Raxiors of Raxor",
+  "order": 1200,
+  "type": "tame",
+  "count": 1,
+  "rewards": {
+    "xp": 400,
+    "items": [
+      {
+        "item": "minecraft:saddle",
+        "count": 1
+      },
+      {
+        "item": "minecraft:cooked_beef",
+        "count": 16
+      }
+    ]
+  },
+  "entity": "ror:*",
+  "requires_mod": "ror"
+}

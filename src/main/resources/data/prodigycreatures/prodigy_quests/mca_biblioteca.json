@@ -1,0 +1,25 @@
+{
+  "title": "Saber en estantes",
+  "description": "Construye una biblioteca completa.",
+  "category": "Aldeas MCA",
+  "order": 540,
+  "type": "village",
+  "count": 1,
+  "rewards": {
+    "xp": 220,
+    "items": [
+      {
+        "item": "minecraft:bookshelf",
+        "count": 8
+      },
+      {
+        "item": "minecraft:experience_bottle",
+        "count": 8
+      }
+    ]
+  },
+  "requires": "mca_casas_5",
+  "requires_mod": "mca",
+  "metric": "building",
+  "building": "library"
+}

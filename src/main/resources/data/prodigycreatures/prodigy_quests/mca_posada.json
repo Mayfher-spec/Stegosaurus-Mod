@@ -1,0 +1,25 @@
+{
+  "title": "Cama y comida caliente",
+  "description": "Construye una posada completa para los viajeros.",
+  "category": "Aldeas MCA",
+  "order": 530,
+  "type": "village",
+  "count": 1,
+  "rewards": {
+    "xp": 200,
+    "items": [
+      {
+        "item": "minecraft:cake",
+        "count": 1
+      },
+      {
+        "item": "minecraft:golden_carrot",
+        "count": 12
+      }
+    ]
+  },
+  "requires": "mca_casas_5",
+  "requires_mod": "mca",
+  "metric": "building",
+  "building": "inn"
+}

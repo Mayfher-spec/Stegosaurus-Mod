@@ -1,0 +1,29 @@
+{
+  "title": "El Obliterador",
+  "description": "Derrota al Obliterador. Es el mas temible.",
+  "category": "Monstruos Legendarios",
+  "order": 1120,
+  "type": "kill",
+  "count": 1,
+  "rewards": {
+    "xp": 4000,
+    "items": [
+      {
+        "item": "minecraft:diamond",
+        "count": 7
+      },
+      {
+        "item": "minecraft:golden_apple",
+        "count": 2
+      },
+      {
+        "item": "minecraft:netherite_scrap",
+        "count": 2
+      }
+    ]
+  },
+  "entity": "legendary_monsters:*obliterator*",
+  "boss": true,
+  "requires": "lm_cazador",
+  "requires_mod": "legendary_monsters"
+}

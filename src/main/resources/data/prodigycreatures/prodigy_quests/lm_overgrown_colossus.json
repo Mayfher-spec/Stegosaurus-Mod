@@ -1,0 +1,25 @@
+{
+  "title": "Coloso cubierto de musgo",
+  "description": "Derrota al Coloso Cubierto.",
+  "category": "Monstruos Legendarios",
+  "order": 1030,
+  "type": "kill",
+  "count": 1,
+  "rewards": {
+    "xp": 1500,
+    "items": [
+      {
+        "item": "minecraft:diamond",
+        "count": 4
+      },
+      {
+        "item": "minecraft:golden_apple",
+        "count": 2
+      }
+    ]
+  },
+  "entity": "legendary_monsters:*overgrown_colossus*",
+  "boss": true,
+  "requires": "lm_cazador",
+  "requires_mod": "legendary_monsters"
+}

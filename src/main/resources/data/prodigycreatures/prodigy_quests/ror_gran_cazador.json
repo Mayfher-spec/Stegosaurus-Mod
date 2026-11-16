@@ -1,0 +1,24 @@
+{
+  "title": "Gran cazador",
+  "description": "Derrota a 30 criaturas de Raxiors of Raxor.",
+  "category": "Raxiors of Raxor",
+  "order": 1230,
+  "type": "kill",
+  "count": 30,
+  "rewards": {
+    "xp": 1800,
+    "items": [
+      {
+        "item": "minecraft:netherite_ingot",
+        "count": 1
+      },
+      {
+        "item": "minecraft:diamond",
+        "count": 10
+      }
+    ]
+  },
+  "entity": "ror:*",
+  "requires": "ror_cazar",
+  "requires_mod": "ror"
+}

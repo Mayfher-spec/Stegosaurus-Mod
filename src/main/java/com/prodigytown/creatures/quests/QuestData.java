@@ -3,6 +3,10 @@ package com.prodigytown.creatures.quests;
 import com.prodigytown.creatures.net.ModNetwork;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
+import net.minecraft.world.entity.OwnableEntity;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -54,6 +58,7 @@ public final class QuestData {
         CompoundTag s = st(p, q.id);
         s.putBoolean("accepted", true);
         s.putInt("progress", 0);
+        if (q.type == QuestDef.Type.TAME) for (Entity e : ownedNearby(p)) if (q.matches(e.getType())) markSeen(p, e);   // lo que ya era tuyo no cuenta
         return true;
     }
 
@@ -110,6 +115,7 @@ public final class QuestData {
     }
 
     public static void onTame(ServerPlayer p, Entity animal) {
+        if (!markSeen(p, animal)) return;   // ya contado (p. ej. por el barrido de propiedad)
         boolean changed = false;
         for (QuestDef q : QuestManager.all()) if (q.type == QuestDef.Type.TAME && q.matches(animal.getType())) changed |= add(p, q, 1);
         if (changed) sync(p, -1);
@@ -118,6 +124,60 @@ public final class QuestData {
     public static void onRaidWon(ServerPlayer p) {
         boolean changed = false;
         for (QuestDef q : QuestManager.all()) if (q.type == QuestDef.Type.RAID) changed |= add(p, q, 1);
+        if (changed) sync(p, -1);
+    }
+
+    // ------------------------------------------------------------------ comprobaciones periodicas
+
+    private static final int SEEN_CAP = 600;
+
+    /** Marca una criatura como ya contada para las domas. Devuelve false si ya lo estaba. */
+    private static boolean markSeen(ServerPlayer p, Entity e) {
+        CompoundTag r = root(p);
+        if (!r.contains("_seen", 9)) r.put("_seen", new ListTag());
+        ListTag list = r.getList("_seen", 8);
+        String id = e.getUUID().toString();
+        for (int i = 0; i < list.size(); i++) if (list.getString(i).equals(id)) return false;
+        list.add(StringTag.valueOf(id));
+        while (list.size() > SEEN_CAP) list.remove(0);
+        return true;
+    }
+
+    private static List<Entity> ownedNearby(ServerPlayer p) {
+        AABB box = p.getBoundingBox().inflate(64.0);
+        return p.serverLevel().getEntities((Entity) null, box, e -> e instanceof OwnableEntity oe && p.getUUID().equals(oe.getOwnerUUID()));
+    }
+
+    /**
+     * Cada pocos segundos: (1) domas de mods que no lanzan AnimalTameEvent (p. ej. dragones que nacen del huevo ya con duenio)
+     * se detectan por propiedad; (2) misiones de aldea de MCA (poblacion, edificios, nivel).
+     */
+    public static void poll(ServerPlayer p) {
+        boolean tame = false, village = false;
+        for (QuestDef q : QuestManager.all()) {
+            if (state(p, q) != ACTIVE) continue;
+            if (q.type == QuestDef.Type.TAME) tame = true;
+            else if (q.type == QuestDef.Type.VILLAGE) village = true;
+        }
+        boolean changed = false;
+        if (tame) {
+            for (Entity e : ownedNearby(p)) {
+                QuestDef hit = null;
+                for (QuestDef q : QuestManager.all()) if (q.type == QuestDef.Type.TAME && state(p, q) == ACTIVE && q.matches(e.getType())) { hit = q; break; }
+                if (hit == null || !markSeen(p, e)) continue;
+                for (QuestDef q : QuestManager.all()) if (q.type == QuestDef.Type.TAME && q.matches(e.getType())) changed |= add(p, q, 1);
+            }
+        }
+        if (village) {
+            McaBridge.VillageInfo info = McaBridge.near(p);
+            if (info != null) {
+                for (QuestDef q : QuestManager.all()) {
+                    if (q.type != QuestDef.Type.VILLAGE || state(p, q) != ACTIVE) continue;
+                    int gap = Math.min(q.target, info.metric(q)) - progress(p, q);   // el progreso nunca baja
+                    if (gap > 0) changed |= add(p, q, gap);
+                }
+            }
+        }
         if (changed) sync(p, -1);
     }
 

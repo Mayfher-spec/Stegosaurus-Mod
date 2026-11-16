@@ -1,0 +1,25 @@
+{
+  "title": "El que no descansa",
+  "description": "Derrota a un Dread Lich.",
+  "category": "Hielo y Fuego",
+  "order": 800,
+  "type": "kill",
+  "count": 1,
+  "rewards": {
+    "xp": 3000,
+    "items": [
+      {
+        "item": "minecraft:netherite_ingot",
+        "count": 2
+      },
+      {
+        "item": "minecraft:nether_star",
+        "count": 1
+      }
+    ]
+  },
+  "entity": "iceandfire:dread_lich",
+  "boss": true,
+  "requires": "iaf_matadragones",
+  "requires_mod": "iceandfire"
+}

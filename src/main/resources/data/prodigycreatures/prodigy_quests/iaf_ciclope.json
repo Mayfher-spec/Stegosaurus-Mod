@@ -1,0 +1,25 @@
+{
+  "title": "Gigante de un ojo",
+  "description": "Derrota a un cíclope.",
+  "category": "Hielo y Fuego",
+  "order": 750,
+  "type": "kill",
+  "count": 1,
+  "rewards": {
+    "xp": 700,
+    "items": [
+      {
+        "item": "minecraft:diamond",
+        "count": 6
+      },
+      {
+        "item": "minecraft:experience_bottle",
+        "count": 12
+      }
+    ]
+  },
+  "entity": "iceandfire:cyclops",
+  "boss": true,
+  "requires": "iaf_trol",
+  "requires_mod": "iceandfire"
+}

@@ -1,0 +1,23 @@
+{
+  "title": "Un pueblo con vida",
+  "description": "Haz que tu aldea de MCA tenga 5 habitantes. Acercate a ella y espera: la poblacion crece sola si hay camas libres.",
+  "category": "Aldeas MCA",
+  "order": 500,
+  "type": "village",
+  "count": 5,
+  "rewards": {
+    "xp": 150,
+    "items": [
+      {
+        "item": "minecraft:bread",
+        "count": 12
+      },
+      {
+        "item": "minecraft:emerald",
+        "count": 8
+      }
+    ]
+  },
+  "requires_mod": "mca",
+  "metric": "population"
+}

@@ -1,0 +1,24 @@
+{
+  "title": "Canto traicionero",
+  "description": "Derrota a 3 sirenas.",
+  "category": "Hielo y Fuego",
+  "order": 720,
+  "type": "kill",
+  "count": 3,
+  "rewards": {
+    "xp": 350,
+    "items": [
+      {
+        "item": "minecraft:heart_of_the_sea",
+        "count": 1
+      },
+      {
+        "item": "minecraft:diamond",
+        "count": 3
+      }
+    ]
+  },
+  "entity": "iceandfire:siren",
+  "requires": "iaf_cockatrice",
+  "requires_mod": "iceandfire"
+}

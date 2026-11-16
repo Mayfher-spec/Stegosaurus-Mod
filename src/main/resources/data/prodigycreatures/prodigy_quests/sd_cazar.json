@@ -1,0 +1,23 @@
+{
+  "title": "Escamas ajenas",
+  "description": "Derrota a 5 criaturas de Saint's Dragons.",
+  "category": "Dragones de Saint",
+  "order": 900,
+  "type": "kill",
+  "count": 5,
+  "rewards": {
+    "xp": 500,
+    "items": [
+      {
+        "item": "minecraft:diamond",
+        "count": 4
+      },
+      {
+        "item": "minecraft:experience_bottle",
+        "count": 10
+      }
+    ]
+  },
+  "entity": "saintsdragons:*,saints_dragons:*",
+  "requires_mod": "saintsdragons,saints_dragons"
+}

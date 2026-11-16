@@ -1,0 +1,29 @@
+{
+  "title": "Casas para todos",
+  "description": "Construye y registra 5 casas completas en la aldea.",
+  "category": "Aldeas MCA",
+  "order": 510,
+  "type": "village",
+  "count": 5,
+  "rewards": {
+    "xp": 250,
+    "items": [
+      {
+        "item": "minecraft:oak_door",
+        "count": 6
+      },
+      {
+        "item": "minecraft:white_bed",
+        "count": 3
+      },
+      {
+        "item": "minecraft:emerald",
+        "count": 10
+      }
+    ]
+  },
+  "requires": "mca_poblacion_5",
+  "requires_mod": "mca",
+  "metric": "building",
+  "building": "house"
+}

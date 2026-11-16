@@ -1,0 +1,25 @@
+{
+  "title": "Terror de las mareas",
+  "description": "Derrota a una serpiente marina.",
+  "category": "Hielo y Fuego",
+  "order": 770,
+  "type": "kill",
+  "count": 1,
+  "rewards": {
+    "xp": 800,
+    "items": [
+      {
+        "item": "minecraft:nautilus_shell",
+        "count": 2
+      },
+      {
+        "item": "minecraft:diamond",
+        "count": 6
+      }
+    ]
+  },
+  "entity": "iceandfire:sea_serpent",
+  "boss": true,
+  "requires": "iaf_sirena",
+  "requires_mod": "iceandfire"
+}

@@ -1,0 +1,29 @@
+{
+  "title": "Chorusent",
+  "description": "Derrota al Chorusent.",
+  "category": "Monstruos Legendarios",
+  "order": 1090,
+  "type": "kill",
+  "count": 1,
+  "rewards": {
+    "xp": 2200,
+    "items": [
+      {
+        "item": "minecraft:diamond",
+        "count": 6
+      },
+      {
+        "item": "minecraft:golden_apple",
+        "count": 2
+      },
+      {
+        "item": "minecraft:netherite_scrap",
+        "count": 2
+      }
+    ]
+  },
+  "entity": "legendary_monsters:*chorusent*",
+  "boss": true,
+  "requires": "lm_cazador",
+  "requires_mod": "legendary_monsters"
+}

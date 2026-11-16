@@ -1,0 +1,25 @@
+{
+  "title": "El yunque de la aldea",
+  "description": "Levanta una herreria completa dentro de la aldea.",
+  "category": "Aldeas MCA",
+  "order": 520,
+  "type": "village",
+  "count": 1,
+  "rewards": {
+    "xp": 200,
+    "items": [
+      {
+        "item": "minecraft:anvil",
+        "count": 1
+      },
+      {
+        "item": "minecraft:iron_ingot",
+        "count": 12
+      }
+    ]
+  },
+  "requires": "mca_casas_5",
+  "requires_mod": "mca",
+  "metric": "building",
+  "building": "blacksmith"
+}

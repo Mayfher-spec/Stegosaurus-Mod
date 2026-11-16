@@ -1,0 +1,28 @@
+{
+  "title": "Capital de Prodigy",
+  "description": "Lleva tu aldea al nivel 10: una verdadera capital.",
+  "category": "Aldeas MCA",
+  "order": 610,
+  "type": "village",
+  "count": 10,
+  "rewards": {
+    "xp": 2500,
+    "items": [
+      {
+        "item": "minecraft:netherite_ingot",
+        "count": 2
+      },
+      {
+        "item": "minecraft:beacon",
+        "count": 1
+      },
+      {
+        "item": "prodigycreatures:dilophosaurus_armor_diamond",
+        "count": 1
+      }
+    ]
+  },
+  "requires": "mca_nivel_6",
+  "requires_mod": "mca",
+  "metric": "level"
+}

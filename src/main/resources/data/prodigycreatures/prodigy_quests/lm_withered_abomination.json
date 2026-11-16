@@ -1,0 +1,25 @@
+{
+  "title": "Abominacion marchita",
+  "description": "Derrota a la Abominacion Marchita.",
+  "category": "Monstruos Legendarios",
+  "order": 1060,
+  "type": "kill",
+  "count": 1,
+  "rewards": {
+    "xp": 2000,
+    "items": [
+      {
+        "item": "minecraft:diamond",
+        "count": 5
+      },
+      {
+        "item": "minecraft:golden_apple",
+        "count": 2
+      }
+    ]
+  },
+  "entity": "legendary_monsters:*withered_abomination*",
+  "boss": true,
+  "requires": "lm_cazador",
+  "requires_mod": "legendary_monsters"
+}

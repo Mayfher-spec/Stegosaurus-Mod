@@ -1,0 +1,25 @@
+{
+  "title": "Centinela de las dunas",
+  "description": "Derrota al Centinela de las Dunas.",
+  "category": "Monstruos Legendarios",
+  "order": 1040,
+  "type": "kill",
+  "count": 1,
+  "rewards": {
+    "xp": 1500,
+    "items": [
+      {
+        "item": "minecraft:diamond",
+        "count": 5
+      },
+      {
+        "item": "minecraft:golden_apple",
+        "count": 2
+      }
+    ]
+  },
+  "entity": "legendary_monsters:*dune_sentinel*",
+  "boss": true,
+  "requires": "lm_cazador",
+  "requires_mod": "legendary_monsters"
+}

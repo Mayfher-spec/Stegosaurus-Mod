@@ -1,0 +1,28 @@
+{
+  "title": "Escuadron de dragones",
+  "description": "Ten 3 dragones domados de Saint's Dragons.",
+  "category": "Dragones de Saint",
+  "order": 920,
+  "type": "tame",
+  "count": 3,
+  "rewards": {
+    "xp": 3000,
+    "items": [
+      {
+        "item": "minecraft:netherite_ingot",
+        "count": 3
+      },
+      {
+        "item": "minecraft:diamond_block",
+        "count": 2
+      },
+      {
+        "item": "minecraft:elytra",
+        "count": 1
+      }
+    ]
+  },
+  "entity": "saintsdragons:*,saints_dragons:*",
+  "requires": "sd_domar",
+  "requires_mod": "saintsdragons,saints_dragons"
+}

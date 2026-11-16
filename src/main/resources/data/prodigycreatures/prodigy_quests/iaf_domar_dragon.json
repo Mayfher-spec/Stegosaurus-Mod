@@ -1,0 +1,28 @@
+{
+  "title": "Amo del dragon",
+  "description": "Consigue un dragon de Hielo y Fuego como tuyo (cria o doma uno).",
+  "category": "Hielo y Fuego",
+  "order": 780,
+  "type": "tame",
+  "count": 1,
+  "rewards": {
+    "xp": 2000,
+    "items": [
+      {
+        "item": "minecraft:netherite_ingot",
+        "count": 2
+      },
+      {
+        "item": "minecraft:diamond",
+        "count": 12
+      },
+      {
+        "item": "prodigycreatures:carnotaurus_armor_gold",
+        "count": 1
+      }
+    ]
+  },
+  "entity": "iceandfire:fire_dragon,iceandfire:ice_dragon,iceandfire:lightning_dragon",
+  "requires": "iaf_hipogrifo",
+  "requires_mod": "iceandfire"
+}

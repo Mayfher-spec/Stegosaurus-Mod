@@ -1,0 +1,29 @@
+{
+  "title": "Mimico shulker",
+  "description": "Derrota al Mimico Shulker.",
+  "category": "Monstruos Legendarios",
+  "order": 1100,
+  "type": "kill",
+  "count": 1,
+  "rewards": {
+    "xp": 1500,
+    "items": [
+      {
+        "item": "minecraft:diamond",
+        "count": 7
+      },
+      {
+        "item": "minecraft:golden_apple",
+        "count": 2
+      },
+      {
+        "item": "minecraft:netherite_scrap",
+        "count": 2
+      }
+    ]
+  },
+  "entity": "legendary_monsters:*shulker_mimic*",
+  "boss": true,
+  "requires": "lm_cazador",
+  "requires_mod": "legendary_monsters"
+}

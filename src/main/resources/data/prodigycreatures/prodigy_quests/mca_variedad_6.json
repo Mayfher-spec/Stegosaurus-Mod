@@ -1,0 +1,24 @@
+{
+  "title": "De todo un poco",
+  "description": "Reune 6 tipos distintos de edificio (casa, herreria, posada, biblioteca, granja...).",
+  "category": "Aldeas MCA",
+  "order": 570,
+  "type": "village",
+  "count": 6,
+  "rewards": {
+    "xp": 600,
+    "items": [
+      {
+        "item": "minecraft:diamond",
+        "count": 5
+      },
+      {
+        "item": "minecraft:experience_bottle",
+        "count": 12
+      }
+    ]
+  },
+  "requires": "mca_edificios_8",
+  "requires_mod": "mca",
+  "metric": "building_types"
+}

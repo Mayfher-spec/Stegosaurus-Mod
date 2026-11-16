@@ -1,0 +1,24 @@
+{
+  "title": "Manada propia",
+  "description": "Ten 3 criaturas de Raxiors of Raxor domadas.",
+  "category": "Raxiors of Raxor",
+  "order": 1220,
+  "type": "tame",
+  "count": 3,
+  "rewards": {
+    "xp": 1200,
+    "items": [
+      {
+        "item": "minecraft:diamond",
+        "count": 8
+      },
+      {
+        "item": "prodigycreatures:stegosaurus_armor_iron",
+        "count": 1
+      }
+    ]
+  },
+  "entity": "ror:*",
+  "requires": "ror_domar",
+  "requires_mod": "ror"
+}

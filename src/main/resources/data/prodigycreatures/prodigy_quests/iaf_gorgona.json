@@ -1,0 +1,24 @@
+{
+  "title": "Piedra eterna",
+  "description": "Derrota a una gorgona.",
+  "category": "Hielo y Fuego",
+  "order": 740,
+  "type": "kill",
+  "count": 1,
+  "rewards": {
+    "xp": 600,
+    "items": [
+      {
+        "item": "minecraft:diamond",
+        "count": 5
+      },
+      {
+        "item": "minecraft:golden_apple",
+        "count": 3
+      }
+    ]
+  },
+  "entity": "iceandfire:gorgon",
+  "requires": "iaf_sirena",
+  "requires_mod": "iceandfire"
+}

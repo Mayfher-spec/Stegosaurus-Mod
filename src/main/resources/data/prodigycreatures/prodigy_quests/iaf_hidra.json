@@ -1,0 +1,25 @@
+{
+  "title": "Cabezas cortadas",
+  "description": "Derrota a una hidra.",
+  "category": "Hielo y Fuego",
+  "order": 760,
+  "type": "kill",
+  "count": 1,
+  "rewards": {
+    "xp": 900,
+    "items": [
+      {
+        "item": "minecraft:diamond",
+        "count": 8
+      },
+      {
+        "item": "minecraft:golden_apple",
+        "count": 4
+      }
+    ]
+  },
+  "entity": "iceandfire:hydra",
+  "boss": true,
+  "requires": "iaf_gorgona",
+  "requires_mod": "iceandfire"
+}

@@ -1,0 +1,24 @@
+{
+  "title": "Arquitecto de la aldea",
+  "description": "Ten 8 edificios completos registrados en una misma aldea.",
+  "category": "Aldeas MCA",
+  "order": 560,
+  "type": "village",
+  "count": 8,
+  "rewards": {
+    "xp": 450,
+    "items": [
+      {
+        "item": "minecraft:emerald",
+        "count": 24
+      },
+      {
+        "item": "minecraft:diamond",
+        "count": 3
+      }
+    ]
+  },
+  "requires": "mca_casas_5",
+  "requires_mod": "mca",
+  "metric": "buildings"
+}

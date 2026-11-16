@@ -1,0 +1,25 @@
+{
+  "title": "Paladin poseido",
+  "description": "Derrota al Paladin Poseido.",
+  "category": "Monstruos Legendarios",
+  "order": 1020,
+  "type": "kill",
+  "count": 1,
+  "rewards": {
+    "xp": 1200,
+    "items": [
+      {
+        "item": "minecraft:diamond",
+        "count": 4
+      },
+      {
+        "item": "minecraft:golden_apple",
+        "count": 2
+      }
+    ]
+  },
+  "entity": "legendary_monsters:*possessed_paladin*",
+  "boss": true,
+  "requires": "lm_cazador",
+  "requires_mod": "legendary_monsters"
+}

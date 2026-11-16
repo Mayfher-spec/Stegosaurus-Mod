@@ -9,6 +9,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.OwnableEntity;
 import net.minecraft.world.entity.TamableAnimal;
 import net.minecraftforge.event.AddReloadListenerEvent;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.AnimalTameEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.MobEffectEvent;
@@ -49,6 +50,12 @@ public final class QuestEvents {
     @SubscribeEvent
     public static void effect(MobEffectEvent.Added event) {
         if (event.getEffectInstance().getEffect() == MobEffects.HERO_OF_THE_VILLAGE && event.getEntity() instanceof ServerPlayer sp) QuestData.onRaidWon(sp);
+    }
+
+    @SubscribeEvent
+    public static void tick(TickEvent.PlayerTickEvent event) {
+        if (event.phase != TickEvent.Phase.END || event.side.isClient()) return;
+        if (event.player instanceof ServerPlayer sp && sp.tickCount % 100 == 17) QuestData.poll(sp);
     }
 
     @SubscribeEvent

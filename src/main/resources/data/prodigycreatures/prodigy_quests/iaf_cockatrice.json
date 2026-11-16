@@ -1,0 +1,23 @@
+{
+  "title": "Mirada de gallo",
+  "description": "Derrota a 3 cocatrices. No les mires a los ojos.",
+  "category": "Hielo y Fuego",
+  "order": 710,
+  "type": "kill",
+  "count": 3,
+  "rewards": {
+    "xp": 300,
+    "items": [
+      {
+        "item": "minecraft:diamond",
+        "count": 2
+      },
+      {
+        "item": "minecraft:experience_bottle",
+        "count": 6
+      }
+    ]
+  },
+  "entity": "iceandfire:cockatrice",
+  "requires_mod": "iceandfire"
+}

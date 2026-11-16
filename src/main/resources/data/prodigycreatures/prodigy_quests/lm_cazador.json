@@ -1,0 +1,23 @@
+{
+  "title": "Cazador de rarezas",
+  "description": "Derrota a 10 criaturas de Legendary Monsters.",
+  "category": "Monstruos Legendarios",
+  "order": 1000,
+  "type": "kill",
+  "count": 10,
+  "rewards": {
+    "xp": 500,
+    "items": [
+      {
+        "item": "minecraft:diamond",
+        "count": 4
+      },
+      {
+        "item": "minecraft:experience_bottle",
+        "count": 8
+      }
+    ]
+  },
+  "entity": "legendary_monsters:*",
+  "requires_mod": "legendary_monsters"
+}
