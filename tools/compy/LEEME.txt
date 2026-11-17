@@ -1,0 +1,20 @@
+COMPY (Compsognathus) - herramientas
+====================================
+Una sola geometria y OCHO texturas (verde, rojo, azul, gris, amarillo, rosa, albino, melanico). Reutiliza el empaquetado UV y la
+exportacion a Java de tools/carnotaurus/rig.py, igual que el Dilophosaurus. Marco de diseno: x lateral (+x = izquierda), y arriba, z delante; 1 unidad = 1 texel.
+
+  mrig.py       esqueleto (30 huesos, 62 cubos): cuerpo, pecho, cuello en S (2), cabeza + mandibula, cola de 6 tramos, brazos de 2 tramos con 3 garras,
+                patas de 4 tramos (muslo, tibia, metatarso, pie) + 3 dedos con garra
+  mpaint.py     pintor: los PATRONES (franjas, manchas, vientre, sombreado de borde) son mascaras iguales para las 8 variantes; cada variante solo cambia la paleta
+  mlayers.py    genera CompyLayers.java (altura del cuerpo ajustada para que la planta toque el suelo)
+  mexport.py    python3 tools/compy/mexport.py <repo>  -> CompyLayers.java + 16 texturas (8 abiertas + 8 con ojos cerrados: parpadeo y sueno)
+  mbbmodel.py   python3 tools/compy/mbbmodel.py tools/compy/compy.bbmodel -> modelo editable de Blockbench (Modded Entity) con huesos, UV, 8 texturas y animaciones de muestra
+  mrender.py    visor ortogonal con la geometria y UV REALES (izq, der, frente, atras, arriba, abajo, 3/4)
+  mpreview.py   python3 tools/compy/mpreview.py tools/compy/preview -> vistas, variantes y escala
+  mpose.py      pose sentado/dormido: calcula cuanto baja el cuerpo (SIT_DROP/SLEEP_DROP de CompyModel.java)
+  sounds.py     python3 tools/compy/sounds.py src/main/resources/assets/prodigycreatures/sounds/compy
+  stats.py      largo/alto/ancho del modelo en reposo y a distintas escalas
+
+Escala en el juego: CompyRenderer.SCALE = 0.185 -> ~1,09 bloques de largo, ~0,47 de alto (con la cabeza alzada); hitbox 0,4 x 0,5.
+Donde aparece: data/prodigycreatures/forge/biome_modifier/compy_*_spawns.json (grupos de 3 a 8); la variante sale del bioma (ver CompyEntity.baseVariantFor)
+y las raras (albino, melanico) se tiran por individuo (ver config/prodigycreatures-compy.toml).

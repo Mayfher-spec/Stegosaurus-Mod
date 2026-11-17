@@ -32,6 +32,13 @@ public final class ModSounds {
     public static final RegistryObject<SoundEvent> CARNO_ULT_ROAR = reg("carnotaurus.ult_roar");
     public static final RegistryObject<SoundEvent> CARNO_EVOLUTION = reg("carnotaurus.evolution");
     public static final RegistryObject<SoundEvent> CARNO_REVERT = reg("carnotaurus.revert");
+    public static final RegistryObject<SoundEvent> COMPY_AMBIENT = reg("compy.ambient");
+    public static final RegistryObject<SoundEvent> COMPY_HURT = reg("compy.hurt");
+    public static final RegistryObject<SoundEvent> COMPY_DEATH = reg("compy.death");
+    public static final RegistryObject<SoundEvent> COMPY_BITE = reg("compy.bite");
+    public static final RegistryObject<SoundEvent> COMPY_EAT = reg("compy.eat");
+    public static final RegistryObject<SoundEvent> COMPY_HAPPY = reg("compy.happy");
+    public static final RegistryObject<SoundEvent> COMPY_STEP = reg("compy.step");
     public static final RegistryObject<SoundEvent> DILO_AMBIENT = reg("dilophosaurus.ambient");
     public static final RegistryObject<SoundEvent> DILO_AMBIENT_BABY = reg("dilophosaurus.ambient_baby");
     public static final RegistryObject<SoundEvent> DILO_HURT = reg("dilophosaurus.hurt");

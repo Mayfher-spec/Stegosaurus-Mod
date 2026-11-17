@@ -116,5 +116,13 @@
   "item.prodigycreatures.dilophosaurus_armor_diamond": "Armadura de diamante para dilofosaurio",
   "item.prodigycreatures.dilophosaurus_armor_netherite": "Armadura de netherita para dilofosaurio",
   "entity.prodigycreatures.cronista": "El Cronista Mutante",
-  "item.prodigycreatures.cronista_spawn_egg": "Generar Cronista"
+  "item.prodigycreatures.cronista_spawn_egg": "Generar Cronista",
+  "entity.prodigycreatures.compy": "Compy",
+  "item.prodigycreatures.compy_spawn_egg": "Generar Compy",
+  "subtitles.prodigycreatures.compy.ambient": "Compy gorjea",
+  "subtitles.prodigycreatures.compy.hurt": "Compy herido",
+  "subtitles.prodigycreatures.compy.death": "Compy muere",
+  "subtitles.prodigycreatures.compy.bite": "Compy muerde",
+  "subtitles.prodigycreatures.compy.eat": "Compy come",
+  "subtitles.prodigycreatures.compy.happy": "Compy se alegra"
 }

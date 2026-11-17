@@ -116,5 +116,13 @@
   "item.prodigycreatures.dilophosaurus_armor_diamond": "Diamond Dilophosaurus Armor",
   "item.prodigycreatures.dilophosaurus_armor_netherite": "Netherite Dilophosaurus Armor",
   "entity.prodigycreatures.cronista": "The Mutant Chronicler",
-  "item.prodigycreatures.cronista_spawn_egg": "Chronicler Spawn Egg"
+  "item.prodigycreatures.cronista_spawn_egg": "Chronicler Spawn Egg",
+  "entity.prodigycreatures.compy": "Compy",
+  "item.prodigycreatures.compy_spawn_egg": "Compy Spawn Egg",
+  "subtitles.prodigycreatures.compy.ambient": "Compy chirps",
+  "subtitles.prodigycreatures.compy.hurt": "Compy hurt",
+  "subtitles.prodigycreatures.compy.death": "Compy dies",
+  "subtitles.prodigycreatures.compy.bite": "Compy bites",
+  "subtitles.prodigycreatures.compy.eat": "Compy eats",
+  "subtitles.prodigycreatures.compy.happy": "Compy rejoices"
 }

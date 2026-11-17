@@ -89,6 +89,12 @@ public class ProdigyCreatures {
     public static final RegistryObject<EntityType<DilophosaurusEntity>> DILOPHOSAURUS = ENTITIES.register("dilophosaurus", () ->
         EntityType.Builder.of(DilophosaurusEntity::new, MobCategory.CREATURE)
             .sized(0.9f, 1.9f).clientTrackingRange(10).build(MODID + ":dilophosaurus"));
+    /** Compy (Compsognathus): diminuto, tamano de pollo, en manadas; 8 variantes de textura. */
+    public static final RegistryObject<EntityType<CompyEntity>> COMPY = ENTITIES.register("compy", () ->
+        EntityType.Builder.of(CompyEntity::new, MobCategory.CREATURE)
+            .sized(0.4f, 0.5f).clientTrackingRange(10).build(MODID + ":compy"));
+    public static final RegistryObject<Item> COMPY_SPAWN_EGG = ITEMS.register("compy_spawn_egg", () ->
+        new ForgeSpawnEggItem(() -> COMPY.get(), 0x74862E, 0xE4D8A8, new Item.Properties()));
     /** El Cronista de Prodigy: NPC de misiones (humanoide con cola de dinosaurio). */
     public static final RegistryObject<EntityType<com.prodigytown.creatures.quests.CronistaEntity>> CRONISTA = ENTITIES.register("cronista", () ->
         EntityType.Builder.of(com.prodigytown.creatures.quests.CronistaEntity::new, MobCategory.MISC)
@@ -145,6 +151,7 @@ public class ProdigyCreatures {
         GeckoLib.initialize();
         com.prodigytown.creatures.net.ModNetwork.register();
         net.minecraftforge.fml.ModLoadingContext.get().registerConfig(net.minecraftforge.fml.config.ModConfig.Type.COMMON, DiloConfig.SPEC, "prodigycreatures-dilophosaurus.toml");
+        net.minecraftforge.fml.ModLoadingContext.get().registerConfig(net.minecraftforge.fml.config.ModConfig.Type.COMMON, CompyConfig.SPEC, "prodigycreatures-compy.toml");
         // Legacy baby registry is initialized by this SAME mod, not by a second @Mod.
         ChibiAlpha.register(bus);
         ENTITIES.register(bus);
@@ -165,6 +172,15 @@ public class ProdigyCreatures {
                 event.accept(STEGOSAURUS_EGG.get());
                 event.accept(CARNOTAURUS_EGG.get());
                 event.accept(DILOPHOSAURUS_SPAWN_EGG.get());
+                event.accept(COMPY_SPAWN_EGG.get());
+                for (int v = 0; v < CompyEntity.VARIANTS; v++) {   // un huevo por variante (EntityTag Variant) para probar y para coleccionistas
+                    net.minecraft.world.item.ItemStack st = new net.minecraft.world.item.ItemStack(COMPY_SPAWN_EGG.get());
+                    net.minecraft.nbt.CompoundTag et = new net.minecraft.nbt.CompoundTag();
+                    et.putInt("Variant", v);
+                    st.getOrCreateTag().put("EntityTag", et);
+                    st.setHoverName(net.minecraft.network.chat.Component.literal("Huevo generador de Compy " + CompyEntity.VARIANT_NAMES[v]).withStyle(sty -> sty.withItalic(false)));
+                    event.accept(st);
+                }
                 event.accept(CRONISTA_SPAWN_EGG.get());
                 event.accept(NEST_ITEM.get());
                 for (RegistryObject<Item> egg : EGG_ITEMS) event.accept(egg.get());
@@ -224,10 +240,22 @@ public class ProdigyCreatures {
         }
 
         @SubscribeEvent
+        public static void registerCompySpawn(SpawnPlacementRegisterEvent event) {
+            event.register(COMPY.get(), SpawnPlacements.Type.ON_GROUND, Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+                (type, level, reason, pos, random) -> level.getBlockState(pos.below()).isFaceSturdy(level, pos.below(), Direction.UP)
+                    && CompyEntity.roomFor(level, pos) && Mob.checkMobSpawnRules(type, level, reason, pos, random)
+                    // en estado salvaje solo prospera el porcentaje configurado de intentos de aparicion natural
+                    && (reason != net.minecraft.world.entity.MobSpawnType.NATURAL && reason != net.minecraft.world.entity.MobSpawnType.CHUNK_GENERATION
+                        || random.nextInt(100) < CompyConfig.get(CompyConfig.SPAWN_PERCENT, 60)),
+                SpawnPlacementRegisterEvent.Operation.REPLACE);
+        }
+
+        @SubscribeEvent
         public static void registerAttributes(EntityAttributeCreationEvent event) {
             event.put(STEGOSAURUS.get(), StegosaurusEntity.createAttributes().build());
             event.put(CARNOTAURUS.get(), CarnotaurusEntity.createAttributes().build());
             event.put(DILOPHOSAURUS.get(), DilophosaurusEntity.createAttributes().build());
+            event.put(COMPY.get(), CompyEntity.createAttributes().build());
             event.put(CRONISTA.get(), com.prodigytown.creatures.quests.CronistaEntity.createAttributes().build());
             event.put(ChibiAlpha.STEGO.get(), ChibiStego.attributes().build());
         }

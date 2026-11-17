@@ -677,5 +677,83 @@
         "stream": false
       }
     ]
+  },
+  "compy.ambient": {
+    "subtitle": "subtitles.prodigycreatures.compy.ambient",
+    "sounds": [
+      {
+        "name": "prodigycreatures:compy/ambient1",
+        "stream": false
+      },
+      {
+        "name": "prodigycreatures:compy/ambient2",
+        "stream": false
+      },
+      {
+        "name": "prodigycreatures:compy/ambient3",
+        "stream": false
+      }
+    ]
+  },
+  "compy.hurt": {
+    "subtitle": "subtitles.prodigycreatures.compy.hurt",
+    "sounds": [
+      {
+        "name": "prodigycreatures:compy/hurt",
+        "stream": false
+      }
+    ]
+  },
+  "compy.death": {
+    "subtitle": "subtitles.prodigycreatures.compy.death",
+    "sounds": [
+      {
+        "name": "prodigycreatures:compy/death",
+        "stream": false
+      }
+    ]
+  },
+  "compy.bite": {
+    "subtitle": "subtitles.prodigycreatures.compy.bite",
+    "sounds": [
+      {
+        "name": "prodigycreatures:compy/bite",
+        "stream": false
+      }
+    ]
+  },
+  "compy.eat": {
+    "subtitle": "subtitles.prodigycreatures.compy.eat",
+    "sounds": [
+      {
+        "name": "prodigycreatures:compy/eat",
+        "stream": false
+      }
+    ]
+  },
+  "compy.happy": {
+    "subtitle": "subtitles.prodigycreatures.compy.happy",
+    "sounds": [
+      {
+        "name": "prodigycreatures:compy/happy",
+        "stream": false
+      }
+    ]
+  },
+  "compy.step": {
+    "sounds": [
+      {
+        "name": "prodigycreatures:compy/step1",
+        "stream": false
+      },
+      {
+        "name": "prodigycreatures:compy/step2",
+        "stream": false
+      },
+      {
+        "name": "prodigycreatures:compy/step3",
+        "stream": false
+      }
+    ]
   }
 }
