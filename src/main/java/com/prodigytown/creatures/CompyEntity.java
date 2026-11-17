@@ -328,7 +328,7 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder {
             getLookControl().setLookAt(l, 10.0F, getMaxHeadXRot());
             if (--recalc > 0) return;
             recalc = 8;
-            if (isTame() && distanceToSqr(l) > 24.0 * 24.0) { this.teleportTo(l.getX(), l.getY(), l.getZ()); return; }
+            if (isTame() && distanceToSqr(l) > 24.0 * 24.0) { CompyEntity.this.teleportTo(l.getX(), l.getY(), l.getZ()); return; }
             getNavigation().moveTo(l, isTame() ? 1.25D : 1.0D);
         }
     }
