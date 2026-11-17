@@ -24,8 +24,8 @@ import java.util.EnumSet;
  */
 public final class PetOrders {
     private PetOrders() {}
-    public static final int FOLLOW = 0, STAY = 1, WANDER = 2, PATROL = 3, SIT = 4, SLEEP = 5, COUNT = 8;
-    /** Ordenes 6 (defender: se pega a ti y ataca a los monstruos que se acerquen) y 7 (atacar objetivo: la criatura que apuntas). Desde la v1.8 las tres especies tienen las 8 ordenes. */
+    public static final int FOLLOW = 0, STAY = 1, WANDER = 2, PATROL = 3, SIT = 4, SLEEP = 5, COUNT = 6;
+    /** Ordenes extra solo del dilofosaurio: 6 defender (protege al dueno) y 7 atacar objetivo (la criatura que apuntas). El resto de especies sigue con COUNT = 6. */
     public static final int DEFEND = 6, ATTACK = 7, DILO_COUNT = 8;
     public static final String[] DILO_NAMES = {"Seguir", "Quieto", "Deambular", "Patrullar", "Sentarse", "Dormir", "Defender", "Atacar objetivo"};
     public static final String[] DILO_HELP = {
@@ -37,16 +37,14 @@ public final class PetOrders {
         "Se tumba, baja la cabeza y cierra los ojos: recupera vida poco a poco.",
         "Se pega a ti y ataca a cualquier amenaza hostil que se acerque.",
         "Ataca a la criatura que estes mirando al darle la orden (apuntala antes de pulsar)."};
-    public static final String[] NAMES = DILO_NAMES;
+    public static final String[] NAMES = {"Seguir", "Quieto", "Deambular", "Patrullar", "Sentarse", "Dormir"};
     public static final String[] HELP = {
         "Tu dinosaurio te seguira a donde vayas.",
         "Tu dinosaurio permanecera en el lugar actual hasta que le des otra orden.",
         "Paseara libremente por la zona, sin alejarse mas de 3 chunks de donde se lo ordenaste.",
         "Recorrera la zona en ronda y atacara a los monstruos que se acerquen.",
         "Se sentara y esperara.",
-        "Dormira profundamente: recupera vida mucho mas rapido.",
-        "Se pega a ti y ataca a los monstruos que se acerquen a menos de 16 bloques de ti.",
-        "Ataca a la criatura que estes mirando al darle la orden (apunta antes de pulsar)."};
+        "Dormira profundamente: recupera vida mucho mas rapido."};
     /** Radio (bloques) de la arena de deambular y patrullar: 3 chunks a cada lado. */
     public static final int WANDER_RADIUS = 48;
     /** Por debajo de esta fraccion de vida el chibi se asusta: deja de atacar, huye de monstruos y te sigue muy cerca. */
@@ -65,10 +63,10 @@ public final class PetOrders {
 
     public static int clamp(int order) { return Math.max(0, Math.min(COUNT - 1, order)); }
     public static boolean isSittingOrder(int order) { return order == SIT || order == SLEEP; }
-    /** Limite de ordenes (las tres especies comparten las 8). */
-    public static int clampFor(TamableAnimal mob, int order) { return clamp(order); }
-    /** Seguir y Defender caminan tras el dueno. */
-    public static boolean followsOwner(int order) { return order == FOLLOW || order == DEFEND; }
+    /** Limite de ordenes segun la especie (el dilofosaurio tiene 8). */
+    public static int clampFor(TamableAnimal mob, int order) {
+        return mob instanceof DilophosaurusEntity ? Math.max(0, Math.min(DILO_COUNT - 1, order)) : clamp(order);
+    }
 
     /** Solo servidor. */
     public static void setOrder(TamableAnimal mob, int order) {
@@ -258,69 +256,6 @@ public final class PetOrders {
             @Override public boolean canUse() {
                 return ((Holder) mob).getOrder() == PATROL && !((Holder) mob).isFallen() && super.canUse();
             }
-        };
-    }
-
-    // ------------------------------------------------------------------ Defender y Atacar objetivo (Estegosaurio, Carnotauro y chibi; el Dilo tiene los suyos)
-
-    private static final java.util.Map<net.minecraft.world.entity.Entity, Integer> ATTACK_TARGET = new java.util.WeakHashMap<>();
-
-    private static boolean canHit(TamableAnimal mob, LivingEntity e) {
-        if (e == mob || !e.isAlive() || e instanceof net.minecraft.world.entity.decoration.ArmorStand || e instanceof Player) return false;
-        if (e instanceof TamableAnimal t && t.isTame() && (mob.getOwnerUUID() == null || mob.getOwnerUUID().equals(t.getOwnerUUID()))) return false;
-        return e.getType() != mob.getType();
-    }
-
-    /** Orden "Atacar objetivo": se llama desde la red; el objetivo es la criatura que apunta el jugador (hasta 40 bloques). */
-    public static void commandAttack(TamableAnimal mob, Player player) {
-        if (mob.level().isClientSide || !mob.isTame() || !(mob instanceof Holder h) || h.isFallen()) return;
-        net.minecraft.world.phys.Vec3 eye = player.getEyePosition(), look = player.getViewVector(1.0F), end = eye.add(look.scale(40.0));
-        net.minecraft.world.phys.AABB box = player.getBoundingBox().expandTowards(look.scale(40.0)).inflate(1.5);
-        LivingEntity best = null; double bd = Double.MAX_VALUE;
-        for (LivingEntity e : mob.level().getEntitiesOfClass(LivingEntity.class, box, x -> x != player && canHit(mob, x))) {
-            var hit = e.getBoundingBox().inflate(0.35).clip(eye, end);
-            if (hit.isPresent()) { double d = eye.distanceToSqr(hit.get()); if (d < bd) { bd = d; best = e; } }
-        }
-        if (best == null) { player.displayClientMessage(Component.literal("Apunta a una criatura antes de dar la orden de atacar"), true); return; }
-        setOrder(mob, ATTACK);
-        ATTACK_TARGET.put(mob, best.getId());
-        mob.setTarget(best);
-        player.displayClientMessage(Component.literal("Orden: atacar a " + best.getName().getString()), true);
-    }
-
-    /** Orden "Atacar objetivo": persigue a la criatura designada hasta abatirla (o perderla) y luego vuelve a seguir. */
-    public static Goal orderTargeting(TamableAnimal mob) {
-        return new Goal() {
-            { this.setFlags(EnumSet.of(Goal.Flag.TARGET)); }
-            @Nullable private LivingEntity designated() {
-                Integer id = ATTACK_TARGET.get(mob);
-                if (id == null || !(mob.level() instanceof ServerLevel sl)) return null;
-                net.minecraft.world.entity.Entity e = sl.getEntity(id);
-                return e instanceof LivingEntity le && le.isAlive() && canHit(mob, le) ? le : null;
-            }
-            @Override public boolean canUse() { return mob.isTame() && ((Holder) mob).getOrder() == ATTACK && !((Holder) mob).isFallen(); }
-            @Override public void start() { LivingEntity t = designated(); if (t != null) mob.setTarget(t); }
-            @Override public boolean canContinueToUse() { return canUse() && mob.getTarget() != null && mob.getTarget().isAlive(); }
-            @Override public void tick() {
-                LivingEntity t = designated();
-                if (t == null) { ATTACK_TARGET.remove(mob); mob.setTarget(null); setOrder(mob, FOLLOW); }
-                else if (mob.getTarget() != t) mob.setTarget(t);
-            }
-        };
-    }
-
-    /** Orden "Defender": ataca a los monstruos que se acerquen a menos de 16 bloques del dueno. */
-    public static Goal defendTargeting(TamableAnimal pet) {
-        return new NearestAttackableTargetGoal<Monster>(pet, Monster.class, 10, true, false, e -> {
-            LivingEntity o = pet.getOwner();
-            return o != null && e.distanceToSqr(o) <= 16.0 * 16.0;
-        }) {
-            private boolean active() {
-                Holder h = (Holder) pet;
-                return pet.isTame() && h.getOrder() == DEFEND && !h.isFallen() && !pet.isOrderedToSit() && !weak(pet);
-            }
-            @Override public boolean canUse() { return active() && super.canUse(); }
-            @Override public boolean canContinueToUse() { return active() && super.canContinueToUse(); }
         };
     }
 

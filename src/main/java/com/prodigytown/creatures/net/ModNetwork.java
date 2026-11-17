@@ -102,7 +102,7 @@ public final class ModNetwork {
                 }
                 if (e instanceof net.minecraft.world.entity.TamableAnimal t && e instanceof com.prodigytown.creatures.PetOrders.Holder
                         && t.isTame() && t.isOwnedBy(sp) && t.distanceTo(sp) <= 40.0F) {
-                    if (m.order == com.prodigytown.creatures.PetOrders.ATTACK) { if (t instanceof DilophosaurusEntity dilo) dilo.commandAttack(sp); else com.prodigytown.creatures.PetOrders.commandAttack(t, sp); }
+                    if (t instanceof DilophosaurusEntity dilo && m.order == com.prodigytown.creatures.PetOrders.ATTACK) dilo.commandAttack(sp);
                     else com.prodigytown.creatures.PetOrders.setOrder(t, m.order);
                 }
             });

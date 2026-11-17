@@ -278,22 +278,20 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet, 
         goalSelector.addGoal(1, new com.prodigytown.creatures.PetOrders.FleeGoal(this));
         goalSelector.addGoal(2, new com.prodigytown.creatures.PetOrders.CloseFollowGoal(this));
         goalSelector.addGoal(3, new FollowOwnerGoal(this, 1.1D, 6.0F, 2.0F, false) {
-            @Override public boolean canUse() { return com.prodigytown.creatures.PetOrders.followsOwner(getOrder()) && !isFallen() && !isWeak() && super.canUse(); }
-            @Override public boolean canContinueToUse() { return com.prodigytown.creatures.PetOrders.followsOwner(getOrder()) && !isWeak() && super.canContinueToUse(); }
+            @Override public boolean canUse() { return getOrder() == com.prodigytown.creatures.PetOrders.FOLLOW && !isFallen() && !isWeak() && super.canUse(); }
+            @Override public boolean canContinueToUse() { return getOrder() == com.prodigytown.creatures.PetOrders.FOLLOW && !isWeak() && super.canContinueToUse(); }
         });
         goalSelector.addGoal(4, new net.minecraft.world.entity.ai.goal.MoveTowardsRestrictionGoal(this, 0.8D));
         goalSelector.addGoal(4, new com.prodigytown.creatures.PetOrders.PatrolGoal(this));
         goalSelector.addGoal(4, new RandomStrollGoal(this, 0.75) {
-            @Override public boolean canUse() { return !isTame() || (getOrder() != com.prodigytown.creatures.PetOrders.STAY && getOrder() != com.prodigytown.creatures.PetOrders.PATROL && getOrder() != com.prodigytown.creatures.PetOrders.ATTACK && !isFallen() && super.canUse()); }
+            @Override public boolean canUse() { return !isTame() || (getOrder() != com.prodigytown.creatures.PetOrders.STAY && getOrder() != com.prodigytown.creatures.PetOrders.PATROL && !isFallen() && super.canUse()); }
         });
         goalSelector.addGoal(5, new LookAtPlayerGoal(this, Player.class, 8.0F));
         goalSelector.addGoal(6, new RandomLookAroundGoal(this));
-        targetSelector.addGoal(0, com.prodigytown.creatures.PetOrders.orderTargeting(this));
         targetSelector.addGoal(1, new OwnerHurtByTargetGoal(this));
         targetSelector.addGoal(2, new OwnerHurtTargetGoal(this));
         targetSelector.addGoal(3, new HurtByTargetGoal(this));
         targetSelector.addGoal(4, com.prodigytown.creatures.PetOrders.patrolTargeting(this));
-        targetSelector.addGoal(4, com.prodigytown.creatures.PetOrders.defendTargeting(this));
     }
 
     private boolean isSalad(ItemStack stack) { return stack.is(com.prodigytown.creatures.ProdigyCreatures.FEED.get()); }

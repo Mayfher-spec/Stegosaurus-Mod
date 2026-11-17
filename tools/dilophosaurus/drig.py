@@ -92,57 +92,30 @@ def add_gear(P):
     c += mir(11.4, 12.4, -4.0, 2.0, -1.2, -0.2, 'leather', dict(strap=1))
     c += mir(11.4, 13.4, -6.5, -4.0, -3.4, 1.0, 'metal', dict(iron=1))
     add('body', c)
-    # --- armadura ligera: no cubre las crestas ni la membrana NI LOS OJOS (el ojo ocupa z 4.8-10.2, y -1.9..3.5 del craneo: ahi no hay placas).
-    # Cubre cabeza (nuca, mejillas bajas, hocico), cuello, lomo, vientre, flancos, brazos, patas, pies y cola.
+    # --- armadura ligera: no cubre las crestas ni la membrana
     add('head', [
         _a(-1.9, 6.0, 0.0, 3.8, 0.9, 10.0, kind='plate', role2='helm'),            # entre las dos crestas
         _a(-3.0, 5.0, 12.5, 6.0, 1.0, 9.0, kind='plate', role2='nose'),
         _a(-1.3, 6.8, 2.0, 2.6, 1.3, 2.6, kind='gem'),
-        _a(-6.9, -4.0, -2.6, 0.9, 8.6, 5.9, kind='plate', role2='cheek'),         # sien (detras del ojo)
-        _a(6.0, -4.0, -2.6, 0.9, 8.6, 5.9, kind='plate', role2='cheek'),
-        _a(-6.9, -5.1, 4.0, 0.9, 2.7, 8.5, kind='plate', role2='cheek'),          # pomulo (debajo del ojo)
-        _a(6.0, -5.1, 4.0, 0.9, 2.7, 8.5, kind='plate', role2='cheek'),
-        _a(-5.4, -3.2, 13.5, 0.9, 3.2, 8.5, kind='plate', role2='cheek'),         # hocico lateral
-        _a(4.5, -3.2, 13.5, 0.9, 3.2, 8.5, kind='plate', role2='cheek'),
+        _a(-6.9, -3.2, 1.0, 0.9, 6.6, 9.0, kind='plate', role2='cheek'),
+        _a(6.0, -3.2, 1.0, 0.9, 6.6, 9.0, kind='plate', role2='cheek'),
         _a(-4.2, -3.0, 22.5, 8.4, 1.2, 1.0, kind='band')])
-    add('jaw', [
-        _a(-4.9, -3.6, 4.0, 0.9, 3.0, 14.0, kind='plate', role2='cheek'),
-        _a(4.0, -3.6, 4.0, 0.9, 3.0, 14.0, kind='plate', role2='cheek')])
-    add('neck1', [
-        _a(-6.9, -6.4, 8.0, 13.8, 13.3, 3.0, kind='band'),
-        _a(-4.5, 6.0, 1.0, 9.0, 0.9, 6.8, kind='plate', role2='ntop'), _a(-4.5, 6.0, 11.4, 9.0, 0.9, 8.2, kind='plate', role2='ntop'),
-        _a(6.0, -4.0, 1.0, 0.9, 8.0, 6.8, kind='plate', role2='nside'), _a(6.0, -4.0, 11.4, 0.9, 8.0, 8.2, kind='plate', role2='nside'),
-        _a(-6.9, -4.0, 1.0, 0.9, 8.0, 6.8, kind='plate', role2='nside'), _a(-6.9, -4.0, 11.4, 0.9, 8.0, 8.2, kind='plate', role2='nside')])
+    add('neck1', [_a(-6.9, -6.4, 8.0, 13.8, 13.3, 3.0, kind='band')])
     add('chest', [
         _a(-11.5, -11.9, 1.5, 23.0, 24.8, 7.0, kind='plate', role2='breast'),
         _a(10.8, 3.5, 7.5, 1.6, 8.0, 7.5, kind='plate', role2='pauld'),
-        _a(-12.4, 3.5, 7.5, 1.6, 8.0, 7.5, kind='plate', role2='pauld'),
-        _a(-8.5, 12.0, -5.0, 17.0, 0.9, 6.0, kind='plate', role2='lame'),
-        _a(-8.5, 12.0, 8.6, 17.0, 0.9, 6.0, kind='plate', role2='lame'),
-        _a(-8.0, -13.9, -4.0, 16.0, 0.9, 16.0, kind='plate', role2='belly')])
+        _a(-12.4, 3.5, 7.5, 1.6, 8.0, 7.5, kind='plate', role2='pauld')])
     add('body', [
         _a(12.0, 3.0, -20.0, 0.9, 8.5, 11.0, kind='plate', role2='rump'),
         _a(-12.9, 3.0, -20.0, 0.9, 8.5, 11.0, kind='plate', role2='rump'),
         _a(12.0, 3.0, 8.0, 0.9, 8.5, 12.0, kind='plate', role2='side'),
-        _a(-12.9, 3.0, 8.0, 0.9, 8.5, 12.0, kind='plate', role2='side'),
-        # lomo: placas a cada lado de las puas
-        _a(1.6, 12.0, -18.0, 6.4, 0.9, 8.0, kind='plate', role2='lame'), _a(-8.0, 12.0, -18.0, 6.4, 0.9, 8.0, kind='plate', role2='lame'),
-        _a(1.6, 12.0, -8.0, 6.4, 0.9, 8.0, kind='plate', role2='lame'), _a(-8.0, 12.0, -8.0, 6.4, 0.9, 8.0, kind='plate', role2='lame'),
-        _a(1.6, 12.0, 2.0, 6.4, 0.9, 8.0, kind='plate', role2='lame'), _a(-8.0, 12.0, 2.0, 6.4, 0.9, 8.0, kind='plate', role2='lame'),
-        _a(-8.0, -14.9, -20.0, 16.0, 0.9, 34.0, kind='plate', role2='belly')])
-    for n, sg in (('l', 1), ('r', -1)):
-        add('arm_' + n, [_a(-3.1, -8.4, -3.1, 6.2, 3.4, 6.2, kind='band')])
-        add('arm2_' + n, [_a(-2.7, -7.6, -2.7, 5.4, 3.0, 5.4, kind='band')])
-        add('meta_' + n, [_a(-3.7, -12.0, -3.7, 7.4, 3.0, 7.4, kind='band')])
-        add('shin_' + n, [_a(-4.6, -14.0, -4.6, 9.2, 5.0, 9.2, kind='band'), _a(-3.0, -20.5, 3.8, 6.0, 12.0, 0.9, kind='plate', role2='thigh')])
-        add('foot_' + n, [_a(-4.0, 0.0, -6.0, 8.0, 0.9, 11.0, kind='plate', role2='lame')])
-    add('thigh_l', [_a(5.5, -18.0, -5.0, 0.9, 12.0, 10.0, kind='plate', role2='thigh'), _a(-4.5, -16.0, 7.0, 9.0, 10.0, 0.9, kind='plate', role2='thigh'),
-                    _a(-6.2, -3.5, -7.7, 12.4, 3.0, 15.4, kind='band')])
-    add('thigh_r', [_a(-6.4, -18.0, -5.0, 0.9, 12.0, 10.0, kind='plate', role2='thigh'), _a(-4.5, -16.0, 7.0, 9.0, 10.0, 0.9, kind='plate', role2='thigh'),
-                    _a(-6.2, -3.5, -7.7, 12.4, 3.0, 15.4, kind='band')])
-    add('tail1', [_a(-6.9, -6.9, -14.0, 13.8, 13.8, 3.0, kind='band'), _a(-3.5, 6.0, -22.0, 7.0, 0.9, 6.0, kind='plate', role2='tail')])
+        _a(-12.9, 3.0, 8.0, 0.9, 8.5, 12.0, kind='plate', role2='side')])
+    add('thigh_l', [_a(5.5, -18.0, -5.0, 0.9, 12.0, 10.0, kind='plate', role2='thigh')])
+    add('thigh_r', [_a(-6.4, -18.0, -5.0, 0.9, 12.0, 10.0, kind='plate', role2='thigh')])
+    for n in ('l', 'r'):
+        add('shin_' + n, [_a(-4.6, -14.0, -4.6, 9.2, 5.0, 9.2, kind='band')])
+    add('tail1', [_a(-6.9, -6.9, -14.0, 13.8, 13.8, 3.0, kind='band')])
     add('tail2', [_a(-5.7, -5.7, -12.0, 11.4, 11.4, 2.8, kind='band')])
-    add('tail3', [_a(-4.3, -4.3, -10.0, 8.6, 8.6, 2.6, kind='band')])
 
 STAGES = {
     'chibi': dict(body=0.58, tail=0.52, neck=0.60, head=1.05, crest=0.75, arm=0.70, leg=0.58, frill=0.95),
