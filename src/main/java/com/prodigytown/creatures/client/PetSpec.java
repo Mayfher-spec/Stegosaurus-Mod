@@ -22,7 +22,10 @@ import java.util.function.Supplier;
  */
 final class PetSpec {
     /** Habilidad: cd = indice de recarga de la entidad (-1 = pasiva). hudKey es la etiqueta corta para el HUD. */
-    record Ability(String name, String desc, Item icon, Supplier<String> key, int cd, BooleanSupplier locked, String lockedText) {
+    record Ability(String name, String desc, Item icon, Supplier<String> key, int cd, BooleanSupplier locked, String lockedText, Supplier<String[]> stats) {
+        Ability(String name, String desc, Item icon, Supplier<String> key, int cd, BooleanSupplier locked, String lockedText) {
+            this(name, desc, icon, key, cd, locked, lockedText, null);
+        }
         String hudKey() {
             String k = key.get();
             if (k.startsWith("Clic i")) return "Izq";
@@ -81,17 +84,49 @@ final class PetSpec {
         PetSpec s = new PetSpec(e, "Carnotauro", new String[]{"Combate", "Defensa", "Soporte"}, "Definitiva", 0xFFE0453A,
             "ensalada de domesticación");
         s.abilities.add(new Ability("Mordida feroz", "Cierra sus mandíbulas sobre el enemigo que tiene delante. Es su arma más rápida.", Items.IRON_SWORD,
-            () -> "Clic izq.", 2, () -> false, ""));
+            () -> "Clic izq.", 2, () -> false, "", () -> carnoStats(e, 0)));
         s.abilities.add(new Ability("Embestida brutal", "Se lanza hacia delante, golpea a todo el que toca y lo empuja con fuerza.", Items.IRON_BOOTS,
-            () -> k(ClientKeys.CHARGE), 0, () -> false, ""));
-        s.abilities.add(new Ability("Cabezazo demoledor", "Echa la cabeza atrás y embiste con los cuernos: daño fuerte y los enemigos salen disparados hacia arriba.", Items.ANVIL,
-            () -> k(ClientKeys.TAIL), 1, () -> false, ""));
+            () -> k(ClientKeys.CHARGE), 0, () -> false, "", () -> carnoStats(e, 1)));
         s.abilities.add(new Ability("Rugido aterrador", "Definitiva: aliados cercanos ganan Fuerza; los enemigos quedan lentos y débiles. Desde el nivel 50.", Items.NETHER_STAR,
-            () -> k(ClientKeys.ULTIMATE), 3, () -> e.ultimateLevel() <= 0, "Nv. 50"));
+            () -> k(ClientKeys.ULTIMATE), 3, () -> e.ultimateLevel() <= 0, "Nv. 50", () -> carnoStats(e, 2)));
+        s.abilities.add(new Ability("Cabezazo demoledor", "Echa la cabeza atrás y embiste con los cuernos: daño fuerte y los enemigos salen disparados hacia arriba.", Items.ANVIL,
+            () -> k(ClientKeys.TAIL), 1, () -> false, "", () -> carnoStats(e, 3)));
         s.abilities.add(new Ability("Instinto depredador", "Pasiva: ataca todo lo que ve, corre más rápido tras una presa y se enfurece con poca vida.", Items.ENDER_EYE,
             () -> "Pasiva", -1, () -> false, ""));
         return s;
     }
+
+    private static String sec(double ticks) {
+        double s = ticks / 20.0;
+        return (s == Math.rint(s) ? String.valueOf((int) s) : String.format("%.1f", s).replace('.', ',')) + " s";
+    }
+
+    /** Estadisticas de cada ataque del carnotauro: 0 mordida, 1 embestida, 2 rugido, 3 cabezazo. */
+    private static String[] carnoStats(CarnotaurusEntity e, int a) {
+        ProdigyProgress p = e.getProgress();
+        float dmg = (float) e.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE);
+        float f = 1.0F - 0.10F * p.rank("C7");
+        switch (a) {
+            case 0 -> { return new String[]{"Daño: " + Math.round(dmg), "Recarga: " + sec(Math.max(2, Math.round(12 * f))), "Tecla: clic izq."}; }
+            case 1 -> { return new String[]{"Daño: " + Math.round(dmg * (1.4F + 0.2F * p.rank("C3"))), "Recarga: " + sec(Math.round(160 * f)), "Tecla: " + k(ClientKeys.CHARGE)}; }
+            case 2 -> {
+                int ul = e.ultimateLevel();
+                int cd = ul > 0 ? 1200 - 20 * new int[]{0, 8, 14, 20}[Math.min(3, p.rank("U3"))] : 500;
+                return new String[]{"Alcance: 12 m", "Recarga: " + sec(Math.round(cd * f)), "Tecla: " + k(ClientKeys.ULTIMATE)};
+            }
+            default -> { return new String[]{"Daño: " + Math.round(dmg * (1.3F + 0.5F * p.rank("C5"))), "Recarga: " + sec(Math.round(70 * (1.0F - 0.10F * p.rank("C5")) * f)), "Tecla: " + k(ClientKeys.TAIL)}; }
+        }
+    }
+
+    // ---- definitiva / mejora final
+    String ultName() { return pet instanceof DilophosaurusEntity ? "Cazador primordial" : "Rugido ancestral"; }
+    String ultHeader() { return pet instanceof DilophosaurusEntity ? "Mejora final" : "Mejoras de la definitiva"; }
+    String ultStatus() {
+        if (pet instanceof StegosaurusEntity s) { int u = s.ultimateLevel(); return u > 0 ? "Definitiva nivel " + u + " / 3" : "Se obtiene al nivel 50"; }
+        if (pet instanceof CarnotaurusEntity c) { int u = c.ultimateLevel(); return u > 0 ? "Definitiva nivel " + u + " / 3" : "Se obtiene al nivel 50"; }
+        return progress().rank("P1") > 0 ? "Desbloqueado" : "Se obtiene al nivel 70";
+    }
+    boolean hasUltimateCard() { return !(pet instanceof DilophosaurusEntity); }
 
     private static final String[] DILO_DESC = {
         "Un mordisco rápido y preciso. El daño llega justo en el momento del impacto.",
