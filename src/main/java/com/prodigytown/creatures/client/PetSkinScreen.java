@@ -232,6 +232,11 @@ public final class PetSkinScreen extends Screen {
             this.armor = armor;
         }
         @Override public void renderWidget(GuiGraphics g, int mx, int my, float pt) {
+            g.pose().pushPose(); g.pose().translate(0.0F, 0.0F, 200.0F); // por encima del modelo del retrato (que se dibuja a z=50)
+            draw(g);
+            g.pose().popPose();
+        }
+        private void draw(GuiGraphics g) {
             int x = getX(), y = getY();
             boolean on = this.active;
             g.fill(x, y, x + width, y + height, on ? 0xCC10161C : 0x8810161C);
@@ -251,6 +256,11 @@ public final class PetSkinScreen extends Screen {
     private final class ChibiButton extends Button {
         ChibiButton(int x, int y, OnPress press) { super(x, y, 22, 22, Component.empty(), press, DEFAULT_NARRATION); }
         @Override public void renderWidget(GuiGraphics g, int mx, int my, float pt) {
+            g.pose().pushPose(); g.pose().translate(0.0F, 0.0F, 200.0F);
+            draw(g);
+            g.pose().popPose();
+        }
+        private void draw(GuiGraphics g) {
             int x = getX(), y = getY();
             boolean on = this.active, armed = System.currentTimeMillis() < chibiConfirmUntil;
             g.fill(x, y, x + width, y + height, on ? 0xCC10161C : 0x8810161C);
