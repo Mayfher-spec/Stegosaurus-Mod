@@ -23,6 +23,7 @@ Manadas: cada grupo tiene UN lider (marca roja con dos anillos en la cola cerca 
 al hacerlo, toda la manada cercana se une como soldados (sin interfaz: orden bloqueada en "seguidor"). Ver CompyEntity (recruitPack, packTick, promoteSuccessor).
 
 --- Interfaz del Compy (v1.10.0) ---
-python3 tools/compy/gui.py <repo> <comandos.png> <ataques.png> <talentos.png> [carpeta_vista_previa]
-Genera textures/gui/compy2/{cmd,atk,tal}.png (maquetas limpiadas, 1086 px de ancho) y client/CompyGui.java
+python3 tools/compy/gui.py <repo> <comandos.png> <ataques.png> <talentos.png> <manada.png> [carpeta_vista_previa]
+Genera textures/gui/compy2/{cmd,atk,tal,pack}.png (con la barra de 4 pestanas unificada tomada de la maqueta de Manada;
+gui_pack.py contiene la pagina Manada y la barra) (maquetas limpiadas, 1086 px de ancho) y client/CompyGui.java
 (coordenadas). CompyGui.java es GENERADO: no se edita a mano, se vuelve a ejecutar el script.
