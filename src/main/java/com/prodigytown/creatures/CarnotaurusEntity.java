@@ -220,7 +220,7 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
         this.progress = ProdigyProgress.load(tag.getCompound("Progress"), isAdultStage() ? ProdigyProgress.ADULT_START_LEVEL : 1, Talents.CARNO);
         this.entityData.set(PROGRESS, progress.save());
         this.entityData.set(SADDLED, tag.getBoolean("Saddled"));
-        this.entityData.set(ARMOR_TIER, isAdultStage() ? Math.max(0, Math.min(4, tag.getInt("ArmorTier"))) : 0);
+        this.entityData.set(ARMOR_TIER, Math.max(0, Math.min(4, tag.getInt("ArmorTier"))));
         this.entityData.set(ORDER, PetOrders.clamp(tag.getInt("PetOrder")));
         this.entityData.set(FALLEN, tag.getBoolean("PetFallen"));
         this.orderHome = tag.contains("OrderHome") ? BlockPos.of(tag.getLong("OrderHome")) : null;
@@ -925,15 +925,13 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
     }
 
     /**
-     * Vuelve a ser una cria (solo el adulto vivo). Suelta la silla y la armadura, baja al jinete y conserva dueno,
+     * Vuelve a ser una cria (solo el adulto vivo). Baja al jinete, conserva la silla y la armadura (se ven de nuevo al crecer) y conserva dueno,
      * nombre, color, nivel y orden. Para volver a crecer hacen falta de nuevo las carnes crudas. Solo servidor.
      */
     public void revertToChibi() {
         if (this.level().isClientSide || !isAlive() || isFallen() || !isAdultStage() || getMorph() > 0) return;
         this.ejectPassengers();
-        removeSaddle();
-        removeArmor();
-        this.getNavigation().stop();
+        this.getNavigation().stop();   // la silla y la armadura se conservan: reaparecen al volver a crecer
         this.growth = 0;
         this.entityData.set(MORPH_KIND, 2);
         this.entityData.set(MORPH, SHRINK_LEN);

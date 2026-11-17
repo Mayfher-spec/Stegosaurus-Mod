@@ -251,7 +251,7 @@ public class DilophosaurusEntity extends TamableAnimal implements PetOrders.Hold
         this.progress = ProdigyProgress.load(tag.getCompound("Progress"), isAdultStage() ? ProdigyProgress.ADULT_START_LEVEL : 1, Talents.DILO);
         this.entityData.set(PROGRESS, progress.save());
         this.entityData.set(SADDLED, tag.getBoolean("Saddled"));
-        this.entityData.set(ARMOR_TIER, isAdultStage() ? Math.max(0, Math.min(4, tag.getInt("ArmorTier"))) : 0);
+        this.entityData.set(ARMOR_TIER, Math.max(0, Math.min(4, tag.getInt("ArmorTier"))));
         this.entityData.set(ORDER, PetOrders.clampFor(this, tag.getInt("PetOrder")));
         this.entityData.set(FALLEN, tag.getBoolean("PetFallen"));
         this.orderHome = tag.contains("OrderHome") ? BlockPos.of(tag.getLong("OrderHome")) : null;
@@ -1267,13 +1267,11 @@ public class DilophosaurusEntity extends TamableAnimal implements PetOrders.Hold
         applyStageStats(true);
     }
 
-    /** Vuelve a ser una cria (solo el adulto vivo): suelta la silla, baja al jinete y conserva dueno, nombre, color, nivel y orden. Solo servidor. */
+    /** Vuelve a ser una cria (solo el adulto vivo): baja al jinete, conserva la silla y la armadura y conserva dueno, nombre, color, nivel y orden. Solo servidor. */
     public void revertToChibi() {
         if (this.level().isClientSide || !isAlive() || isFallen() || !isAdultStage() || getMorph() > 0) return;
         this.ejectPassengers();
-        removeSaddle();
-        removeArmor();
-        this.getNavigation().stop();
+        this.getNavigation().stop();   // la silla y la armadura se conservan: reaparecen al volver a crecer
         this.growth = 0;
         this.entityData.set(MORPH_KIND, 2);
         this.entityData.set(MORPH, SHRINK_LEN);

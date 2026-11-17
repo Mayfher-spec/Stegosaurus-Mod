@@ -302,7 +302,7 @@ public final class CarnoScreen extends Screen {
             if (mx >= left + pr[0] + 6 && mx < left + pr[0] + 28) g.renderTooltip(this.font, Component.literal(pet.isSaddled() ? "Quitar silla" : "Sin silla (clic con una silla en la mano)"), rmx, rmy);
             else if (mx >= left + pr[2] - 28 && mx < left + pr[2] - 6) g.renderTooltip(this.font, Component.literal(pet.getArmorTier() > 0 ? "Quitar armadura" : "Sin armadura (clic con una en la mano)"), rmx, rmy);
             else if (mx >= left + (pr[0] + pr[2]) / 2 - 11 && mx < left + (pr[0] + pr[2]) / 2 + 11) g.renderTooltip(this.font, Component.literal(!pet.isAdultStage() ? "Ya es una cria"
-                : System.currentTimeMillis() < chibiConfirmUntil ? "Pulsa otra vez para confirmar" : "Volver a pequeno (suelta silla y armadura)"), rmx, rmy);
+                : System.currentTimeMillis() < chibiConfirmUntil ? "Pulsa otra vez para confirmar" : "Volver a pequeno (conserva silla y armadura)"), rmx, rmy);
         }
         int[] tt = TITLE[tab];
         if (!renaming && mx >= left + tt[0] && mx < left + tt[2] && my >= top + tt[1] && my < top + tt[3]) g.renderTooltip(this.font, Component.literal("Clic para ponerle nombre"), rmx, rmy);

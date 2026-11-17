@@ -539,6 +539,7 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder, Prod
             }
             return InteractionResult.sidedSuccess(client);
         }
+        if (!player.isShiftKeyDown() && held.isEmpty() && hand == InteractionHand.MAIN_HAND) return huntGroupInteract(player);   // clic con la mano vacia: grupo de caza
         if (player.isShiftKeyDown() && held.isEmpty()) {   // Mayus + clic con la mano vacia: cambia la orden
             if (isFollower()) {
                 if (!client) player.displayClientMessage(Component.literal("Es un soldado: sigue al líder de la manada (interfaz bloqueada)"), true);
@@ -553,6 +554,83 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder, Prod
         }
         return InteractionResult.PASS;   // el Compy es demasiado pequeno para montarlo
     }
+
+    // ------------------------------------------------------------------ grupo de caza (solo del Compy)
+
+    /** Seleccion pendiente de cada jugador: el lider elegido y cuando (para que caduque). Solo servidor. */
+    private static final Map<java.util.UUID, Object[]> GROUP_PICK = new HashMap<>();
+    private static final int GROUP_PICK_TICKS = 600, GROUP_RANGE = 32;
+
+    private int groupSize() {
+        return 1 + this.level().getEntitiesOfClass(CompyEntity.class, this.getBoundingBox().inflate(64.0), e -> e != this && e.isTame() && e.isAlive() && e.packId.equals(packId)).size();
+    }
+
+    /**
+     * Clic derecho con la mano vacia sobre un Compy tuyo. 1) Sobre un lider: lo elige como lider del grupo de caza. 2) Luego, sobre otro lider
+     * tuyo: ese lider y su manada pasan a ser sus subditos. Sobre un soldado de otra manada lo traspasa al grupo; sobre un soldado del propio
+     * grupo lo separa (queda como lider de uno nuevo). Sobre el elegido otra vez cancela. Sin eleccion, un soldado dice a que grupo pertenece.
+     */
+    private InteractionResult huntGroupInteract(Player player) {
+        boolean client = this.level().isClientSide;
+        if (client) return InteractionResult.sidedSuccess(true);
+        long now = this.level().getGameTime();
+        CompyEntity chosen = null;
+        Object[] sel = GROUP_PICK.get(player.getUUID());
+        if (sel != null) {
+            if (now - (Long) sel[1] <= GROUP_PICK_TICKS && this.level() instanceof ServerLevel sl && sl.getEntity((java.util.UUID) sel[0]) instanceof CompyEntity c
+                    && c.isAlive() && c.isTame() && c.isLeader() && c.isOwnedBy(player)) chosen = c;
+            else GROUP_PICK.remove(player.getUUID());
+        }
+        if (chosen == null) {
+            if (isLeader()) {
+                GROUP_PICK.put(player.getUUID(), new Object[]{this.getUUID(), now});
+                if (this.level() instanceof ServerLevel sl) sl.sendParticles(ParticleTypes.GLOW, getX(), getY() + getBbHeight() + 0.2, getZ(), 6, 0.2, 0.1, 0.2, 0.02);
+                msg(player, this.getDisplayName().getString() + " lidera el grupo de caza (" + groupSize() + "). Clic con la mano vacía en otro líder tuyo para unirlo");
+            } else {
+                CompyEntity l = findLeader();
+                msg(player, l == null ? "Soldado sin líder cerca" : "Soldado del grupo de caza de " + l.getDisplayName().getString() + " (" + l.groupSize() + " miembros)");
+            }
+            return InteractionResult.SUCCESS;
+        }
+        if (chosen == this) {
+            GROUP_PICK.remove(player.getUUID());
+            msg(player, "Grupo de caza de " + chosen.getDisplayName().getString() + ": " + chosen.groupSize() + " miembros. Selección terminada");
+            return InteractionResult.SUCCESS;
+        }
+        if (this.distanceTo(chosen) > GROUP_RANGE) { msg(player, "Están muy lejos: acércalos a menos de " + GROUP_RANGE + " bloques"); return InteractionResult.SUCCESS; }
+        GROUP_PICK.put(player.getUUID(), new Object[]{chosen.getUUID(), now});
+        if (isLeader()) {                                   // otro lider: toda su manada pasa al grupo del elegido
+            java.util.List<CompyEntity> crew = this.level().getEntitiesOfClass(CompyEntity.class, this.getBoundingBox().inflate(64.0), e -> e != this && e.isTame() && e.isAlive() && e.packId.equals(packId));
+            chosen.adopt(this);
+            for (CompyEntity m : crew) chosen.adopt(m);
+            msg(player, this.getDisplayName().getString() + " y su manada siguen ahora a " + chosen.getDisplayName().getString() + " (" + chosen.groupSize() + " en el grupo)");
+        } else if (this.packId.equals(chosen.packId)) {     // soldado del propio grupo: se separa y forma el suyo
+            this.packId = java.util.UUID.randomUUID();
+            this.leaderRef = null;
+            this.setLeader(true);
+            this.setPackOrder(PetOrders.FOLLOW);
+            this.level().broadcastEntityEvent(this, (byte) 7);
+            msg(player, "Un soldado se separa y forma su propio grupo de caza");
+        } else {                                            // soldado de otra manada: pasa al grupo del elegido
+            chosen.adopt(this);
+            msg(player, "Un soldado se une al grupo de caza de " + chosen.getDisplayName().getString() + " (" + chosen.groupSize() + " en el grupo)");
+        }
+        return InteractionResult.SUCCESS;
+    }
+
+    /** Hace de {@code m} un subdito de este lider: mismo grupo, sin liderazgo propio y orden de seguir. */
+    private void adopt(CompyEntity m) {
+        m.packId = this.packId;
+        m.leaderRef = this;
+        if (m.isLeader()) m.setLeader(false);
+        m.bonusB1 = 0; m.bonusP1 = 0;
+        m.setTarget(null);
+        m.setPackOrder(PetOrders.FOLLOW);
+        m.applyRoleStats(false);
+        m.level().broadcastEntityEvent(m, (byte) 7);
+    }
+
+    private static void msg(Player p, String text) { p.displayClientMessage(Component.literal(text), true); }
 
     /** Cada carne sube su confianza (con una pausa entre bocados); al llegar al total se doma. En Creativo, al instante. */
     private void feedWild(Player player, ItemStack held) {
@@ -578,7 +656,9 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder, Prod
             this.trust = 0;
             this.playSound(ModSounds.COMPY_HAPPY.get(), 1.0F, 1.0F);
             this.level().broadcastEntityEvent(this, (byte) 7);   // corazones
-            player.displayClientMessage(Component.literal("¡El líder confía en ti: su manada te sigue como soldados!"), true);
+            boolean other = !this.level().getEntitiesOfClass(CompyEntity.class, this.getBoundingBox().inflate(64.0), e -> e != this && e.isTame() && e.isLeader() && e.isOwnedBy(player)).isEmpty();
+            player.displayClientMessage(Component.literal(other ? "¡Nueva manada! Clic con la mano vacía en un líder y luego en el otro para formar un grupo de caza"
+                    : "¡El líder confía en ti: su manada te sigue como soldados!"), true);
         } else {
             this.level().broadcastEntityEvent(this, (byte) 6);   // humo: todavia desconfia
             player.displayClientMessage(Component.literal("Confianza: " + trust + "/" + need), true);

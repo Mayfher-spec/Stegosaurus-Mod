@@ -509,7 +509,7 @@ public final class PetSkinScreen extends Screen {
             if (mx >= pr[0] + 4 && mx < pr[0] + 26) g.renderTooltip(this.font, Component.literal(saddled() ? "Quitar silla" : "Sin silla (clic con una silla en la mano)"), rmx, rmy);
             else if (mx >= pr[2] - 26 && mx < pr[2] - 4) g.renderTooltip(this.font, Component.literal(armorTier() > 0 ? "Quitar armadura" : "Sin armadura (clic con una en la mano)"), rmx, rmy);
             else if (mx >= (pr[0] + pr[2]) / 2 - 11 && mx < (pr[0] + pr[2]) / 2 + 11) g.renderTooltip(this.font, Component.literal(!adult() ? "Ya es una cria"
-                : System.currentTimeMillis() < chibiConfirmUntil ? "Pulsa otra vez para confirmar" : "Volver a pequeno (suelta silla y armadura)"), rmx, rmy);
+                : System.currentTimeMillis() < chibiConfirmUntil ? "Pulsa otra vez para confirmar" : "Volver a pequeno (conserva silla y armadura)"), rmx, rmy);
         }
         int[] nb = VR(skin.namebox[tab]);
         if (!renaming && mx >= nb[0] && mx < nb[2] && my >= nb[1] && my < nb[3]) g.renderTooltip(this.font, Component.literal("Clic para ponerle nombre"), rmx, rmy);
