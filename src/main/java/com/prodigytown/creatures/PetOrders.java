@@ -310,14 +310,14 @@ public final class PetOrders {
     }
 
     /** Orden "Defender": ataca a los monstruos que se acerquen a menos de 16 bloques del dueno. */
-    public static Goal defendTargeting(TamableAnimal mob) {
-        return new NearestAttackableTargetGoal<Monster>(mob, Monster.class, 10, true, false, e -> {
-            LivingEntity o = mob.getOwner();
+    public static Goal defendTargeting(TamableAnimal pet) {
+        return new NearestAttackableTargetGoal<Monster>(pet, Monster.class, 10, true, false, e -> {
+            LivingEntity o = pet.getOwner();
             return o != null && e.distanceToSqr(o) <= 16.0 * 16.0;
         }) {
             private boolean active() {
-                Holder h = (Holder) mob;
-                return mob.isTame() && h.getOrder() == DEFEND && !h.isFallen() && !mob.isOrderedToSit() && !weak(mob);
+                Holder h = (Holder) pet;
+                return pet.isTame() && h.getOrder() == DEFEND && !h.isFallen() && !pet.isOrderedToSit() && !weak(pet);
             }
             @Override public boolean canUse() { return active() && super.canUse(); }
             @Override public boolean canContinueToUse() { return active() && super.canContinueToUse(); }
