@@ -50,16 +50,30 @@ import net.minecraft.world.level.ServerLevelAccessor;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.core.Holder;
+import com.prodigytown.creatures.progress.GrowthTable;
+import com.prodigytown.creatures.progress.ProdigyPet;
+import com.prodigytown.creatures.progress.ProdigyProgress;
+import com.prodigytown.creatures.progress.Talents;
+import net.minecraft.tags.DamageTypeTags;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.monster.Enemy;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Compy (Compsognathus): el cuarto dinosaurio. Diminuto (~1,1 bloques de largo, tamano de pollo), vive en manadas de 3 a 8 y no se puede montar.
  * UNA sola malla y ocho variantes de textura (verde, rojo, azul, gris, amarillo, rosa, albino, melanico).
- * MANADAS: cada grupo tiene UN lider (mas grande, con cresta de plumas y gorguera de color). Solo el lider se puede domar; al hacerlo, el resto de la
+ * MANADAS: cada grupo tiene UN lider (mas grande, con dos marcas rojas en la cola cerca de la punta). Solo el lider se puede domar; al hacerlo, el resto de la
  * manada se une como sus SOLDADOS: no tienen interfaz propia, su orden queda bloqueada en "seguidor" (siguen al lider y copian Quieto/Sentarse/Dormir),
- * atacan lo que ataca el lider y, si el lider cae, el soldado mas cercano asciende a lider. Habilidades, talentos y HUD llegan despues.
+ * atacan lo que ataca el lider y, si el lider cae, el soldado mas cercano asciende a lider. El lider tiene nivel, XP, 21 talentos (Acecho, Bandada, Astucia, Rey de la bandada), 4 habilidades y su pantalla (K).
  */
-public class CompyEntity extends TamableAnimal implements PetOrders.Holder {
+public class CompyEntity extends TamableAnimal implements PetOrders.Holder, ProdigyPet {
     public static final String[] VARIANT_IDS = {"verde", "rojo", "azul", "gris", "amarillo", "rosa", "albino", "melanico"};
     public static final String[] VARIANT_NAMES = {"Verde", "Rojo", "Azul", "Gris", "Amarillo", "Rosa", "Albino", "Melánico"};
     public static final int VERDE = 0, ROJO = 1, AZUL = 2, GRIS = 3, AMARILLO = 4, ROSA = 5, ALBINO = 6, MELANICO = 7, VARIANTS = 8;
@@ -69,6 +83,8 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder {
     private static final EntityDataAccessor<Integer> ORDER = SynchedEntityData.defineId(CompyEntity.class, EntityDataSerializers.INT);
     /** Lider de su manada (solo uno por manada): mas grande, con distintivos, domable y con interfaz propia. */
     private static final EntityDataAccessor<Boolean> LEADER = SynchedEntityData.defineId(CompyEntity.class, EntityDataSerializers.BOOLEAN);
+    /** Nivel, XP y talentos del lider (sincronizado para la pantalla del cliente). */
+    private static final EntityDataAccessor<CompoundTag> PROGRESS = SynchedEntityData.defineId(CompyEntity.class, EntityDataSerializers.COMPOUND_TAG);
     private static final net.minecraft.world.entity.EntityDimensions LEADER_DIM = net.minecraft.world.entity.EntityDimensions.scalable(0.48F, 0.6F);
     /** Tamano del lider respecto al resto de la manada. */
     public static final float LEADER_SCALE = 1.2F;
@@ -81,6 +97,13 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder {
     public int biteT = -1, biteTO = -1, eatT = -1, eatTO = -1;
 
     @Nullable private BlockPos orderHome;
+    private ProdigyProgress progress = ProdigyProgress.atLevel(1, Talents.COMPY);
+    /** Recargas (ticks restantes), solo servidor: 0 mordida fugaz, 1 salto evasivo, 2 chillido, 3 ataque en bandada. */
+    private final int[] cd = new int[4];
+    private int lungeId = -1, lungeEnd, evadeUntil, cdFlee, swarmUntil, bonusB1, bonusP1;
+    private float lungeMul = 1.0F, swarmMul = 1.0F;
+    private boolean nextBiteBonus;
+    private final Map<Integer, float[]> bleeding = new HashMap<>();
     private int trust, lastFeedTick = -100000;
     private boolean variantFixed = false, syncingOrder = false;
     /** Manada a la que pertenece (los miembros comparten id). Solo servidor. */
@@ -110,6 +133,7 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder {
         this.entityData.define(VARIANT, VERDE);
         this.entityData.define(ORDER, PetOrders.FOLLOW);
         this.entityData.define(LEADER, Boolean.TRUE);
+        this.entityData.define(PROGRESS, ProdigyProgress.atLevel(1, Talents.COMPY).save());
     }
 
     @Override public void addAdditionalSaveData(CompoundTag tag) {
@@ -119,6 +143,7 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder {
         tag.putInt("PetOrder", getOrder());
         tag.putBoolean("Leader", isLeader());
         tag.putUUID("PackId", packId);
+        tag.put("Progress", progress.save());
         if (orderHome != null) tag.putLong("OrderHome", orderHome.asLong());
     }
 
@@ -129,6 +154,8 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder {
         this.entityData.set(ORDER, PetOrders.clamp(tag.getInt("PetOrder")));
         if (tag.contains("Leader")) this.entityData.set(LEADER, tag.getBoolean("Leader"));
         if (tag.hasUUID("PackId")) this.packId = tag.getUUID("PackId");
+        this.progress = ProdigyProgress.load(tag.getCompound("Progress"), 1, Talents.COMPY);
+        this.entityData.set(PROGRESS, progress.save());
         applyRoleStats(false);
         this.orderHome = tag.contains("OrderHome") ? BlockPos.of(tag.getLong("OrderHome")) : null;
         if (isTame()) this.setPersistenceRequired();
@@ -147,18 +174,47 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder {
     @Override public void onSyncedDataUpdated(EntityDataAccessor<?> key) {
         super.onSyncedDataUpdated(key);
         if (LEADER.equals(key)) this.refreshDimensions();
+        if (PROGRESS.equals(key)) this.progress = ProdigyProgress.load(this.entityData.get(PROGRESS), 1, Talents.COMPY);
     }
     @Override public net.minecraft.world.entity.EntityDimensions getDimensions(net.minecraft.world.entity.Pose pose) { return isLeader() ? LEADER_DIM : super.getDimensions(pose); }
 
-    /** Vida segun el papel: lider 14 (20 domado), soldado 10 (12 domado). Conserva la fraccion de vida. */
+    /** Rango de un talento del lider (los soldados no tienen talentos propios: sus mejoras vienen del lider, ver bonusB1 / bonusP1). */
+    private int rk(String id) { return isLeader() ? progress.rank(id) : 0; }
+
+    /**
+     * Vida, ataque, armadura y velocidad segun el papel y el nivel. Lider salvaje 14 PV; lider domado 20 + nivel; soldado 10 (12 domado) mas las
+     * mejoras Soldados fuertes / Rey de la bandada de su lider. Conserva la fraccion de vida cuando cambia el maximo.
+     */
     private void applyRoleStats(boolean keepFraction) {
         if (this.level().isClientSide) return;
-        double max = isLeader() ? (isTame() ? 20.0 : 14.0) : (isTame() ? 12.0 : 10.0);
+        boolean tame = isTame(), lead = isLeader();
+        int lv = progress.level();
+        double bite = CompyConfig.get(CompyConfig.BITE_DAMAGE, 2.0);
+        double hp, atk, armor, speed = 0.30;
+        if (lead) {
+            hp = tame ? 20.0 + (GrowthTable.HEALTH[lv] - 24) * 0.10 : 14.0;
+            atk = tame ? bite * 1.5 + GrowthTable.DAMAGE[lv] * 0.18 : bite;
+            armor = tame ? GrowthTable.ARMOR[lv] * 0.30 : 0.0;
+            atk *= 1.0 + 0.10 * progress.rank("P1") + 0.12 * progress.rank("A7");
+            speed *= 1.0 + 0.04 * progress.rank("C2") + 0.05 * progress.rank("P1");
+        } else {
+            hp = (tame ? 12.0 : 10.0) * (1.0 + 0.10 * bonusB1);
+            atk = (tame ? bite * 1.5 : bite) * (1.0 + 0.10 * bonusB1 + 0.15 * bonusP1);
+            armor = 0.0;
+        }
         var attr = this.getAttribute(Attributes.MAX_HEALTH);
-        if (attr == null || attr.getBaseValue() == max) return;
-        float frac = keepFraction ? this.getHealth() / this.getMaxHealth() : 1.0F;
-        attr.setBaseValue(max);
-        this.setHealth(Math.max(1.0F, (float) max * Math.min(1.0F, frac)));
+        if (attr != null && attr.getBaseValue() != hp) {
+            float frac = keepFraction ? this.getHealth() / Math.max(1.0F, this.getMaxHealth()) : 1.0F;
+            attr.setBaseValue(hp);
+            this.setHealth(Math.max(1.0F, (float) hp * Math.min(1.0F, frac)));
+        }
+        setBase(Attributes.ATTACK_DAMAGE, atk);
+        setBase(Attributes.ARMOR, armor);
+        setBase(Attributes.MOVEMENT_SPEED, speed);
+    }
+    private void setBase(net.minecraft.world.entity.ai.attributes.Attribute a, double v) {
+        var inst = this.getAttribute(a);
+        if (inst != null && inst.getBaseValue() != v) inst.setBaseValue(v);
     }
 
     /** El lider de mi manada (el mas cercano con mi id), con cache. Solo servidor. */
@@ -203,6 +259,10 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder {
             if (d < bd) { bd = d; best = o; }
         }
         if (best == null) return;
+        best.progress = this.progress.copy();   // hereda nivel y XP (los talentos se reparten de nuevo)
+        best.progress.reset();
+        best.pushProgress();
+        best.bonusB1 = 0; best.bonusP1 = 0;
         best.setLeader(true);
         best.leaderRef = null;
         if (best.isTame()) {
@@ -334,12 +394,57 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder {
     }
 
     @Override public boolean doHurtTarget(Entity target) {
+        if (!(target instanceof LivingEntity le)) return false;
         this.level().broadcastEntityEvent(this, (byte) 67);
         this.playSound(ModSounds.COMPY_BITE.get(), 0.9F, 0.95F + this.random.nextFloat() * 0.2F);
-        float dmg = (float) CompyConfig.get(CompyConfig.BITE_DAMAGE, 2.0);
-        boolean ok = target.hurt(this.damageSources().mobAttack(this), isTame() ? dmg * 1.5F : dmg);
-        if (ok && target instanceof LivingEntity le && !le.isAlive()) { this.heal(2.0F); this.level().broadcastEntityEvent(this, (byte) 66); }
+        return strike(le, 1.0F);
+    }
+
+    /**
+     * Una mordida con todos los efectos: dano base (atributo) x multiplicador, mejoras de talento del lider (Garras afiladas, Ojo de cazador,
+     * Pasos silenciosos, Punto debil, Maestro del sigilo), la pasiva Cazador diminuto (+25 % contra criaturas pequenas) y sangrado.
+     */
+    private boolean strike(LivingEntity target, float mult) {
+        float dmg = (float) this.getAttributeValue(Attributes.ATTACK_DAMAGE) * mult;
+        dmg *= 1.0F + 0.08F * rk("A1");
+        if (target.getHealth() < target.getMaxHealth() * 0.5F) dmg *= 1.0F + 0.06F * rk("A2");
+        if (target instanceof Mob m && m.getTarget() == null) dmg *= 1.0F + 0.10F * rk("C1");   // emboscada
+        if (target.getBbHeight() < 1.0F) dmg *= 1.25F;                                          // Cazador diminuto (pasiva)
+        if (nextBiteBonus) { dmg *= 1.5F; nextBiteBonus = false; }
+        if (swarmUntil > this.tickCount) dmg *= swarmMul;
+        int a5 = rk("A5");
+        if (a5 > 0 && this.random.nextFloat() < new float[]{0F, 0.08F, 0.14F, 0.20F}[a5]) {
+            dmg *= 1.6F;
+            if (this.level() instanceof ServerLevel sl) sl.sendParticles(ParticleTypes.CRIT, target.getX(), target.getY() + target.getBbHeight() * 0.6, target.getZ(), 6, 0.2, 0.2, 0.2, 0.2);
+        }
+        float cfg = (float) CompyConfig.get(CompyConfig.BITE_DAMAGE, 2.0);
+        if (dmg < cfg * 0.5F) dmg = cfg * 0.5F;
+        boolean ok = target.hurt(this.damageSources().mobAttack(this), dmg);
+        if (ok) {
+            int a4 = rk("A4");
+            if (a4 > 0 && target.isAlive()) bleeding.put(target.getId(), new float[]{(float) this.getAttributeValue(Attributes.ATTACK_DAMAGE) * new float[]{0F, 0.10F, 0.16F, 0.22F}[a4], 3});
+            if (!target.isAlive()) onKill(target);
+        }
         return ok;
+    }
+
+    /** Al abatir una presa: el lider se cura y se acelera (Racha de caza); los soldados cercanos se curan (Festin compartido); los soldados dan XP al lider. */
+    private void onKill(LivingEntity victim) {
+        this.level().broadcastEntityEvent(this, (byte) 66);
+        this.heal(2.0F);
+        CompyEntity l = isLeader() ? this : findLeader();
+        if (!isLeader() && l != null) l.gainXp(Math.max(1, (int) (victim.getMaxHealth() / 4.0F)));
+        if (l == null) return;
+        if (isLeader()) {
+            int a6 = rk("A6");
+            if (a6 > 0) {
+                this.heal(this.getMaxHealth() * 0.03F * a6);
+                this.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, (2 + a6) * 20, 0, false, false));
+            }
+        }
+        int b2 = l.rk("B2");
+        if (b2 > 0) for (CompyEntity o : this.level().getEntitiesOfClass(CompyEntity.class, l.getBoundingBox().inflate(16.0), e -> e != l && e.isTame() && e.isAlive() && e.packId.equals(packId)))
+            o.heal(2.0F * b2);
     }
 
     @Override public void handleEntityEvent(byte id) {
@@ -351,7 +456,7 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder {
     @Override public void tick() {
         super.tick();
         if (this.level().isClientSide) animTick();
-        else { PetOrders.serverTick(this); packTick(); }
+        else { PetOrders.serverTick(this); packTick(); abilityTick(); }
     }
 
     /** Solo servidor: los soldados copian la orden del lider y atacan lo que el ataca; un solo lider por manada. */
@@ -360,6 +465,8 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder {
         if (isFollower()) {
             CompyEntity l = findLeader();
             if (l == null) return;
+            int nb1 = l.rk("B1"), np1 = l.rk("P1");
+            if (nb1 != bonusB1 || np1 != bonusP1) { bonusB1 = nb1; bonusP1 = np1; applyRoleStats(true); }
             int want = l.getOrder();
             if (want == PetOrders.WANDER || want == PetOrders.PATROL) want = PetOrders.FOLLOW;   // el lider pasea; los soldados lo acompanan
             if (getOrder() != want) setPackOrder(want);
@@ -415,7 +522,7 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder {
         if (!this.isTame()) {
             if (!isMeat(held)) return InteractionResult.PASS;
             if (!isLeader()) {
-                if (!client) player.displayClientMessage(Component.literal("Solo el líder de la manada (con cresta) puede confiar en ti"), true);
+                if (!client) player.displayClientMessage(Component.literal("Solo el líder de la manada (marca roja en la cola) puede confiar en ti"), true);
                 return InteractionResult.sidedSuccess(client);
             }
             if (!client) feedWild(player, held);
@@ -478,12 +585,261 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder {
         }
     }
 
+    // ------------------------------------------------------------------ progresion (nivel, XP, talentos) - solo el lider
+
+    @Override public ProdigyProgress getProgress() { return progress; }
+    private void pushProgress() { this.entityData.set(PROGRESS, progress.save()); }
+
+    @Override public void gainXp(int amount) {
+        if (this.level().isClientSide || amount <= 0 || !isLeader() || !isTame()) return;
+        float oldMax = this.getMaxHealth();
+        boolean leveled = progress.addXp(amount);
+        if (leveled) {
+            applyRoleStats(true);
+            float diff = this.getMaxHealth() - oldMax;
+            if (diff > 0) this.heal(diff);
+            if (this.getOwner() instanceof Player p)
+                p.displayClientMessage(Component.literal("Tu Compy sube a nivel " + progress.level() + " (" + progress.pointsAvailable() + " puntos disponibles)"), true);
+            this.playSound(net.minecraft.sounds.SoundEvents.PLAYER_LEVELUP, 0.8F, 1.3F);
+        }
+        pushProgress();
+    }
+
+    public boolean unlockTalent(int idx) {
+        if (this.level().isClientSide || !isLeader() || !isTame()) return false;
+        float oldMax = this.getMaxHealth();
+        if (!progress.unlock(idx)) return false;
+        applyRoleStats(true);
+        float diff = this.getMaxHealth() - oldMax;
+        if (diff > 0) this.heal(diff);
+        pushProgress();
+        return true;
+    }
+
+    public void resetTalents() {
+        if (this.level().isClientSide) return;
+        progress.reset();
+        applyRoleStats(true);
+        pushProgress();
+    }
+
+    public void toggleSit() {
+        if (this.level().isClientSide) return;
+        PetOrders.setOrder(this, this.isOrderedToSit() ? PetOrders.FOLLOW : PetOrders.SIT);
+    }
+
+    /** Plumaje ligero: fraccion de dano de caida que se evita (0 a 1). */
+    public float fallReduction() { return isLeader() ? new float[]{0F, 0.35F, 0.70F, 1.0F}[progress.rank("C4")] : 0.0F; }
+
+    @Override public boolean causeFallDamage(float dist, float mult, DamageSource src) {
+        return super.causeFallDamage(dist, mult * (1.0F - fallReduction()), src);
+    }
+
+    // ------------------------------------------------------------------ habilidades del lider
+
+    public static final int AB_BITE = 0, AB_LEAP = 1, AB_SCREECH = 2, AB_PACK = 3;
+    public static final String[] AB_NAMES = {"Mordida fugaz", "Salto evasivo", "Chillido de alarma", "Ataque en bandada"};
+
+    /** Recarga base (ticks) de cada habilidad segun los talentos del lider; la usa tambien la pantalla. */
+    public static int cooldownTicks(ProdigyProgress p, int ab) {
+        float f = 1.0F - 0.10F * p.rank("P1");
+        return Math.max(10, Math.round(switch (ab) {
+            case AB_BITE -> 60 * (1.0F - 0.06F * p.rank("A3")) * f;
+            case AB_LEAP -> 160 * f;
+            case AB_SCREECH -> 400 * f;
+            default -> 200 * (1.0F - 0.10F * p.rank("B6")) * f;
+        }));
+    }
+    public static float screechRadius(ProdigyProgress p) { return 8.0F + (p.rank("B4") > 0 ? p.rank("B4") + 1 : 0); }
+    public static float leapDistance(ProdigyProgress p) { return 5.0F * (1.0F + 0.15F * p.rank("C3")); }
+    public static float packDamageMul(ProdigyProgress p) { return 1.5F * (1.0F + 0.15F * p.rank("B6")); }
+
+    /** Segundos de recarga restantes (solo servidor); la pantalla muestra la recarga base. */
+    public int cooldownLeft(int ab) { return cd[ab]; }
+
+    private boolean isAlly(LivingEntity e) {
+        if (e instanceof Player) return true;
+        if (e instanceof net.minecraft.world.entity.decoration.ArmorStand) return true;
+        if (e instanceof TamableAnimal t && t.isTame()) return true;
+        return e instanceof CompyEntity c && c.packId.equals(packId);
+    }
+
+    /** Objetivo de una habilidad ofensiva: el del lider, el ultimo golpeado por el dueno o la amenaza mas cercana delante (monstruos o quien ataque). */
+    @Nullable private LivingEntity pickTarget(double range) {
+        LivingEntity t = getTarget();
+        if (t != null && t.isAlive() && distanceToSqr(t) < (range + 8) * (range + 8)) return t;
+        if (getOwner() instanceof Player o) {
+            LivingEntity h = o.getLastHurtMob();
+            if (h != null && h.isAlive() && !isAlly(h) && o.tickCount - o.getLastHurtMobTimestamp() < 200 && distanceToSqr(h) < (range + 8) * (range + 8)) return h;
+        }
+        LivingEntity best = null; double bd = Double.MAX_VALUE;
+        for (LivingEntity e : this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(range), x -> x != this && x.isAlive() && !isAlly(x))) {
+            boolean threat = e instanceof Enemy || (e instanceof Mob m && (m.getTarget() == this || m.getTarget() == getOwner()));
+            if (!threat || !this.hasLineOfSight(e)) continue;
+            double d = distanceToSqr(e);
+            if (d < bd) { bd = d; best = e; }
+        }
+        return best;
+    }
+
+    private void say(@Nullable Player user, String msg) { if (user != null) user.displayClientMessage(Component.literal(msg), true); }
+
+    /** 0 mordida fugaz, 1 salto evasivo, 2 chillido de alarma, 3 ataque en bandada. Solo servidor; la IA lo llama con user = null. */
+    public void useAbility(@Nullable Player user, int ab) {
+        if (this.level().isClientSide || !isLeader() || !isTame() || !isAlive() || ab < 0 || ab > 3) return;
+        if (getOrder() == PetOrders.SLEEP) { say(user, "Está dormido"); return; }
+        if (cd[ab] > 0) { say(user, AB_NAMES[ab] + ": recarga " + ((cd[ab] + 19) / 20) + " s"); return; }
+        ServerLevel sl = (ServerLevel) this.level();
+        switch (ab) {
+            case AB_BITE -> {
+                LivingEntity t = pickTarget(7.0);
+                if (t == null) { say(user, "Sin objetivo cercano"); return; }
+                setTarget(t);
+                lungeId = t.getId(); lungeEnd = this.tickCount + 12; lungeMul = 1.4F;
+                this.setOrderedToSit(false);
+                this.playSound(ModSounds.COMPY_BITE.get(), 1.0F, 1.5F);
+            }
+            case AB_LEAP -> {
+                Vec3 away = null;
+                LivingEntity threat = pickTarget(9.0);
+                if (threat != null) away = this.position().subtract(threat.position()).multiply(1, 0, 1);
+                if (away == null || away.lengthSqr() < 1.0E-4) away = this.getLookAngle().multiply(-1, 0, -1);
+                if (away.lengthSqr() < 1.0E-4) away = new Vec3(1, 0, 0);
+                away = away.normalize();
+                double sp = 0.30 * leapDistance(progress) / 5.0 * 1.9;
+                this.setDeltaMovement(away.x * sp, 0.42, away.z * sp);
+                this.hasImpulse = true;
+                this.getNavigation().stop();
+                evadeUntil = this.tickCount + 12;
+                this.playSound(ModSounds.COMPY_STEP.get(), 0.8F, 1.6F);
+                sl.sendParticles(ParticleTypes.CLOUD, getX(), getY() + 0.1, getZ(), 8, 0.2, 0.05, 0.2, 0.02);
+                if (progress.rank("C7") > 0) { this.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, 60, 0, false, false)); nextBiteBonus = true; }
+            }
+            case AB_SCREECH -> {
+                float r = screechRadius(progress);
+                int secs = 3 + progress.rank("B4");
+                this.playSound(ModSounds.COMPY_HURT.get(), 1.8F, 1.9F);
+                this.playSound(ModSounds.COMPY_AMBIENT.get(), 1.8F, 1.7F);
+                for (int i = 0; i < 24; i++) {
+                    double ang = i * Math.PI / 12.0;
+                    sl.sendParticles(ParticleTypes.NOTE, getX() + Math.cos(ang) * 1.2, getY() + 0.6, getZ() + Math.sin(ang) * 1.2, 1, 0, 0, 0, 1.0);
+                }
+                for (LivingEntity e : this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(r), x -> x != this && x.isAlive() && !isAlly(x) && x instanceof Enemy)) {
+                    e.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, secs * 20, 1));
+                    e.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, secs * 20, 0));
+                    e.addEffect(new MobEffectInstance(MobEffects.GLOWING, (secs + 2) * 20, 0, false, false));
+                    if (e instanceof Mob m && m.getTarget() != null) m.setTarget(null);
+                }
+                for (CompyEntity o : this.level().getEntitiesOfClass(CompyEntity.class, this.getBoundingBox().inflate(24.0), e -> e != this && e.isTame() && e.isAlive() && e.packId.equals(packId))) {
+                    o.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 120, 0, false, false));
+                    if (o.getOrder() != PetOrders.SLEEP && o.distanceToSqr(this) > 100.0) o.getNavigation().moveTo(this, 1.4D);
+                }
+            }
+            default -> {
+                LivingEntity t = pickTarget(16.0);
+                if (t == null) { say(user, "Sin objetivo cercano"); return; }
+                int n = 0;
+                float mul = packDamageMul(progress);
+                int dur = 80 + 40 * progress.rank("P1");
+                for (CompyEntity o : this.level().getEntitiesOfClass(CompyEntity.class, this.getBoundingBox().inflate(32.0), e -> e != this && e.isTame() && e.isAlive() && e.packId.equals(packId))) {
+                    o.setOrderedToSit(false);
+                    o.setTarget(t);
+                    o.swarmUntil = this.tickCount + dur; o.swarmMul = mul;
+                    o.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, dur, 1, false, false));
+                    sl.sendParticles(ParticleTypes.ANGRY_VILLAGER, o.getX(), o.getY() + o.getBbHeight() + 0.2, o.getZ(), 1, 0.1, 0.1, 0.1, 0);
+                    n++;
+                }
+                setTarget(t);
+                lungeId = t.getId(); lungeEnd = this.tickCount + 14; lungeMul = 1.0F;
+                this.swarmUntil = this.tickCount + dur; this.swarmMul = mul;
+                this.playSound(ModSounds.COMPY_AMBIENT.get(), 1.4F, 1.3F);
+                say(user, "¡Ataque en bandada! (" + n + " soldados)");
+            }
+        }
+        cd[ab] = cooldownTicks(progress, ab);
+    }
+
+    /** Solo servidor: recargas, embestida de la mordida fugaz, sangrado y descanso en nidada. */
+    private void abilityTick() {
+        for (int i = 0; i < 4; i++) if (cd[i] > 0) cd[i]--;
+        if (lungeId != -1) {
+            Entity t = this.level().getEntity(lungeId);
+            if (!(t instanceof LivingEntity le) || !le.isAlive() || this.tickCount > lungeEnd) lungeId = -1;
+            else {
+                double reach = (getBbWidth() + le.getBbWidth()) / 2.0 + 0.9;
+                if (distanceToSqr(le) <= reach * reach) {
+                    lungeId = -1;
+                    this.level().broadcastEntityEvent(this, (byte) 67);
+                    this.playSound(ModSounds.COMPY_BITE.get(), 1.0F, 1.1F);
+                    strike(le, lungeMul);
+                    if (rk("A7") > 0 && le.isAlive()) { le.invulnerableTime = 0; strike(le, lungeMul * 0.8F); }
+                } else {
+                    Vec3 dir = le.position().subtract(position()).multiply(1, 0, 1);
+                    if (dir.lengthSqr() > 1.0E-4) {
+                        dir = dir.normalize();
+                        Vec3 mv = getDeltaMovement();
+                        this.setDeltaMovement(dir.x * 0.5, mv.y, dir.z * 0.5);
+                        this.getLookControl().setLookAt(le, 60.0F, 60.0F);
+                    }
+                }
+            }
+        }
+        if (this.tickCount % 20 == 7) {
+            var it = bleeding.entrySet().iterator();
+            while (it.hasNext()) {
+                var en = it.next();
+                Entity e = this.level().getEntity(en.getKey());
+                if (!(e instanceof LivingEntity le) || !le.isAlive() || en.getValue()[1] <= 0) { it.remove(); continue; }
+                le.invulnerableTime = 0;
+                le.hurt(this.damageSources().mobAttack(this), en.getValue()[0]);
+                if (this.level() instanceof ServerLevel sl) sl.sendParticles(ParticleTypes.DAMAGE_INDICATOR, le.getX(), le.getY() + le.getBbHeight() * 0.5, le.getZ(), 2, 0.15, 0.1, 0.15, 0.1);
+                en.getValue()[1]--;
+                if (!le.isAlive()) { onKill(le); it.remove(); }
+            }
+            int b5 = rk("B5");
+            if (b5 > 0 && isTame() && (getOrder() == PetOrders.SIT || getOrder() == PetOrders.SLEEP)) {
+                float pct = new float[]{0F, 0.008F, 0.014F, 0.020F}[b5];
+                this.heal(this.getMaxHealth() * pct);
+                for (CompyEntity o : this.level().getEntitiesOfClass(CompyEntity.class, this.getBoundingBox().inflate(12.0), e -> e != this && e.isTame() && e.isAlive() && e.packId.equals(packId)))
+                    if (o.getOrder() == PetOrders.SIT || o.getOrder() == PetOrders.SLEEP) o.heal(o.getMaxHealth() * pct);
+            }
+        }
+    }
+
+    private int soldiersNear(double r) {
+        return this.level().getEntitiesOfClass(CompyEntity.class, this.getBoundingBox().inflate(r), e -> e != this && !e.isLeader() && e.isTame() && e.isAlive() && e.packId.equals(packId)).size();
+    }
+
+    @Override public boolean hurt(DamageSource source, float amount) {
+        if (!this.level().isClientSide && isAlive() && source.getEntity() != null && !source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
+            if (this.tickCount < evadeUntil) {   // salto evasivo: en el aire no te alcanzan
+                if (this.level() instanceof ServerLevel sl) sl.sendParticles(ParticleTypes.POOF, getX(), getY() + 0.3, getZ(), 3, 0.15, 0.1, 0.15, 0.02);
+                return false;
+            }
+            if (isLeader()) {
+                int c5 = rk("C5");
+                if (c5 > 0 && this.random.nextFloat() < 0.06F * c5) {   // esquiva instintiva
+                    if (this.level() instanceof ServerLevel sl) sl.sendParticles(ParticleTypes.POOF, getX(), getY() + 0.3, getZ(), 3, 0.15, 0.1, 0.15, 0.02);
+                    return false;
+                }
+                int b3 = rk("B3");
+                if (b3 > 0 && soldiersNear(8.0) >= 3) amount *= 1.0F - 0.04F * b3;
+            }
+        }
+        boolean r = super.hurt(source, amount);
+        if (r && !this.level().isClientSide && isLeader()) {
+            int c6 = rk("C6");
+            if (c6 > 0 && this.tickCount >= cdFlee) { cdFlee = this.tickCount + 200; this.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, (2 + c6) * 20, 0, false, false)); }
+        }
+        return r;
+    }
+
     // ------------------------------------------------------------------ sonidos y varios
 
     @Override protected SoundEvent getHurtSound(DamageSource source) { return ModSounds.COMPY_HURT.get(); }
     @Override protected SoundEvent getDeathSound() { return ModSounds.COMPY_DEATH.get(); }
     @Override protected void playStepSound(BlockPos pos, net.minecraft.world.level.block.state.BlockState state) {
-        this.playSound(ModSounds.COMPY_STEP.get(), 0.25F, 0.9F + this.random.nextFloat() * 0.3F);
+        this.playSound(ModSounds.COMPY_STEP.get(), 0.25F * (1.0F - new float[]{0F, 0.20F, 0.35F, 0.50F}[progress.rank("C1")] * (isLeader() ? 1.0F : 0.0F)), 0.9F + this.random.nextFloat() * 0.3F);
     }
     @Nullable @Override protected SoundEvent getAmbientSound() {
         return isTame() && getOrder() == PetOrders.SLEEP ? null : ModSounds.COMPY_AMBIENT.get();

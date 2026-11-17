@@ -1,5 +1,6 @@
 package com.prodigytown.creatures.client;
 
+import com.prodigytown.creatures.CompyEntity;
 import com.prodigytown.creatures.DilophosaurusEntity;
 import com.prodigytown.creatures.DiloConfig;
 import com.prodigytown.creatures.PetOrders;
@@ -63,9 +64,14 @@ public final class PetSkinScreen extends Screen {
         int[] progText;
         String[] colName, colSub;
         int[] colOfBranch;
+        // ---- solo Compy: el fondo ya trae nombres, pastillas, nodos y lineas dibujados
+        boolean baked;
+        int circ = 96, nodeHalf;
+        int[] detOff, detKey, passive, overlay0, p1, lock, nodeX, nodeY;
+        String[] nodeId;
     }
 
-    private static final Skin STEGO = new Skin(), DILO = new Skin();
+    private static final Skin STEGO = new Skin(), DILO = new Skin(), COMPY = new Skin();
     static {
         for (int i = 0; i < 3; i++) {
             String n = new String[]{"cmd", "atk", "tal"}[i];
@@ -158,6 +164,37 @@ public final class PetSkinScreen extends Screen {
         s.colName = new String[]{"Cazador", "Supervivencia", "Movilidad"};
         s.colSub = new String[]{"Daño y cacería", "Aguante y veneno", "Ritmo y saltos"};
         s.colOfBranch = new int[]{0, 2, 1, 1}; // rama de la tabla -> columna (roja, verde, azul)
+        // ---- compy (coordenadas generadas por tools/compy/gui.py a partir de las maquetas del usuario)
+        s = COMPY;
+        for (int i = 0; i < 3; i++) s.bg[i] = new ResourceLocation(MOD, "textures/gui/compy2/" + new String[]{"cmd", "atk", "tal"}[i] + ".png");
+        s.baked = true;
+        s.texH = CompyGui.TEX_H;
+        s.close = new int[][]{CompyGui.CLOSE[0], CompyGui.CLOSE[1], CompyGui.CLOSE[2]};
+        s.tabs = CompyGui.TABS;
+        s.namebox = CompyGui.NAMEBOX; s.portrait = CompyGui.PORTRAIT;
+        s.lvl = CompyGui.LVL; s.hp = CompyGui.HP;
+        s.exp = new int[][]{CompyGui.EXP[0], CompyGui.EXP[1], null};
+        s.statRight = CompyGui.STAT_RIGHT; s.statY = CompyGui.STAT_Y;
+        s.variantC = new int[]{0, 0}; s.pointsC = CompyGui.POINTS_C; s.resetBox = CompyGui.RESET_BOX;
+        s.medal = CompyGui.MEDAL; s.bar = CompyGui.BAR;
+        s.progText = CompyGui.PROG_TEXT;
+        s.panelIcon = CompyGui.PANEL_ICON; s.panelPill = CompyGui.PANEL_PILL; s.btn = CompyGui.BTN;
+        s.overlay0 = CompyGui.OVERLAY0; s.overlay1 = CompyGui.OVERLAY1; s.overlay2 = CompyGui.OVERLAY2;
+        s.panelTitleX = CompyGui.PANEL_TITLE[0]; s.panelTitleY = CompyGui.PANEL_TITLE[1]; s.panelTitleW = CompyGui.PANEL_TITLE[2];
+        s.panelEffX = CompyGui.PANEL_EFF[0]; s.panelEffY = CompyGui.PANEL_EFF[1]; s.panelEffW = CompyGui.PANEL_EFF[2];
+        s.reqHeadY = CompyGui.REQ_HEAD_Y;
+        s.cardX = CompyGui.CARD_X; s.cardY = CompyGui.CARD_Y; s.cardW = CompyGui.CARD_W; s.cardH = CompyGui.CARD_H;
+        s.cmdTitle = CompyGui.CMD_TITLE;
+        s.atkCard = CompyGui.ATK_CARD; s.atkCircle = CompyGui.ATK_CIRCLE; s.circ = CompyGui.ATK_CIRC; s.passive = CompyGui.ATK_PASSIVE;
+        s.atkDetailIcon = CompyGui.ATK_DETAIL_ICON;
+        s.detTitleX = CompyGui.DET_TITLE[0]; s.detTitleY = CompyGui.DET_TITLE[1];
+        s.detDescX = CompyGui.DET_DESC[0]; s.detDescY = CompyGui.DET_DESC[1]; s.detDescW = CompyGui.DET_DESC[2];
+        s.detPill = CompyGui.DET_PILL; s.detOff = CompyGui.DET_OFF; s.detKey = CompyGui.DET_KEY; s.detPillOff = CompyGui.DET_OFF[0];
+        s.nodeId = CompyGui.NODE_ID; s.nodeX = CompyGui.NODE_X; s.nodeY = CompyGui.NODE_Y; s.nodeHalf = CompyGui.NODE_HALF;
+        s.p1 = CompyGui.P1; s.lock = CompyGui.LOCK;
+        s.colOfBranch = new int[]{0, 2, 1, 1};
+        s.colX = new int[]{0, 0, 0}; s.rowY = new int[]{0, 0, 0, 0, 0}; s.plateC = new int[][]{{0, 0, 0}, {0, 0, 0}, {0, 0, 0}}; s.ultNodesY = new int[]{0};
+        s.colName = new String[]{"", "", ""}; s.colSub = new String[]{"", "", ""};
     }
 
     // ---------------------------------------------------------------- habilidades
@@ -178,6 +215,7 @@ public final class PetSkinScreen extends Screen {
     private final TamableAnimal pet;
     private final StegosaurusEntity stego;
     private final DilophosaurusEntity dilo;
+    private final CompyEntity compy;
     private final Skin skin;
     private int tab = 0, selAtk = 0, selected = 0;
     private boolean ultSel = false, renaming = false;
@@ -189,24 +227,27 @@ public final class PetSkinScreen extends Screen {
     private int[][] nodePos;
 
     public PetSkinScreen(TamableAnimal pet) {
-        super(Component.literal(pet instanceof DilophosaurusEntity ? "Dilofosaurio" : "Estegosaurio"));
+        super(Component.literal(pet instanceof DilophosaurusEntity ? "Dilofosaurio" : pet instanceof CompyEntity ? "Compy" : "Estegosaurio"));
         this.pet = pet;
         this.stego = pet instanceof StegosaurusEntity s ? s : null;
         this.dilo = pet instanceof DilophosaurusEntity d ? d : null;
-        this.skin = dilo != null ? DILO : STEGO;
+        this.compy = pet instanceof CompyEntity c ? c : null;
+        this.skin = compy != null ? COMPY : dilo != null ? DILO : STEGO;
     }
 
     // ---------------------------------------------------------------- acceso comun a las dos especies
     private ProdigyProgress prog() { return ((ProdigyPet) pet).getProgress(); }
     private int idx(String id) { Talent[] t = prog().table(); for (int i = 0; i < t.length; i++) if (t[i].id.equals(id)) return i; return -1; }
-    private boolean adult() { return dilo == null || dilo.isAdultStage(); }
-    private boolean saddled() { return dilo != null ? dilo.isSaddled() : stego.isSaddled(); }
-    private int armorTier() { return dilo != null ? dilo.getArmorTier() : stego.getArmorTier(); }
-    private int variant() { return Math.max(0, Math.min(4, dilo != null ? dilo.getVariant() : stego.getVariant())); }
-    private boolean fallen() { return dilo != null ? dilo.isFallen() : stego.isFallen(); }
-    private int order() { return dilo != null ? dilo.getOrder() : stego.getOrder(); }
-    private String variantName() { return dilo != null ? DilophosaurusEntity.VARIANT_NAMES[variant()] : STEGO_VARIANT[variant()]; }
-    private String petName() { return dilo != null ? "Dilofosaurio" : "Estegosaurio"; }
+    private boolean adult() { return compy != null || dilo == null || dilo.isAdultStage(); }
+    /** Compy soldado: su interfaz esta bloqueada (modo seguidor del lider). */
+    private boolean locked() { return compy != null && !compy.isLeader(); }
+    private boolean saddled() { return compy == null && (dilo != null ? dilo.isSaddled() : stego.isSaddled()); }
+    private int armorTier() { return compy != null ? 0 : dilo != null ? dilo.getArmorTier() : stego.getArmorTier(); }
+    private int variant() { return compy != null ? compy.getVariant() : Math.max(0, Math.min(4, dilo != null ? dilo.getVariant() : stego.getVariant())); }
+    private boolean fallen() { return compy == null && (dilo != null ? dilo.isFallen() : stego.isFallen()); }
+    private int order() { return compy != null ? compy.getOrder() : dilo != null ? dilo.getOrder() : stego.getOrder(); }
+    private String variantName() { return compy != null ? CompyEntity.VARIANT_NAMES[variant()] : dilo != null ? DilophosaurusEntity.VARIANT_NAMES[variant()] : STEGO_VARIANT[variant()]; }
+    private String petName() { return compy != null ? "Compy" : dilo != null ? "Dilofosaurio" : "Estegosaurio"; }
 
     // ---------------------------------------------------------------- conversion de coordenadas (imagen -> virtual)
     private float X(float px) { return left + px * K; }
@@ -303,20 +344,23 @@ public final class PetSkinScreen extends Screen {
         addRenderableWidget(hit(skin.namebox[tab], b -> { renaming = true; nameBox.visible = true; nameBox.active = true; setFocused(nameBox); nameBox.setFocused(true); }));
         addRenderableWidget(nameBox);
         int[] pr = VR(skin.portrait[tab]);
-        addRenderableWidget(new GearButton(pr[0] + 4, pr[3] - 28, false, b -> ModNetwork.CHANNEL.sendToServer(new ModNetwork.TalentAction(pet.getId(), 3, 0))));
-        addRenderableWidget(new GearButton(pr[2] - 26, pr[3] - 28, true, b -> ModNetwork.CHANNEL.sendToServer(new ModNetwork.TalentAction(pet.getId(), 4, 0))));
-        ChibiButton toChibi = new ChibiButton((pr[0] + pr[2]) / 2 - 11, pr[3] - 28, b -> {
-            long now = System.currentTimeMillis();
-            if (now < chibiConfirmUntil) {
-                ModNetwork.CHANNEL.sendToServer(new ModNetwork.TalentAction(pet.getId(), 5, 0));
-                this.onClose();
-            } else chibiConfirmUntil = now + 3000L;
-        });
-        toChibi.active = adult();
-        addRenderableWidget(toChibi);
+        if (compy == null) {
+            addRenderableWidget(new GearButton(pr[0] + 4, pr[3] - 28, false, b -> ModNetwork.CHANNEL.sendToServer(new ModNetwork.TalentAction(pet.getId(), 3, 0))));
+            addRenderableWidget(new GearButton(pr[2] - 26, pr[3] - 28, true, b -> ModNetwork.CHANNEL.sendToServer(new ModNetwork.TalentAction(pet.getId(), 4, 0))));
+            ChibiButton toChibi = new ChibiButton((pr[0] + pr[2]) / 2 - 11, pr[3] - 28, b -> {
+                long now = System.currentTimeMillis();
+                if (now < chibiConfirmUntil) {
+                    ModNetwork.CHANNEL.sendToServer(new ModNetwork.TalentAction(pet.getId(), 5, 0));
+                    this.onClose();
+                } else chibiConfirmUntil = now + 3000L;
+            });
+            toChibi.active = adult();
+            addRenderableWidget(toChibi);
+        }
+        if (locked()) return;   // soldado: solo se puede mirar (pestanas, cerrar); nada de ordenes, habilidades ni talentos
         switch (tab) {
             case 0 -> {
-                int[] ord = dilo != null ? CARD_ORDER_DILO : CARD_ORDER_STEGO;
+                int[] ord = dilo != null || compy != null ? CARD_ORDER_DILO : CARD_ORDER_STEGO;
                 for (int i = 0; i < 6; i++) {
                     final int k = i;
                     int cx = skin.cardX[i % 3], cy = skin.cardY[i / 3];
@@ -344,7 +388,7 @@ public final class PetSkinScreen extends Screen {
                     else resetConfirmUntil = now + 3000L;
                 }));
                 addRenderableWidget(hit(skin.medal, b -> {
-                    if (dilo != null) selected = idx("P1"); else ultSel = true;
+                    if (dilo != null || compy != null) selected = idx("P1"); else ultSel = true;
                 }));
             }
         }
@@ -374,12 +418,13 @@ public final class PetSkinScreen extends Screen {
 
     @Override public boolean mouseClicked(double mx, double my, int button) {
         mx /= sc; my /= sc;
-        if (tab == 2 && button == 0 && adult()) {
+        if (tab == 2 && button == 0 && adult() && !locked()) {
             Talent[] all = prog().table();
+            float ns = nodeSize();
             for (int i = 0; i < all.length; i++) {
                 if (nodePos[i] == null) continue;
-                float x = X(nodePos[i][0]) - NS / 2.0F, y = Y(nodePos[i][1]) - NS / 2.0F;
-                if (mx >= x && mx < x + NS && my >= y && my < y + NS) { selected = i; ultSel = false; return true; }
+                float x = X(nodePos[i][0]) - ns / 2.0F, y = Y(nodePos[i][1]) - ns / 2.0F;
+                if (mx >= x && mx < x + ns && my >= y && my < y + ns) { selected = i; ultSel = false; return true; }
             }
         }
         return super.mouseClicked(mx, my, button);
@@ -439,6 +484,17 @@ public final class PetSkinScreen extends Screen {
             case 1 -> renderAttacks(g);
             default -> renderTalents(g);
         }
+        if (locked()) {
+            int[] o = VR(tab == 0 ? skin.overlay0 : tab == 1 ? skin.overlay1 : skin.overlay2);
+            g.fill(o[0], o[1], o[2], o[3], 0xE6101418);
+            g.renderOutline(o[0], o[1], o[2] - o[0], o[3] - o[1], 0xFFB8862A);
+            float cx = (o[0] + o[2]) / 2.0F, cy = (o[1] + o[3]) / 2.0F;
+            textC(g, "Soldado de la manada", cx, cy - 26, 1.6F, GOLD, true);
+            textC(g, "Su interfaz está bloqueada en modo seguidor:", cx, cy - 4, 1.1F, TEXT, false);
+            textC(g, "acompaña al líder y copia sus órdenes.", cx, cy + 8, 1.1F, TEXT, false);
+            textC(g, "Comandos, ataques y talentos son del líder", cx, cy + 28, 1.0F, DIM, false);
+            textC(g, "(el Compy con las marcas rojas en la cola).", cx, cy + 40, 1.0F, DIM, false);
+        }
         if (!adult() && tab > 0) {
             int[] o = VR(tab == 1 ? skin.overlay1 : skin.overlay2);
             g.fill(o[0], o[1], o[2], o[3], 0xF0101418);
@@ -449,7 +505,7 @@ public final class PetSkinScreen extends Screen {
         }
         super.render(g, mx, my, pt);
         int[] pr = VR(skin.portrait[tab]);
-        if (my >= pr[3] - 28 && my < pr[3] - 6) {
+        if (compy == null && my >= pr[3] - 28 && my < pr[3] - 6) {
             if (mx >= pr[0] + 4 && mx < pr[0] + 26) g.renderTooltip(this.font, Component.literal(saddled() ? "Quitar silla" : "Sin silla (clic con una silla en la mano)"), rmx, rmy);
             else if (mx >= pr[2] - 26 && mx < pr[2] - 4) g.renderTooltip(this.font, Component.literal(armorTier() > 0 ? "Quitar armadura" : "Sin armadura (clic con una en la mano)"), rmx, rmy);
             else if (mx >= (pr[0] + pr[2]) / 2 - 11 && mx < (pr[0] + pr[2]) / 2 + 11) g.renderTooltip(this.font, Component.literal(!adult() ? "Ya es una cria"
@@ -458,7 +514,7 @@ public final class PetSkinScreen extends Screen {
         int[] nb = VR(skin.namebox[tab]);
         if (!renaming && mx >= nb[0] && mx < nb[2] && my >= nb[1] && my < nb[3]) g.renderTooltip(this.font, Component.literal("Clic para ponerle nombre"), rmx, rmy);
         g.pose().popPose();
-        if (tab == 2 && adult()) renderTalentTooltip(g, mx, my, rmx, rmy);
+        if (tab == 2 && adult() && !locked()) renderTalentTooltip(g, mx, my, rmx, rmy);
     }
 
     /** Panel izquierdo: nombre, retrato con la criatura real, nivel, vida, estadisticas (y XP / puntos si la pagina los tiene). */
@@ -466,7 +522,7 @@ public final class PetSkinScreen extends Screen {
         ProdigyProgress p = prog();
         int[] nb = skin.namebox[tab];
         if (!renaming) {
-            String nm = pet.hasCustomName() ? pet.getCustomName().getString() : petName();
+            String nm = pet.hasCustomName() ? pet.getCustomName().getString() : locked() ? "Compy soldado" : petName();
             float scale = tab == 2 ? 1.2F : 2.0F;
             nm = shorten(nm, (nb[2] - nb[0]) * K - 6, scale);
             float cx = X((nb[0] + nb[2]) / 2.0F), cy = Y((nb[1] + nb[3]) / 2.0F) - 4.0F * scale;
@@ -478,10 +534,10 @@ public final class PetSkinScreen extends Screen {
         g.enableScissor((int) (x0 * sc), (int) (y0 * sc), (int) (x1 * sc), (int) (y1 * sc));
         boolean ad = adult();
         float k = (x1 - x0) / 238.0F;
-        InventoryScreen.renderEntityInInventoryFollowsMouse(g, (x0 + x1) / 2, y1 - (int) (14 * k) - 4, (int) ((ad ? (dilo != null ? 30.0F : 24.0F) : 56.0F) * k),
+        InventoryScreen.renderEntityInInventoryFollowsMouse(g, (x0 + x1) / 2, y1 - (int) ((compy != null ? 22 : 14) * k) - 4, (int) ((compy != null ? 95.0F : ad ? (dilo != null ? 30.0F : 24.0F) : 56.0F) * k),
             (float) ((x0 + x1) / 2 - mx), (float) (y0 + (y1 - y0) / 3 - my), pet);
         g.disableScissor();
-        textC(g, "Nv. " + p.level(), X(skin.lvl[tab * 2]), Y(skin.lvl[tab * 2 + 1]) - 6.0F, 1.5F, CREAM, true);
+        textC(g, locked() ? "Soldado" : "Nv. " + p.level(), X(skin.lvl[tab * 2]), Y(skin.lvl[tab * 2 + 1]) - 6.0F, 1.5F, CREAM, true);
         float hp = Math.max(0.0F, pet.getHealth()), max = Math.max(1.0F, pet.getMaxHealth());
         int[] h = skin.hp[tab];
         if (h != null) {
@@ -494,7 +550,7 @@ public final class PetSkinScreen extends Screen {
             }
             textC(g, Math.round(hp) + " / " + Math.round(max), bx + bw / 2.0F, by + bh / 2.0F - 4.5F * 1.2F, 1.2F, 0xFFFFFFFF, true);
         }
-        int[] e = skin.exp[tab];
+        int[] e = locked() ? null : skin.exp[tab];
         if (e != null) {
             float bx = X(e[0]), by = Y(e[1]), bw = (e[2] - e[0]) * K, bh = (e[3] - e[1]) * K;
             int need = p.xpToNext();
@@ -506,7 +562,7 @@ public final class PetSkinScreen extends Screen {
             String.valueOf((int) pet.getAttributeValue(Attributes.ARMOR)), String.format("%.2f", pet.getAttributeValue(Attributes.MOVEMENT_SPEED))};
         for (int i = 0; i < 4; i++) textR(g, v[i], X(skin.statRight[tab]), Y(skin.statY[tab][i]) - 5.0F, tab == 2 ? 1.0F : 1.2F, 0xFFFFFFFF, true);
         if (tab == 2) {
-            textC(g, shorten("Variante: " + variantName(), 88, 0.8F), X(skin.variantC[0]), Y(skin.variantC[1]) - 3.5F, 0.8F, 0xFF9BE08A, false);
+            if (compy == null) textC(g, shorten("Variante: " + variantName(), 88, 0.8F), X(skin.variantC[0]), Y(skin.variantC[1]) - 3.5F, 0.8F, 0xFF9BE08A, false);
             textC(g, "Puntos de talento", X(skin.pointsC[0]), Y(skin.pointsC[1]) - 4.0F, 0.8F, 0xFFE9D9A6, true);
             textC(g, String.valueOf(p.pointsAvailable()), X(skin.pointsC[0]), Y(skin.pointsC[2]) - 8.0F, 2.0F, 0xFFFFFFFF, true);
             if (System.currentTimeMillis() < resetConfirmUntil) {
@@ -522,7 +578,7 @@ public final class PetSkinScreen extends Screen {
     private void renderCommands(GuiGraphics g) {
         boolean fall = fallen();
         int cur = order();
-        int[] ord = dilo != null ? CARD_ORDER_DILO : CARD_ORDER_STEGO;
+        int[] ord = dilo != null || compy != null ? CARD_ORDER_DILO : CARD_ORDER_STEGO;
         for (int i = 0; i < 6; i++) {
             int cx = skin.cardX[i % 3], cy = skin.cardY[i / 3];
             float x0 = X(cx), y0 = Y(cy), x1 = X(cx + skin.cardW[i % 3]), y1 = Y(cy + skin.cardH[i / 3]);
@@ -555,6 +611,21 @@ public final class PetSkinScreen extends Screen {
     private Ab[] abilities() {
         ProdigyProgress p = prog();
         float dmg = (float) pet.getAttributeValue(Attributes.ATTACK_DAMAGE);
+        if (compy != null) {
+            String[] key = {ClientKeys.COMPY_BITE.getTranslatedKeyMessage().getString(), ClientKeys.COMPY_LEAP.getTranslatedKeyMessage().getString(),
+                ClientKeys.COMPY_SCREECH.getTranslatedKeyMessage().getString(), ClientKeys.COMPY_PACK.getTranslatedKeyMessage().getString()};
+            return new Ab[]{
+                new Ab(new String[]{"Mordida", "fugaz"}, null, "Mordida fugaz", "Se lanza sobre la presa o el enemigo más cercano y lo muerde con un ataque veloz y preciso." + (p.rank("A7") > 0 ? " Con Depredador alfa muerde dos veces." : ""),
+                    new String[]{"Daño: " + Math.round(dmg * 1.4F * (1.0F + 0.08F * p.rank("A1"))), "Recarga: " + sec(CompyEntity.cooldownTicks(p, 0) / 20.0), "Tecla: " + key[0]}, null),
+                new Ab(new String[]{"Salto", "evasivo"}, null, "Salto evasivo", "Da un salto ágil lejos del peligro: durante un instante nadie lo alcanza." + (p.rank("C7") > 0 ? " Con Maestro del sigilo se vuelve invisible y su siguiente mordida pega más." : ""),
+                    new String[]{"Distancia: " + Math.round(CompyEntity.leapDistance(p)) + " bloques", "Recarga: " + sec(CompyEntity.cooldownTicks(p, 1) / 20.0), "Tecla: " + key[1]}, null),
+                new Ab(new String[]{"Chillido", "de alarma"}, null, "Chillido de alarma", "Un chillido agudo que ralentiza, debilita y marca a los monstruos cercanos, y llama a la manada con un empujón de velocidad.",
+                    new String[]{"Radio: " + Math.round(CompyEntity.screechRadius(p)) + " bloques", "Recarga: " + sec(CompyEntity.cooldownTicks(p, 2) / 20.0), "Tecla: " + key[2]}, null),
+                new Ab(new String[]{"Ataque", "en bandada"}, null, "Ataque en bandada", "El Compy coordina golpes rápidos junto a sus congéneres, aumentando la presión sobre enemigos cercanos: todos los soldados cargan contra el objetivo.",
+                    new String[]{"Daño: " + Math.round(dmg * CompyEntity.packDamageMul(p)), "Recarga: " + sec(CompyEntity.cooldownTicks(p, 3) / 20.0), "Tecla: " + key[3]}, null),
+                new Ab(new String[]{"Cazador", "diminuto"}, null, "Cazador diminuto", "Pasiva: sus mordidas hacen +25 % de daño contra criaturas pequeñas (gallinas, conejos, arañas...).",
+                    new String[]{"+25 % de daño", "Recarga: ninguna", "Tecla: pasiva"}, null)};
+        }
         if (dilo != null) {
             boolean spit = p.rank("S7") > 0;
             double cdf = 1.0 - 0.10 * Math.max(0, p.rank("M3"));
@@ -590,8 +661,35 @@ public final class PetSkinScreen extends Screen {
                 new String[]{"Daño: " + Math.round(dmg * 0.4F), "Recarga: " + sec(0.8), "Tecla: clic izq. (montado)"}, Items.GOLDEN_SWORD)};
     }
 
+    private void renderCompyAttacks(GuiGraphics g, Ab[] ab) {
+        for (int i = 0; i < 5; i++) {
+            if (selAtk != i) continue;
+            int[] c = skin.atkCard[i];
+            frame(g, X(c[0]) - 1, Y(c[1]) - 1, X(c[2]) + 1, Y(c[3]) + 1, GOLD, 0x22FFD35A);
+        }
+        Ab a = ab[selAtk];
+        int[] di = skin.atkDetailIcon;
+        float dx0 = X(di[0]), dy0 = Y(di[1]), dx1 = X(di[2]);
+        int[] src = selAtk < 4 ? new int[]{skin.atkCircle[selAtk][0], skin.atkCircle[selAtk][1], skin.circ} : skin.passive;
+        g.pose().pushPose();
+        g.pose().translate(dx0, dy0, 0.0F);
+        float sx = (dx1 - dx0) / src[2];
+        g.pose().scale(sx, sx, 1.0F);
+        g.blit(skin.bg[1], 0, 0, src[2], src[2], (float) src[0], (float) src[1], src[2], src[2], 1086, skin.texH[1]);
+        g.pose().popPose();
+        text(g, a.title, X(skin.detTitleX), Y(skin.detTitleY), 1.4F, GOLD, true);
+        para(g, a.desc, X(skin.detDescX), Y(skin.detDescY), skin.detDescW * K, 1.1F, 11.0F, TEXT, 4);
+        for (int i = 0; i < 3; i++) {
+            int[] r = skin.detPill[i];
+            text(g, shorten(a.stats[i], (r[2] - r[0] - skin.detOff[i] - 8) * K, 1.1F), X(r[0] + skin.detOff[i]), Y((r[1] + r[3]) / 2.0F) - 4.5F, 1.1F, 0xFFFFFFFF, true);
+        }
+        String ks = a.stats[2].startsWith("Tecla: ") ? a.stats[2].substring(7) : "";
+        if (!ks.equals("pasiva") && !ks.isEmpty()) textC(g, shorten(ks, 18, 0.9F), X(skin.detKey[0]), Y(skin.detKey[1]) - 4.0F, 0.9F, 0xFFFFFFFF, true);
+    }
+
     private void renderAttacks(GuiGraphics g) {
         Ab[] ab = abilities();
+        if (compy != null) { renderCompyAttacks(g, ab); return; }
         int[] pillIcons = null;
         for (int i = 0; i < 4; i++) {
             int[] c = skin.atkCard[i];
@@ -661,9 +759,18 @@ public final class PetSkinScreen extends Screen {
     private static final int SPACING = 34;
 
     /** Coloca cada talento: columna de su rama, fila por profundidad y posicion horizontal segun sus requisitos. */
+    /** Lado de un nodo en unidades virtuales (los del Compy vienen dibujados en el fondo). */
+    private float nodeSize() { return compy != null ? 2.0F * skin.nodeHalf * K : NS; }
+
     private void buildTree() {
         Talent[] all = prog().table();
         nodePos = new int[all.length][];
+        if (compy != null) {   // posiciones fijas: coinciden con los nodos de la maqueta
+            for (int i = 0; i < all.length; i++)
+                for (int k = 0; k < skin.nodeId.length; k++)
+                    if (skin.nodeId[k].equals(all[i].id)) nodePos[i] = new int[]{skin.nodeX[k], skin.nodeY[k]};
+            return;
+        }
         int[] depth = new int[all.length];
         for (int pass = 0; pass < all.length; pass++) {
             for (int i = 0; i < all.length; i++) {
@@ -767,7 +874,7 @@ public final class PetSkinScreen extends Screen {
 
     private void renderTalents(GuiGraphics g) {
         // placas de las ramas
-        for (int c = 0; c < 3; c++) {
+        for (int c = 0; c < 3 && !skin.baked; c++) {
             int[] pc = skin.plateC[c];
             textC(g, skin.colName[c], X(pc[0]), Y(pc[1]) - 4.0F, c == 1 && dilo != null ? 0.8F : 1.0F, 0xFFFFFFFF, true);
             textC(g, skin.colSub[c], X(pc[0]), Y(pc[2]) - 3.0F, 0.6F, 0xFFE9D9A6, false);
@@ -777,7 +884,7 @@ public final class PetSkinScreen extends Screen {
         Talent[] all = p.table();
         if (!adult()) { medallion(g, p, all); return; }
         // lineas de requisito (debajo de los nodos)
-        for (int i = 0; i < all.length; i++) {
+        for (int i = 0; i < all.length && !skin.baked; i++) {
             if (nodePos[i] == null) continue;
             for (String[] req : all[i].reqs) {
                 int r = idx(req[0]);
@@ -794,6 +901,7 @@ public final class PetSkinScreen extends Screen {
         for (int i = 0; i < all.length; i++) {
             Talent t = all[i];
             if (nodePos[i] == null) continue;
+            if (skin.baked) { bakedNode(g, p, t, i); continue; }
             int x = (int) X(nodePos[i][0]) - NS / 2, y = (int) Y(nodePos[i][1]) - NS / 2;
             boolean owned = p.rank(i) > 0, maxed = p.rank(i) >= t.maxRank, can = p.whyNotUnlock(i) == null;
             node(g, x, y, branchColor(t), owned, maxed, can);
@@ -823,8 +931,57 @@ public final class PetSkinScreen extends Screen {
         renderDetail(g, p);
     }
 
+    /** Nodo del Compy: el icono ya esta en el fondo; solo se dibuja el estado (propio, bloqueado, seleccionado) y el rango. */
+    private void bakedNode(GuiGraphics g, ProdigyProgress p, Talent t, int i) {
+        float cx = X(nodePos[i][0]), cy = Y(nodePos[i][1]), h = skin.nodeHalf * K;
+        int x0 = (int) (cx - h), y0 = (int) (cy - h), x1 = (int) (cx + h), y1 = (int) (cy + h);
+        boolean owned = p.rank(i) > 0, maxed = p.rank(i) >= t.maxRank, can = p.whyNotUnlock(i) == null;
+        int col = branchColor(t);
+        if (!owned && !can) {
+            g.fill(x0 + 2, y0 + 2, x1 - 2, y1 - 2, 0xA8000000);
+            int lx = (int) cx, ly = (int) cy - 2;
+            g.fill(lx - 4, ly, lx + 4, ly + 7, 0xFFA0A4A8);
+            g.fill(lx - 3, ly - 4, lx - 1, ly, 0xFF70747A);
+            g.fill(lx + 1, ly - 4, lx + 3, ly, 0xFF70747A);
+            g.fill(lx - 3, ly - 5, lx + 3, ly - 3, 0xFF70747A);
+        } else if (owned) {
+            g.renderOutline(x0 - 1, y0 - 1, x1 - x0 + 2, y1 - y0 + 2, maxed ? GOLD : col);
+            g.renderOutline(x0, y0, x1 - x0, y1 - y0, (maxed ? GOLD : col) & 0x00FFFFFF | 0x88000000);
+        }
+        if (i == selected && !ultSel) g.renderOutline(x0 - 3, y0 - 3, x1 - x0 + 6, y1 - y0 + 6, 0xFFFFFFFF);
+        String rk = p.rank(i) + "/" + t.maxRank;
+        textR(g, rk, cx + h - 2.0F, cy + h * 0.5F, 0.75F, owned ? (maxed ? GOLD : 0xFFFFFFFF) : DIM, true);
+    }
+
+    /** Medallon "Rey de la bandada": nombre y rueda de fondo ya estan en la maqueta; aqui el candado, el brillo al lograrlo y la seleccion. */
+    private void compyMedal(GuiGraphics g, ProdigyProgress p) {
+        int pi = idx("P1");
+        boolean got = pi >= 0 && p.rank(pi) > 0;
+        int[] m = skin.medal;
+        if (got) {
+            int[] c = VR(m);
+            g.renderOutline(c[0] + 2, c[1] + 2, c[2] - c[0] - 4, c[3] - c[1] - 4, 0x66FFD35A);
+        } else {
+            float lx = X(skin.lock[0]), ly = Y(skin.lock[1]) - 3.0F;
+            g.fill((int) lx - 5, (int) ly, (int) lx + 5, (int) ly + 8, 0xFFE6B422);
+            g.renderOutline((int) lx - 5, (int) ly, 10, 8, 0xFF7A5A10);
+            g.fill((int) lx - 3, (int) ly - 5, (int) lx - 1, (int) ly, 0xFFB0B4B8);
+            g.fill((int) lx + 1, (int) ly - 5, (int) lx + 3, (int) ly, 0xFFB0B4B8);
+            g.fill((int) lx - 3, (int) ly - 6, (int) lx + 3, (int) ly - 4, 0xFFB0B4B8);
+        }
+        if (selected == pi && !ultSel) { int[] c = VR(m); g.renderOutline(c[0] + 3, c[1] + 3, c[2] - c[0] - 6, c[3] - c[1] - 6, GOLD); }
+    }
+
+    /** Icono de un talento del Compy: se recorta del propio fondo (el arte del nodo o del medallon) y se ajusta al cuadro del panel de detalle. */
+    private void compyTalentIcon(GuiGraphics g, Talent t, float x, float y, float size) {
+        int cx = skin.p1[0], cy = skin.p1[1], half = 40;
+        if (!t.id.equals("P1")) for (int k = 0; k < skin.nodeId.length; k++) if (skin.nodeId[k].equals(t.id)) { cx = skin.nodeX[k]; cy = skin.nodeY[k]; half = skin.nodeHalf; }
+        g.blit(skin.bg[2], (int) x, (int) y, (int) size, (int) size, (float) (cx - half), (float) (cy - half), half * 2, half * 2, 1086, skin.texH[2]);
+    }
+
     /** Medallon central: la definitiva del estegosaurio (rugido de su variante) o el Cazador Primordial del dilofosaurio. */
     private void medallion(GuiGraphics g, ProdigyProgress p, Talent[] all) {
+        if (compy != null) { compyMedal(g, p); return; }
         int[] m = skin.medal;
         float cx = X((m[0] + m[2]) / 2.0F);
         boolean got;
@@ -892,13 +1049,16 @@ public final class PetSkinScreen extends Screen {
         Talent t = p.table()[selected];
         int col = branchColor(t);
         int cur = p.rank(selected);
-        frame(g, ix, y0, ix + iw, y0 + iw, cur > 0 ? col : 0xFF5A6066, 0x80101418);
-        g.pose().pushPose(); g.pose().translate(ix + iw / 2 - 16, y0 + iw / 2 - 16, 0.0F); g.pose().scale(2.0F, 2.0F, 1.0F);
-        g.renderItem(new ItemStack(iconFor(t)), 0, 0); g.pose().popPose();
+        if (compy != null) compyTalentIcon(g, t, ix, y0, iw);
+        else {
+            frame(g, ix, y0, ix + iw, y0 + iw, cur > 0 ? col : 0xFF5A6066, 0x80101418);
+            g.pose().pushPose(); g.pose().translate(ix + iw / 2 - 16, y0 + iw / 2 - 16, 0.0F); g.pose().scale(2.0F, 2.0F, 1.0F);
+            g.renderItem(new ItemStack(iconFor(t)), 0, 0); g.pose().popPose();
+        }
         para(g, t.name, tx, Y(skin.panelTitleY), tw, 1.1F, 10.5F, 0xFFFFF0C0, 3);
         frame(g, X(pp[0]), Y(pp[1]), X(pp[2]), Y(pp[3]), col, 0x40101418);
         textC(g, "Rango " + cur + " / " + t.maxRank, (X(pp[0]) + X(pp[2])) / 2, (Y(pp[1]) + Y(pp[3])) / 2 - 3.5F, 0.95F, 0xFFFFFFFF, false);
-        float yy = para(g, t.effect, x, effY, effW, 1.0F, 10.0F, TEXT, 9);
+        float yy = para(g, t.effect, x, effY, effW, 1.0F, 10.0F, TEXT, compy != null ? 14 : 9);
         String note = switch (t.id) {
             case "S3" -> stego != null ? "Cruzar portales: pendiente." : null;
             case "D5" -> "Efecto solo montado.";
@@ -934,10 +1094,11 @@ public final class PetSkinScreen extends Screen {
 
     private void renderTalentTooltip(GuiGraphics g, int mx, int my, int rmx, int rmy) {
         Talent[] all = prog().table();
+        float ns = nodeSize();
         for (int i = 0; i < all.length; i++) {
             if (nodePos[i] == null) continue;
-            float x = X(nodePos[i][0]) - NS / 2.0F, y = Y(nodePos[i][1]) - NS / 2.0F;
-            if (mx >= x && mx < x + NS && my >= y && my < y + NS) {
+            float x = X(nodePos[i][0]) - ns / 2.0F, y = Y(nodePos[i][1]) - ns / 2.0F;
+            if (mx >= x && mx < x + ns && my >= y && my < y + ns) {
                 g.renderTooltip(this.font, Component.literal(all[i].name + "  " + prog().rank(i) + "/" + all[i].maxRank), rmx, rmy);
                 return;
             }

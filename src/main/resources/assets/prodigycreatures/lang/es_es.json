@@ -124,5 +124,9 @@
   "subtitles.prodigycreatures.compy.death": "Compy muere",
   "subtitles.prodigycreatures.compy.bite": "Compy muerde",
   "subtitles.prodigycreatures.compy.eat": "Compy come",
-  "subtitles.prodigycreatures.compy.happy": "Compy se alegra"
+  "subtitles.prodigycreatures.compy.happy": "Compy se alegra",
+  "key.prodigycreatures.compy_bite": "Compy (líder): Mordida fugaz",
+  "key.prodigycreatures.compy_leap": "Compy (líder): Salto evasivo",
+  "key.prodigycreatures.compy_screech": "Compy (líder): Chillido de alarma",
+  "key.prodigycreatures.compy_pack": "Compy (líder): Ataque en bandada"
 }

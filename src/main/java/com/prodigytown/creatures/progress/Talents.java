@@ -72,6 +72,8 @@ public final class Talents {
      * Mismos puntos por nivel (GrowthTable); cada talento tiene un efecto real en DilophosaurusEntity.
      */
     public static final Talent[] DILO = buildDilo();
+    /** Compy (solo el lider de la manada): ramas Acecho (A, roja), Astucia (C, azul), Bandada (B, verde) y la mejora final Rey de la bandada (P1). Mismos puntos por nivel. */
+    public static final Talent[] COMPY = buildCompy();
 
     private static Talent t(String id, int branch, String name, int maxRank, int[] cost, int[] minLevel, String[][] reqs, String effect) {
         return new Talent(id, branch, name, maxRank, cost, minLevel, reqs, effect, new String[]{});
@@ -104,6 +106,38 @@ public final class Talents {
             // --- Mejora final ---
             t("P1", 3, "CAZADOR PRIMORDIAL", 1, new int[]{6}, new int[]{70}, new String[][]{{"C6","1"},{"M6","1"},{"S6","1"}},
               "+10 % de daño, +5 % de velocidad, +15 % de daño a monstruos hostiles, el Frenesí dura 3 s más y recarga −10 %; aura visual en el Frenesí")
+        };
+    }
+
+
+    private static Talent[] buildCompy() {
+        return new Talent[]{
+            // --- Rama roja: ACECHO (dano y caza) ---
+            t("A1", 0, "Garras afiladas", 3, new int[]{1,1,2}, new int[]{10,10,10}, new String[][]{}, "+8 % de daño de mordida por rango (hasta +24 %)"),
+            t("A2", 0, "Ojo de cazador", 3, new int[]{2,2,3}, new int[]{20,20,20}, new String[][]{{"A1","1"}}, "+6 / +12 / +18 % de daño contra presas por debajo del 50 % de vida"),
+            t("A3", 0, "Zarpazo veloz", 3, new int[]{2,2,3}, new int[]{20,20,20}, new String[][]{{"A1","1"}}, "−6 / −12 / −18 % de recarga de la Mordida fugaz"),
+            t("A4", 0, "Colmillos de sangre", 3, new int[]{2,3,3}, new int[]{32,32,32}, new String[][]{{"A2","1"}}, "Las mordidas provocan sangrado: 10 / 16 / 22 % del ataque por segundo durante 3 s"),
+            t("A5", 0, "Punto débil", 3, new int[]{2,3,3}, new int[]{32,32,32}, new String[][]{{"A3","1"}}, "8 / 14 / 20 % de probabilidad de golpe crítico (+60 % de daño)"),
+            t("A6", 0, "Racha de caza", 3, new int[]{3,3,4}, new int[]{46,46,46}, new String[][]{{"A4","1"},{"A5","1"}}, "Al abatir una presa: recupera 3 / 6 / 9 % de su vida y gana Velocidad I durante 3 / 4 / 5 s"),
+            t("A7", 0, "Depredador alfa", 1, new int[]{5}, new int[]{60}, new String[][]{{"A6","1"}}, "+12 % de daño y la Mordida fugaz golpea dos veces"),
+            // --- Rama azul: ASTUCIA (movilidad y evasion) ---
+            t("C1", 1, "Pasos silenciosos", 3, new int[]{1,1,2}, new int[]{10,10,10}, new String[][]{}, "Reduce el ruido que generas al moverte (−20 / −35 / −50 %) y mejora tu sigilo, lo que además aumenta el daño del primer ataque al emboscar (+10 / +20 / +30 %)"),
+            t("C2", 1, "Carrera relámpago", 3, new int[]{2,2,3}, new int[]{20,20,20}, new String[][]{{"C1","1"}}, "+4 % de velocidad de movimiento por rango (hasta +12 %)"),
+            t("C3", 1, "Salto ágil", 3, new int[]{2,2,3}, new int[]{20,20,20}, new String[][]{{"C1","1"}}, "El Salto evasivo llega +15 / +30 / +45 % más lejos"),
+            t("C4", 1, "Plumaje ligero", 3, new int[]{2,3,3}, new int[]{32,32,32}, new String[][]{{"C2","1"}}, "−35 / −70 / −100 % de daño por caída para el líder y su dueño"),
+            t("C5", 1, "Esquiva instintiva", 3, new int[]{2,3,3}, new int[]{32,32,32}, new String[][]{{"C3","1"}}, "6 / 12 / 18 % de probabilidad de esquivar un golpe"),
+            t("C6", 1, "Huida veloz", 3, new int[]{3,3,4}, new int[]{46,46,46}, new String[][]{{"C4","1"},{"C5","1"}}, "Al recibir daño gana Velocidad I durante 3 / 4 / 5 s (recarga 10 s)"),
+            t("C7", 1, "Maestro del sigilo", 1, new int[]{5}, new int[]{60}, new String[][]{{"C6","1"}}, "Tras el Salto evasivo se vuelve invisible 3 s y su siguiente mordida hace +50 % de daño"),
+            // --- Rama verde: BANDADA (apoyo y sinergia) ---
+            t("B1", 2, "Soldados fuertes", 3, new int[]{1,1,2}, new int[]{10,10,10}, new String[][]{}, "Los soldados de la manada ganan +10 / +20 / +30 % de vida y de daño"),
+            t("B2", 2, "Festín compartido", 3, new int[]{2,2,3}, new int[]{20,20,20}, new String[][]{{"B1","1"}}, "Cuando el líder o un soldado abate una presa, los soldados cercanos recuperan 2 / 4 / 6 de vida"),
+            t("B3", 2, "Camaradería", 3, new int[]{2,2,3}, new int[]{20,20,20}, new String[][]{{"B1","1"}}, "Con 3 o más soldados a 8 bloques, el líder recibe −4 / −8 / −12 % de daño"),
+            t("B4", 2, "Eco del chillido", 3, new int[]{2,3,3}, new int[]{32,32,32}, new String[][]{{"B2","1"}}, "El Chillido de alarma llega 2 / 3 / 4 bloques más lejos y dura 1 / 2 / 3 s más"),
+            t("B5", 2, "Descanso en nidada", 3, new int[]{2,3,3}, new int[]{32,32,32}, new String[][]{{"B3","1"}}, "Sentados o dormidos, el líder y sus soldados cercanos recuperan 0,8 / 1,4 / 2,0 % de su vida por segundo"),
+            t("B6", 2, "Voz de mando", 3, new int[]{3,3,4}, new int[]{46,46,46}, new String[][]{{"B4","1"},{"B5","1"}}, "El Ataque en bandada hace +15 / +30 / +45 % de daño y su recarga baja −10 / −20 / −30 %"),
+            // --- Mejora final ---
+            t("P1", 3, "REY DE LA BANDADA", 1, new int[]{6}, new int[]{70}, new String[][]{{"A7","1"},{"B6","1"},{"C7","1"}},
+              "+10 % de daño y +5 % de velocidad al líder, +15 % de daño a los soldados, el Ataque en bandada dura 2 s más y todas las recargas bajan −10 %")
         };
     }
 

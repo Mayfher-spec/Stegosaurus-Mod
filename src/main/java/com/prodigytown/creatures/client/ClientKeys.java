@@ -32,6 +32,10 @@ public final class ClientKeys {
     public static final KeyMapping DILO_POUNCE = new KeyMapping("key.prodigycreatures.dilo_pounce", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_C, CATEGORY);
     public static final KeyMapping DILO_FRENZY = new KeyMapping("key.prodigycreatures.dilo_frenzy", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_G, CATEGORY);
     public static final KeyMapping DILO_SPIT = new KeyMapping("key.prodigycreatures.dilo_spit", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_Y, CATEGORY);
+    public static final KeyMapping COMPY_BITE = new KeyMapping("key.prodigycreatures.compy_bite", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_U, CATEGORY);
+    public static final KeyMapping COMPY_LEAP = new KeyMapping("key.prodigycreatures.compy_leap", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_I, CATEGORY);
+    public static final KeyMapping COMPY_SCREECH = new KeyMapping("key.prodigycreatures.compy_screech", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_O, CATEGORY);
+    public static final KeyMapping COMPY_PACK = new KeyMapping("key.prodigycreatures.compy_pack", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_J, CATEGORY);
     private ClientKeys() {}
 
     @Mod.EventBusSubscriber(modid = ProdigyCreatures.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
@@ -47,6 +51,10 @@ public final class ClientKeys {
             event.register(DILO_POUNCE);
             event.register(DILO_FRENZY);
             event.register(DILO_SPIT);
+            event.register(COMPY_BITE);
+            event.register(COMPY_LEAP);
+            event.register(COMPY_SCREECH);
+            event.register(COMPY_PACK);
         }
     }
 
@@ -97,6 +105,10 @@ public final class ClientKeys {
             while (DILO_POUNCE.consumeClick()) ModNetwork.CHANNEL.sendToServer(new ModNetwork.UseAbility(12));
             while (DILO_FRENZY.consumeClick()) ModNetwork.CHANNEL.sendToServer(new ModNetwork.UseAbility(13));
             while (DILO_SPIT.consumeClick()) ModNetwork.CHANNEL.sendToServer(new ModNetwork.UseAbility(14));
+            while (COMPY_BITE.consumeClick()) ModNetwork.CHANNEL.sendToServer(new ModNetwork.UseAbility(20));
+            while (COMPY_LEAP.consumeClick()) ModNetwork.CHANNEL.sendToServer(new ModNetwork.UseAbility(21));
+            while (COMPY_SCREECH.consumeClick()) ModNetwork.CHANNEL.sendToServer(new ModNetwork.UseAbility(22));
+            while (COMPY_PACK.consumeClick()) ModNetwork.CHANNEL.sendToServer(new ModNetwork.UseAbility(23));
             while (SHRINK.consumeClick()) { // Saint's Dragons: H = encoger/agrandar el dragon que miras (Mayus+H = todos los tuyos cercanos)
                 net.minecraft.world.entity.Entity look = mc.crosshairPickEntity;
                 ModNetwork.CHANNEL.sendToServer(new ModNetwork.ShrinkDragon(com.prodigytown.creatures.compat.SaintsDragonsCompat.isDragon(look) ? look.getId() : -1, player.isShiftKeyDown()));
@@ -105,13 +117,18 @@ public final class ClientKeys {
                 if (mc.screen != null) continue;
                 net.minecraft.world.entity.TamableAnimal best = null;
                 for (net.minecraft.world.entity.TamableAnimal s : mc.level.getEntitiesOfClass(net.minecraft.world.entity.TamableAnimal.class,
-                        player.getBoundingBox().inflate(24.0), e -> (e instanceof StegosaurusEntity || e instanceof com.prodigytown.chibi.ChibiStego || e instanceof com.prodigytown.creatures.CarnotaurusEntity || e instanceof com.prodigytown.creatures.DilophosaurusEntity) && e.isTame() && e.isOwnedBy(player))) {
+                        player.getBoundingBox().inflate(24.0), e -> (e instanceof StegosaurusEntity || e instanceof com.prodigytown.chibi.ChibiStego || e instanceof com.prodigytown.creatures.CarnotaurusEntity || e instanceof com.prodigytown.creatures.DilophosaurusEntity || e instanceof com.prodigytown.creatures.CompyEntity c0 && c0.isLeader()) && e.isTame() && e.isOwnedBy(player))) {
                     if (best == null || s.distanceToSqr(player) < best.distanceToSqr(player)) best = s;
+                }
+                if (best == null) {   // sin lider cerca: un soldado abre la pantalla bloqueada (modo seguidor)
+                    for (com.prodigytown.creatures.CompyEntity c : mc.level.getEntitiesOfClass(com.prodigytown.creatures.CompyEntity.class, player.getBoundingBox().inflate(24.0), e -> e.isTame() && e.isOwnedBy(player)))
+                        if (best == null || c.distanceToSqr(player) < best.distanceToSqr(player)) best = c;
                 }
                 if (best instanceof StegosaurusEntity adult) ClientHooks.openTalents(adult);
                 else if (best instanceof com.prodigytown.chibi.ChibiStego chibi) ClientHooks.openOrders(chibi);
                 else if (best instanceof com.prodigytown.creatures.CarnotaurusEntity carno) ClientHooks.openCarno(carno);
                 else if (best instanceof com.prodigytown.creatures.DilophosaurusEntity dilo) ClientHooks.openDilo(dilo);
+                else if (best instanceof com.prodigytown.creatures.CompyEntity compy) ClientHooks.openCompy(compy);
                 else player.displayClientMessage(net.minecraft.network.chat.Component.literal("No hay un companero tuyo cerca"), true);
             }
         }

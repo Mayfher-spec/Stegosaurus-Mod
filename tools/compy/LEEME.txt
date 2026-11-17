@@ -21,3 +21,8 @@ y las raras (albino, melanico) se tiran por individuo (ver config/prodigycreatur
 
 Manadas: cada grupo tiene UN lider (marca roja con dos anillos en la cola cerca de la punta, +20 % de tamano, vida 14/20). Solo el lider se doma;
 al hacerlo, toda la manada cercana se une como soldados (sin interfaz: orden bloqueada en "seguidor"). Ver CompyEntity (recruitPack, packTick, promoteSuccessor).
+
+--- Interfaz del Compy (v1.10.0) ---
+python3 tools/compy/gui.py <repo> <comandos.png> <ataques.png> <talentos.png> [carpeta_vista_previa]
+Genera textures/gui/compy2/{cmd,atk,tal}.png (maquetas limpiadas, 1086 px de ancho) y client/CompyGui.java
+(coordenadas). CompyGui.java es GENERADO: no se edita a mano, se vuelve a ejecutar el script.

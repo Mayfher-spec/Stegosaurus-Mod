@@ -73,6 +73,8 @@ public final class ProgressEvents {
             best = Math.max(best, pet.fallReduction());
         for (DilophosaurusEntity pet : player.level().getEntitiesOfClass(DilophosaurusEntity.class, player.getBoundingBox().inflate(8.0), e -> e.isTame() && e.isOwnedBy(player)))
             best = Math.max(best, pet.fallReduction());
+        for (com.prodigytown.creatures.CompyEntity pet : player.level().getEntitiesOfClass(com.prodigytown.creatures.CompyEntity.class, player.getBoundingBox().inflate(8.0), e -> e.isTame() && e.isLeader() && e.isOwnedBy(player)))
+            best = Math.max(best, pet.fallReduction());
         if (best > 0.0F) event.setDamageMultiplier(event.getDamageMultiplier() * (1.0F - best));
     }
 
