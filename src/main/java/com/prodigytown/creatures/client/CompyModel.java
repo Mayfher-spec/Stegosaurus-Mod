@@ -44,6 +44,8 @@ public final class CompyModel<T extends CompyEntity> extends EntityModel<T> {
     private final Bone[] arm = new Bone[2], arm2 = new Bone[2];
     private final Bone[] thigh = new Bone[2], shin = new Bone[2], meta = new Bone[2], foot = new Bone[2];
     private final Bone[][] toe = new Bone[2][3];
+    /** Distintivo del lider: dos anillos rojos en la cola, cerca de la punta. Solo se dibujan si la entidad es lider. */
+    private final Bone mark1, mark2;
     private final Bone[] all;
     private final float restDepth;
 
@@ -58,7 +60,9 @@ public final class CompyModel<T extends CompyEntity> extends EntityModel<T> {
         this.neck1 = add(list, n1); this.neck2 = add(list, n2); this.head = add(list, h);
         this.jaw = add(list, h.getChild("jaw"));
         ModelPart t = b;
-        for (int i = 0; i < TAILS; i++) { t = t.getChild("tail" + (i + 1)); tail[i] = add(list, t); }
+        ModelPart[] tp = new ModelPart[TAILS];
+        for (int i = 0; i < TAILS; i++) { t = t.getChild("tail" + (i + 1)); tp[i] = t; tail[i] = add(list, t); }
+        this.mark1 = add(list, tp[4].getChild("mark1")); this.mark2 = add(list, tp[5].getChild("mark2"));
         String[] sd = {"l", "r"};
         for (int s = 0; s < 2; s++) {
             ModelPart a1 = c.getChild("arm_" + sd[s]);
@@ -95,6 +99,8 @@ public final class CompyModel<T extends CompyEntity> extends EntityModel<T> {
 
     @Override public void setupAnim(T e, float limbSwing, float limbSwingAmount, float age, float yaw, float pitch) {
         for (Bone bn : all) bn.reset();
+        boolean leader = e.isLeader();
+        mark1.p.visible = leader; mark2.p.visible = leader;
         float pt = Mth.clamp(age - e.tickCount, 0.0F, 1.0F);
 
         float sit = sstep(Mth.lerp(pt, e.sitAnimO, e.sitAnim)), sleep = sstep(Mth.lerp(pt, e.sleepAnimO, e.sleepAnim));

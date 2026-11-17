@@ -31,6 +31,8 @@ public final class CompyRenderer extends MobRenderer<CompyEntity, CompyModel<Com
     }
 
     @Override protected void scale(CompyEntity e, PoseStack stack, float partialTick) {
-        stack.scale(SCALE, SCALE, SCALE);
+        float sc = e.isLeader() ? SCALE * CompyEntity.LEADER_SCALE : SCALE;   // el lider es un 20 % mas grande
+        stack.scale(sc, sc, sc);
+        this.shadowRadius = e.isLeader() ? 0.27F : 0.22F;
     }
 }

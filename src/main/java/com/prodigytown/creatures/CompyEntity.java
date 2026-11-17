@@ -54,8 +54,10 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Compy (Compsognathus): el cuarto dinosaurio. Diminuto (~1,1 bloques de largo, tamano de pollo), vive en manadas de 3 a 8 y no se puede montar.
- * UNA sola malla y ocho variantes de textura (verde, rojo, azul, gris, amarillo, rosa, albino, melanico). Se doma con carne y obedece las
- * ordenes comunes (Seguir, Quieto, Deambular, Patrullar, Sentarse, Dormir). Habilidades, talentos y HUD llegan despues.
+ * UNA sola malla y ocho variantes de textura (verde, rojo, azul, gris, amarillo, rosa, albino, melanico).
+ * MANADAS: cada grupo tiene UN lider (mas grande, con cresta de plumas y gorguera de color). Solo el lider se puede domar; al hacerlo, el resto de la
+ * manada se une como sus SOLDADOS: no tienen interfaz propia, su orden queda bloqueada en "seguidor" (siguen al lider y copian Quieto/Sentarse/Dormir),
+ * atacan lo que ataca el lider y, si el lider cae, el soldado mas cercano asciende a lider. Habilidades, talentos y HUD llegan despues.
  */
 public class CompyEntity extends TamableAnimal implements PetOrders.Holder {
     public static final String[] VARIANT_IDS = {"verde", "rojo", "azul", "gris", "amarillo", "rosa", "albino", "melanico"};
@@ -65,6 +67,11 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder {
 
     private static final EntityDataAccessor<Integer> VARIANT = SynchedEntityData.defineId(CompyEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> ORDER = SynchedEntityData.defineId(CompyEntity.class, EntityDataSerializers.INT);
+    /** Lider de su manada (solo uno por manada): mas grande, con distintivos, domable y con interfaz propia. */
+    private static final EntityDataAccessor<Boolean> LEADER = SynchedEntityData.defineId(CompyEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final net.minecraft.world.entity.EntityDimensions LEADER_DIM = net.minecraft.world.entity.EntityDimensions.scalable(0.48F, 0.6F);
+    /** Tamano del lider respecto al resto de la manada. */
+    public static final float LEADER_SCALE = 1.2F;
 
     // ---- solo cliente: estado de animacion suavizado (cada valor guarda su version del tick anterior ...O para interpolar) ----
     public float sitAnim, sitAnimO, sleepAnim, sleepAnimO;
@@ -75,7 +82,11 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder {
 
     @Nullable private BlockPos orderHome;
     private int trust, lastFeedTick = -100000;
-    private boolean variantFixed = false;
+    private boolean variantFixed = false, syncingOrder = false;
+    /** Manada a la que pertenece (los miembros comparten id). Solo servidor. */
+    private java.util.UUID packId = java.util.UUID.randomUUID();
+    @Nullable private CompyEntity leaderRef;
+    private int leaderCheckAt = 0;
 
     public CompyEntity(EntityType<? extends CompyEntity> type, Level level) {
         super(type, level);
@@ -98,6 +109,7 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder {
         super.defineSynchedData();
         this.entityData.define(VARIANT, VERDE);
         this.entityData.define(ORDER, PetOrders.FOLLOW);
+        this.entityData.define(LEADER, Boolean.TRUE);
     }
 
     @Override public void addAdditionalSaveData(CompoundTag tag) {
@@ -105,6 +117,8 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder {
         tag.putInt("Variant", getVariant());
         tag.putInt("Trust", trust);
         tag.putInt("PetOrder", getOrder());
+        tag.putBoolean("Leader", isLeader());
+        tag.putUUID("PackId", packId);
         if (orderHome != null) tag.putLong("OrderHome", orderHome.asLong());
     }
 
@@ -113,6 +127,9 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder {
         if (tag.contains("Variant")) { setVariant(tag.getInt("Variant")); variantFixed = true; }   // /summon ... {Variant:3} o huevo con variante concreta
         this.trust = tag.getInt("Trust");
         this.entityData.set(ORDER, PetOrders.clamp(tag.getInt("PetOrder")));
+        if (tag.contains("Leader")) this.entityData.set(LEADER, tag.getBoolean("Leader"));
+        if (tag.hasUUID("PackId")) this.packId = tag.getUUID("PackId");
+        applyRoleStats(false);
         this.orderHome = tag.contains("OrderHome") ? BlockPos.of(tag.getLong("OrderHome")) : null;
         if (isTame()) this.setPersistenceRequired();
     }
@@ -120,6 +137,85 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder {
     public int getVariant() { return this.entityData.get(VARIANT); }
     public void setVariant(int v) { this.entityData.set(VARIANT, Math.max(0, Math.min(VARIANTS - 1, v))); }
     public int getTrust() { return trust; }
+    public boolean isLeader() { return this.entityData.get(LEADER); }
+    /** Soldado: domado pero no lider (su orden esta bloqueada en "seguidor" del lider). */
+    public boolean isFollower() { return isTame() && !isLeader(); }
+    public boolean isSyncingOrder() { return syncingOrder; }
+    public java.util.UUID getPackId() { return packId; }
+    private void setLeader(boolean leader) { this.entityData.set(LEADER, leader); applyRoleStats(true); }
+
+    @Override public void onSyncedDataUpdated(EntityDataAccessor<?> key) {
+        super.onSyncedDataUpdated(key);
+        if (LEADER.equals(key)) this.refreshDimensions();
+    }
+    @Override public net.minecraft.world.entity.EntityDimensions getDimensions(net.minecraft.world.entity.Pose pose) { return isLeader() ? LEADER_DIM : super.getDimensions(pose); }
+
+    /** Vida segun el papel: lider 14 (20 domado), soldado 10 (12 domado). Conserva la fraccion de vida. */
+    private void applyRoleStats(boolean keepFraction) {
+        if (this.level().isClientSide) return;
+        double max = isLeader() ? (isTame() ? 20.0 : 14.0) : (isTame() ? 12.0 : 10.0);
+        var attr = this.getAttribute(Attributes.MAX_HEALTH);
+        if (attr == null || attr.getBaseValue() == max) return;
+        float frac = keepFraction ? this.getHealth() / this.getMaxHealth() : 1.0F;
+        attr.setBaseValue(max);
+        this.setHealth(Math.max(1.0F, (float) max * Math.min(1.0F, frac)));
+    }
+
+    /** El lider de mi manada (el mas cercano con mi id), con cache. Solo servidor. */
+    @Nullable public CompyEntity findLeader() {
+        if (isLeader()) return this;
+        if (leaderRef != null && leaderRef.isAlive() && leaderRef.isLeader() && leaderRef.packId.equals(packId) && !leaderRef.isRemoved()) return leaderRef;
+        if (this.tickCount < leaderCheckAt) return null;
+        leaderCheckAt = this.tickCount + 20;
+        leaderRef = null;
+        double best = Double.MAX_VALUE;
+        for (CompyEntity o : this.level().getEntitiesOfClass(CompyEntity.class, this.getBoundingBox().inflate(64.0), e -> e != this && e.isLeader() && e.isAlive() && e.packId.equals(packId))) {
+            double d = this.distanceToSqr(o);
+            if (d < best) { best = d; leaderRef = o; }
+        }
+        return leaderRef;
+    }
+
+    /** Al domar al lider, toda la manada cercana se une a su dueno como soldados. */
+    private void recruitPack(Player owner) {
+        for (CompyEntity m : this.level().getEntitiesOfClass(CompyEntity.class, this.getBoundingBox().inflate(64.0), e -> e != this && !e.isTame() && e.isAlive() && e.packId.equals(packId))) {
+            m.tame(owner);
+            m.setPersistenceRequired();
+            m.setTarget(null);
+            m.leaderRef = this;
+            m.applyRoleStats(false);
+            m.setPackOrder(PetOrders.FOLLOW);
+            m.level().broadcastEntityEvent(m, (byte) 7);
+        }
+    }
+
+    /** Orden de grupo (solo la fija el propio sistema de la manada: los soldados no aceptan ordenes sueltas). */
+    private void setPackOrder(int order) {
+        syncingOrder = true;
+        try { PetOrders.setOrder(this, order); } finally { syncingOrder = false; }
+    }
+
+    /** Si el lider muere, el soldado mas cercano asciende (siempre hay un solo lider por manada). */
+    private void promoteSuccessor() {
+        CompyEntity best = null; double bd = Double.MAX_VALUE;
+        for (CompyEntity o : this.level().getEntitiesOfClass(CompyEntity.class, this.getBoundingBox().inflate(64.0), e -> e != this && !e.isLeader() && e.isAlive() && e.packId.equals(packId))) {
+            double d = this.distanceToSqr(o);
+            if (d < bd) { bd = d; best = o; }
+        }
+        if (best == null) return;
+        best.setLeader(true);
+        best.leaderRef = null;
+        if (best.isTame()) {
+            best.setPackOrder(this.getOrder());
+            if (best.getOwner() instanceof Player p) p.displayClientMessage(Component.literal("Un soldado asciende a líder de la manada"), true);
+        }
+        this.level().broadcastEntityEvent(best, (byte) 7);
+    }
+
+    @Override public void die(DamageSource source) {
+        if (!this.level().isClientSide && isLeader()) promoteSuccessor();
+        super.die(source);
+    }
 
     // PetOrders.Holder (el Compy no "cae": si muere, muere)
     @Override public int getOrder() { return this.entityData.get(ORDER); }
@@ -139,18 +235,17 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder {
 
     /** Los miembros de una manada comparten la variante de su bioma (cada uno tira aparte las raras). */
     private static final class PackData implements SpawnGroupData {
-        final int base;
+        final int base; final java.util.UUID id = java.util.UUID.randomUUID();
         PackData(int base) { this.base = base; }
     }
 
     @Override public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType reason, @Nullable SpawnGroupData spawnData, @Nullable CompoundTag dataTag) {
         SpawnGroupData data = super.finalizeSpawn(level, difficulty, reason, spawnData, dataTag);
-        if (!variantFixed) {
-            int base;
-            if (spawnData instanceof PackData pd) base = pd.base;
-            else { base = baseVariantFor(level.getBiome(this.blockPosition())); data = new PackData(base); }
-            setVariant(rareRoll(level, base));
-        }
+        PackData pd;
+        if (spawnData instanceof PackData existing) { pd = existing; this.packId = pd.id; this.entityData.set(LEADER, false); }   // el resto de la manada: soldados
+        else { pd = new PackData(baseVariantFor(level.getBiome(this.blockPosition()))); data = pd; this.packId = pd.id; this.entityData.set(LEADER, true); }   // el primero: lider
+        if (!variantFixed) setVariant(rareRoll(level, pd.base));
+        applyRoleStats(false);
         return data;
     }
 
@@ -190,13 +285,14 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder {
             @Override public boolean canUse() { return !isTame() && super.canUse(); }
         });
         this.goalSelector.addGoal(4, new FollowOwnerGoal(this, 1.15D, 3.5F, 10.0F, false) {
-            @Override public boolean canUse() { return getOrder() == PetOrders.FOLLOW && super.canUse(); }
-            @Override public boolean canContinueToUse() { return getOrder() == PetOrders.FOLLOW && super.canContinueToUse(); }
+            @Override public boolean canUse() { return getOrder() == PetOrders.FOLLOW && (!isFollower() || findLeader() == null) && super.canUse(); }
+            @Override public boolean canContinueToUse() { return getOrder() == PetOrders.FOLLOW && (!isFollower() || findLeader() == null) && super.canContinueToUse(); }
         });
+        this.goalSelector.addGoal(4, new FollowLeaderGoal());
         this.goalSelector.addGoal(5, new MoveTowardsRestrictionGoal(this, 0.9D));
         this.goalSelector.addGoal(6, new PetOrders.PatrolGoal(this));
         this.goalSelector.addGoal(7, new WaterAvoidingRandomStrollGoal(this, 0.7D) {
-            @Override public boolean canUse() { return (!isTame() || getOrder() == PetOrders.WANDER) && super.canUse(); }
+            @Override public boolean canUse() { return (!isTame() || getOrder() == PetOrders.WANDER && isLeader()) && super.canUse(); }
         });
         this.goalSelector.addGoal(8, new LookAtPlayerGoal(this, Player.class, 8.0F));
         this.goalSelector.addGoal(9, new RandomLookAroundGoal(this));
@@ -210,6 +306,31 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder {
         this.targetSelector.addGoal(5, new NearestAttackableTargetGoal<>(this, Animal.class, 30, true, false, e -> e instanceof Chicken || e instanceof Rabbit) {
             @Override public boolean canUse() { return !isTame() && CompyConfig.get(CompyConfig.HUNT_SMALL_PREY, true) && super.canUse(); }
         });
+    }
+
+    /** La manada se mantiene unida: los soldados (salvajes o domados) siguen a su lider cuando se alejan. */
+    private final class FollowLeaderGoal extends net.minecraft.world.entity.ai.goal.Goal {
+        private int recalc;
+        FollowLeaderGoal() { this.setFlags(java.util.EnumSet.of(Flag.MOVE)); }
+        private boolean away(double min) {
+            if (isLeader() || isOrderedToSit() || isPassenger()) return false;
+            if (isTame() && getOrder() != PetOrders.FOLLOW) return false;
+            CompyEntity l = findLeader();
+            return l != null && distanceToSqr(l) > min * min;
+        }
+        @Override public boolean canUse() { return away(isTame() ? 4.5 : 10.0); }
+        @Override public boolean canContinueToUse() { return away(isTame() ? 2.8 : 5.0) && getTarget() == null; }
+        @Override public void start() { recalc = 0; }
+        @Override public void stop() { getNavigation().stop(); }
+        @Override public void tick() {
+            CompyEntity l = findLeader();
+            if (l == null) return;
+            getLookControl().setLookAt(l, 10.0F, getMaxHeadXRot());
+            if (--recalc > 0) return;
+            recalc = 8;
+            if (isTame() && distanceToSqr(l) > 24.0 * 24.0) { this.teleportTo(l.getX(), l.getY(), l.getZ()); return; }
+            getNavigation().moveTo(l, isTame() ? 1.25D : 1.0D);
+        }
     }
 
     @Override public boolean doHurtTarget(Entity target) {
@@ -230,7 +351,24 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder {
     @Override public void tick() {
         super.tick();
         if (this.level().isClientSide) animTick();
-        else PetOrders.serverTick(this);
+        else { PetOrders.serverTick(this); packTick(); }
+    }
+
+    /** Solo servidor: los soldados copian la orden del lider y atacan lo que el ataca; un solo lider por manada. */
+    private void packTick() {
+        if (this.tickCount % 10 != 3) return;
+        if (isFollower()) {
+            CompyEntity l = findLeader();
+            if (l == null) return;
+            int want = l.getOrder();
+            if (want == PetOrders.WANDER || want == PetOrders.PATROL) want = PetOrders.FOLLOW;   // el lider pasea; los soldados lo acompanan
+            if (getOrder() != want) setPackOrder(want);
+            LivingEntity t = l.getTarget();
+            if (getTarget() == null && t != null && t.isAlive() && t != this && !(t instanceof Player) && !(t instanceof TamableAnimal ta && ta.isTame()) && getOrder() != PetOrders.SLEEP) setTarget(t);
+        } else if (isLeader() && this.tickCount % 100 == 3) {
+            for (CompyEntity o : this.level().getEntitiesOfClass(CompyEntity.class, this.getBoundingBox().inflate(48.0), e -> e != this && e.isLeader() && e.packId.equals(packId)))
+                if (o.getUUID().compareTo(this.getUUID()) < 0) { setLeader(false); break; }   // por si dos lideres coinciden: queda uno solo
+        }
     }
 
     private static float approach(float v, float to, float rate) { return v < to ? Math.min(to, v + rate) : Math.max(to, v - rate); }
@@ -276,6 +414,10 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder {
         boolean client = this.level().isClientSide;
         if (!this.isTame()) {
             if (!isMeat(held)) return InteractionResult.PASS;
+            if (!isLeader()) {
+                if (!client) player.displayClientMessage(Component.literal("Solo el líder de la manada (con cresta) puede confiar en ti"), true);
+                return InteractionResult.sidedSuccess(client);
+            }
             if (!client) feedWild(player, held);
             return InteractionResult.sidedSuccess(client);
         }
@@ -291,6 +433,10 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder {
             return InteractionResult.sidedSuccess(client);
         }
         if (player.isShiftKeyDown() && held.isEmpty()) {   // Mayus + clic con la mano vacia: cambia la orden
+            if (isFollower()) {
+                if (!client) player.displayClientMessage(Component.literal("Es un soldado: sigue al líder de la manada (interfaz bloqueada)"), true);
+                return InteractionResult.sidedSuccess(client);
+            }
             if (!client) {
                 int next = (getOrder() + 1) % PetOrders.COUNT;
                 PetOrders.setOrder(this, next);
@@ -319,13 +465,13 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder {
             this.tame(player);
             if (player instanceof net.minecraft.server.level.ServerPlayer qsp) com.prodigytown.creatures.quests.QuestData.onTame(qsp, this);
             this.setPersistenceRequired();
-            this.getAttribute(Attributes.MAX_HEALTH).setBaseValue(16.0);
-            this.setHealth(16.0F);
+            applyRoleStats(false);
             PetOrders.setOrder(this, PetOrders.FOLLOW);
+            recruitPack(player);
             this.trust = 0;
             this.playSound(ModSounds.COMPY_HAPPY.get(), 1.0F, 1.0F);
             this.level().broadcastEntityEvent(this, (byte) 7);   // corazones
-            player.displayClientMessage(Component.literal("¡Tu compy confía en ti!"), true);
+            player.displayClientMessage(Component.literal("¡El líder confía en ti: su manada te sigue como soldados!"), true);
         } else {
             this.level().broadcastEntityEvent(this, (byte) 6);   // humo: todavia desconfia
             player.displayClientMessage(Component.literal("Confianza: " + trust + "/" + need), true);

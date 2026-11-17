@@ -45,6 +45,9 @@ def build_spec():
         (-1.5, -1.9, -2.0, 3.0, 1.9, 15.4, 'belly', dict(jaw=1)),
         (-1.3, 0, 5.0, 2.6, 0.9, 9.0, 'tooth', dict(lower=1)),
         (-0.8, 0, 3.0, 1.6, 0.7, 8.0, 'mouth', dict())], 'head')
+    # ---- distintivo del LIDER de la manada (solo se dibuja en el lider): dos anillos rojos en la cola, cerca de la punta
+    part('mark1', 'tail5', (0, 0, 0), (0, 0, 0), [(-2.0, -2.5, -5.2, 4.0, 5.0, 2.4, 'mark', dict(k=0))], 'tail')
+    part('mark2', 'tail6', (0, 0, 0), (0, 0, 0), [(-1.9, -2.0, -4.2, 3.8, 4.0, 2.0, 'mark', dict(k=1))], 'tail')
     for sgn, n in ((1, 'l'), (-1, 'r')):
         part('arm_' + n, 'chest', (sgn * 4.8, -2.6, 6.5), (0.45, 0, -sgn * 0.08), [(-1.2, -4.6, -1.2, 2.4, 5.0, 2.4, 'skin', dict())], 'arm')
         part('arm2_' + n, 'arm_' + n, (0, -4.0, 0), (0.8, 0, 0), [

@@ -25,6 +25,8 @@ PAL = {
  'melanico': _pal((46, 46, 50), (30, 30, 34), (112, 24, 28), (86, 16, 22), (74, 68, 72), (48, 42, 46), (126, 26, 30), (64, 20, 24), (232, 34, 34), (10, 0, 0), claw=(26, 24, 26), claw_tip=(120, 110, 110), tooth=(214, 206, 196), mouth=(110, 40, 48), tongue=(150, 54, 62)),
 }
 
+MARK = C(214, 30, 38); MARK_DARK = C(120, 14, 22)   # marca roja del lider (igual en las 8 variantes)
+
 def cellhash(P, size, seed, off=(0, 0, 0)):
     q = np.floor((P + np.array(off)) / size)
     return hsh(q[:, 0], q[:, 1], q[:, 2], seed)
@@ -103,6 +105,10 @@ def make_atlas(var, closed=False):
             ctx = dict(opt=c['opt'], grp=c['grp'], part=c['part'], role=c['role'])
             role = c['role']; op = c['opt']
             if role in ('skin', 'belly'): col = skin(var, P, Nw, ly, ctx, face, fu, fv)
+            elif role == 'mark':
+                e2 = np.minimum(np.minimum(fu, 1 - fu), np.minimum(fv, 1 - fv))
+                col = lerp(MARK, MARK_DARK, 0.55 * ss(0.20, 0.0, e2) + 0.25 * (1 - ss(0.0, 0.7, ly)))
+                if face in ('up', 'down'): col = col * (1.08 if face == 'up' else 0.8)
             elif role == 'spike':
                 t = ly; col = lerp(pal['spine'] * 0.78, pal['spine'] * 1.12, t[:, None] if t.ndim == 1 else t)
             elif role == 'claw':

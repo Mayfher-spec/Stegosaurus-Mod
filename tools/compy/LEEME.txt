@@ -18,3 +18,6 @@ exportacion a Java de tools/carnotaurus/rig.py, igual que el Dilophosaurus. Marc
 Escala en el juego: CompyRenderer.SCALE = 0.185 -> ~1,09 bloques de largo, ~0,47 de alto (con la cabeza alzada); hitbox 0,4 x 0,5.
 Donde aparece: data/prodigycreatures/forge/biome_modifier/compy_*_spawns.json (grupos de 3 a 8); la variante sale del bioma (ver CompyEntity.baseVariantFor)
 y las raras (albino, melanico) se tiran por individuo (ver config/prodigycreatures-compy.toml).
+
+Manadas: cada grupo tiene UN lider (marca roja con dos anillos en la cola cerca de la punta, +20 % de tamano, vida 14/20). Solo el lider se doma;
+al hacerlo, toda la manada cercana se une como soldados (sin interfaz: orden bloqueada en "seguidor"). Ver CompyEntity (recruitPack, packTick, promoteSuccessor).

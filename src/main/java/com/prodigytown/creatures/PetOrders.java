@@ -71,6 +71,7 @@ public final class PetOrders {
     /** Solo servidor. */
     public static void setOrder(TamableAnimal mob, int order) {
         if (mob.level().isClientSide || !(mob instanceof Holder h) || h.isFallen()) return;
+        if (mob instanceof CompyEntity cp && cp.isFollower() && !cp.isSyncingOrder()) return;   // soldado del Compy: orden bloqueada en "seguidor"
         order = clampFor(mob, order);
         int prev = h.getOrder();
         h.setOrderRaw(order);

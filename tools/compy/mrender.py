@@ -43,13 +43,14 @@ def posed(pose=None):
     fr = cp.frames(sp)
     return cubes, fr, H
 
-def render(atlas, view, S=14, pad=6, bg=(236, 232, 222), pose=None, bone_off=None, hy=None, with_ground=True, size=None):
+def render(atlas, view, S=14, pad=6, bg=(236, 232, 222), pose=None, bone_off=None, hy=None, with_ground=True, size=None, leader=True):
     cubes, fr, H = posed(pose)
     r, u, t = basis(view)
     L = np.array([0.35, 0.8, 0.5]); L /= np.linalg.norm(L)
     quads = []
     lo = 0.0
     for c in cubes:
+        if c['role'] == 'mark' and not leader: continue   # la marca solo la lleva el lider
         R, T = fr[c['part']]
         if bone_off and c['part'] in bone_off: T = T + np.array(bone_off[c['part']])
         for face, reg in crig.regions(c).items():

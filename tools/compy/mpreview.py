@@ -31,6 +31,10 @@ for v in mpaint.VARIANTS:
 sheet(ims, lbs, 4).save(os.path.join(out, 'compy_variantes.png'))
 ims = [mrender.render(atlas(v), 'left', S=7)[0] for v in mpaint.VARIANTS]
 sheet(ims, [v.capitalize() for v in mpaint.VARIANTS], 2).save(os.path.join(out, 'compy_variantes_lateral.png'))
+# 2b) lider (marca roja en la cola, 20 % mas grande) frente a un soldado
+b = atlas('verde')
+l1 = mrender.render(b, 'left', S=9 * 1.2, leader=True)[0]; l2 = mrender.render(b, 'left', S=9, leader=False)[0]
+sheet([l1, l2], ['Lider (marca roja en la cola, +20 % de tamano)', 'Soldado'], 1).save(os.path.join(out, 'compy_lider.png'))
 # 3) escala: jugador (1,8), gallina (0,7 x 0,4) y Compy a la escala del renderer (0,185)
 SC = 0.185; PXB = 220            # pixeles por bloque
 img, (xl, xh, yl, yh) = mrender.render(a, 'left', S=1)
