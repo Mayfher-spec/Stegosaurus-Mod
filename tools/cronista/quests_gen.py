@@ -15,7 +15,7 @@ def q(id, order, cat, title, desc, type, entity, count, xp, items, requires=None
     if building: d["building"] = building
     Q.append((id, d))
 C1, C2, C3, C4, C5 = "Cazador", "Domador", "Asedio", "Jefes", "Prodigy"
-q("cronista_hogar", 5, C5, "Un hogar para la Cronista", "La Cronista viaja sin rumbo. Prepárale un hogar cerca de ti: una cama, un atril para sus crónicas, luz y un techo sobre la cama. Luego habla con ella.", "home", None, 4, 400, [it("minecraft:diamond", 3), it("minecraft:emerald", 16), it("minecraft:golden_apple", 2), it("minecraft:experience_bottle", 6)])
+q("cronista_hogar", 5, C5, "Un hogar para la Cronista", "Prepárale un hogar cerca de ti: una cama, un atril, luz y un techo sobre la cama. Luego habla con ella.", "home", None, 4, 400, [it("minecraft:diamond", 3), it("minecraft:emerald", 16), it("minecraft:golden_apple", 2), it("minecraft:experience_bottle", 6)])
 q("zombis", 10, C1, "Limpieza de zombis", "Los muertos vivientes rondan de noche. Derrota 15 zombis.", "kill", "minecraft:zombie", 15, 120, [it("minecraft:bread", 8), it("minecraft:iron_ingot", 4)])
 q("esqueletos", 20, C1, "Huesos y flechas", "Los arqueros esqueleto acechan las cuevas. Derrota 12 esqueletos.", "kill", "minecraft:skeleton", 12, 140, [it("minecraft:arrow", 32), it("minecraft:bow")], "zombis")
 q("aranas", 30, C1, "Plaga de aranas", "Sus telas cubren las minas. Elimina 12 aranas.", "kill", "minecraft:spider", 12, 140, [it("minecraft:string", 16), it("minecraft:golden_carrot", 6)], "zombis")
@@ -61,7 +61,7 @@ q("town_nivel_3", 640, CT, "Aldea consolidada", "Lleva tu aldea al nivel 3 de es
 q("town_nivel_4", 650, CT, "Gran poblacion", "Lleva tu aldea al nivel 4 de espiritu.", "village", None, 4, 1600, [it("minecraft:diamond", 10), it("minecraft:totem_of_undying")], "town_nivel_3", mod="townstead", metric="level")
 q("town_nivel_5", 660, CT, "Capital de Prodigy", "Lleva tu aldea al nivel 5, el maximo espiritu de aldea.", "village", None, 5, 3000, [it("minecraft:netherite_ingot", 2), it("minecraft:beacon"), it(M + "dilophosaurus_armor_diamond")], "town_nivel_4", mod="townstead", metric="level")
 for sid, nm, b in (("martial", "marcial", "Guarnicion"), ("scholar", "erudita", "Escuela"), ("industrious", "industrial", "Forja"), ("pastoral", "pastoral", "Granja"), ("nautical", "nautica", "Puerto")):
-    q("town_" + sid, 670 + 10 * ["martial", "scholar", "industrious", "pastoral", "nautical"].index(sid), CT, "Aldea " + nm, "Haz que el espiritu " + nm + " de tu aldea llegue al nivel 2 (60 puntos).", "village", None, 2, 700, [it("minecraft:diamond", 4), it("minecraft:experience_bottle", 10)], "town_nivel_1", mod="townstead", metric="spirit", building=sid)
+    q("town_" + sid, 670 + 10 * ["martial", "scholar", "industrious", "pastoral", "nautical"].index(sid), CT, "Aldea " + nm, "Haz que el espiritu " + (nm[:-1] + "o" if nm.endswith("a") else nm) + " de tu aldea llegue al nivel 2 (60 puntos).", "village", None, 2, 700, [it("minecraft:diamond", 4), it("minecraft:experience_bottle", 10)], "town_nivel_1", mod="townstead", metric="spirit", building=sid)
 
 # Ice and Fire
 CI = "Hielo y Fuego"
@@ -78,7 +78,7 @@ q("iaf_matadragones", 790, CI, "Matadragones", "Derrota a un dragon de Hielo y F
 q("iaf_lich", 800, CI, "El que no descansa", "Derrota a un Dread Lich.", "kill", "iceandfire:dread_lich", 1, 3000, [it("minecraft:netherite_ingot", 2), it("minecraft:nether_star")], "iaf_matadragones", True, mod=D)
 
 # Saint's Dragons
-CS = "Dragones de Saint"
+CS = "Saint's Dragons"
 q("sd_cazar", 900, CS, "Escamas ajenas", "Derrota a 5 criaturas de Saint's Dragons.", "kill", SDE, 5, 500, [it("minecraft:diamond", 4), it("minecraft:experience_bottle", 10)], mod=SD)
 q("sd_domar", 910, CS, "Primer vuelo", "Doma un dragon de Saint's Dragons.", "tame", SDE, 1, 1800, [it("minecraft:netherite_scrap", 4), it("minecraft:diamond", 10), it(M + "dilophosaurus_armor_diamond")], mod=SD)
 q("sd_domar_3", 920, CS, "Escuadron de dragones", "Ten 3 dragones domados de Saint's Dragons.", "tame", SDE, 3, 3000, [it("minecraft:netherite_ingot", 3), it("minecraft:diamond_block", 2), it("minecraft:elytra")], "sd_domar", mod=SD)
@@ -120,15 +120,15 @@ ICONS = {
 NOUN = {  # entidad -> (singular, plural)
  "minecraft:zombie": ("zombi", "zombis"), "minecraft:skeleton": ("esqueleto", "esqueletos"), "minecraft:spider": ("arana", "aranas"), "minecraft:creeper": ("creeper", "creepers"), "minecraft:enderman": ("enderman", "endermen"),
  "minecraft:witch": ("bruja", "brujas"), "minecraft:pillager": ("saqueador", "saqueadores"), "minecraft:wolf": ("lobo", "lobos"), "*": ("animal", "animales de cualquier especie"),
- M + "stegosaurus": ("Stegosaurus", "Stegosaurus"), M + "carnotaurus": ("Carnotaurus salvaje", "Carnotaurus"), M + "dilophosaurus": ("Dilophosaurus", "Dilophosaurus"), "*dragon*": ("dragon", "dragones"),
+ M + "stegosaurus": ("Stegosaurus", "Stegosaurus"), M + "carnotaurus": ("Carnotaurus", "Carnotaurus"), M + "dilophosaurus": ("Dilophosaurus", "Dilophosaurus"), "*dragon*": ("dragon", "dragones"),
  "minecraft:elder_guardian": ("Guardian Anciano", "Guardianes Ancianos"), "minecraft:warden": ("Warden", "Wardens"), "minecraft:wither": ("Wither", "Withers"), "minecraft:ender_dragon": ("Dragon del Ender", "Dragones del Ender"),
  "iceandfire:hippogryph": ("hipogrifo", "hipogrifos"), "iceandfire:cockatrice": ("cocatriz", "cocatrices"), "iceandfire:siren": ("sirena", "sirenas"), "iceandfire:troll": ("troll", "trolls"), "iceandfire:gorgon": ("gorgona", "gorgonas"),
  "iceandfire:cyclops": ("ciclope", "ciclopes"), "iceandfire:hydra": ("hidra", "hidras"), "iceandfire:sea_serpent": ("serpiente marina", "serpientes marinas"), "iceandfire:dread_lich": ("Dread Lich", "Dread Lich"),
  IAF_DRAGONS: ("dragon de Hielo y Fuego", "dragones de Hielo y Fuego"), SDE: ("criatura de Saint's Dragons", "criaturas de Saint's Dragons"),
  "legendary_monsters:*": ("criatura de Legendary Monsters", "criaturas de Legendary Monsters"), LM_BOSSES: ("jefe de Legendary Monsters", "jefes de Legendary Monsters"), "ror:*": ("criatura de Raxiors of Raxor", "criaturas de Raxiors of Raxor"),
 }
-LMN = {"skeletosaurus": "Skeletosaurus", "possessed_paladin": "Paladin Poseido", "overgrown_colossus": "Coloso Cubierto", "dune_sentinel": "Centinela de las Dunas", "frostbitten_golem": "Golem Escarchado", "withered_abomination": "Abominacion Marchita",
-       "lava_eater": "Devoralava", "cumulonimbus": "Cumulonimbus", "chorusent": "Chorusent", "shulker_mimic": "Mimico Shulker", "ancient_guardian": "Guardian Ancestral", "obliterator": "Obliterador"}
+LMN = {"skeletosaurus": "al Skeletosaurus", "possessed_paladin": "al Paladin Poseido", "overgrown_colossus": "al Coloso Cubierto", "dune_sentinel": "al Centinela de las Dunas", "frostbitten_golem": "al Golem Escarchado", "withered_abomination": "a la Abominacion Marchita",
+       "lava_eater": "al Devoralava", "cumulonimbus": "a Cumulonimbus", "chorusent": "a Chorusent", "shulker_mimic": "al Mimico Shulker", "ancient_guardian": "al Guardian Ancestral", "obliterator": "al Obliterador"}
 BN = {"house": ("casa completa", "casas completas"), "blacksmith": ("herreria completa", "herrerias completas"), "inn": ("posada completa", "posadas completas"), "library": ("biblioteca completa", "bibliotecas completas")}
 SPN = {"martial": "marcial", "scholar": "erudito", "industrious": "industrial", "pastoral": "pastoral", "nautical": "nautico"}
 def objective(id, d):
@@ -140,16 +140,20 @@ def objective(id, d):
         if m == "population": return "Tener %d habitantes en la aldea" % c
         if m == "buildings": return "Tener %d edificios completos" % c
         if m == "building_types": return "Reunir %d tipos de edificio distintos" % c
-        if m == "building": sg, pl = BN.get(d.get("building"), ("edificio", "edificios")); return "Tener %d %s" % (c, pl if c > 1 else sg)
+        if m == "building": sg, pl = BN.get(d.get("building"), ("edificio", "edificios")); return ("Tener %d %s" % (c, pl)) if c > 1 else ("Tener una " + sg)
         if m == "level": return "Alcanzar el nivel %d de espiritu de aldea" % c
         if m == "spirit": return "Alcanzar el nivel %d de espiritu %s" % (c, SPN.get(d.get("building"), d.get("building")))
     verb = "Domar" if t == "tame" else "Derrotar"
-    if id.startswith("lm_") and id not in ("lm_cazador", "lm_cazaleyendas"): return "Derrotar a " + LMN[id[3:]]
+    if id.startswith("lm_") and id not in ("lm_cazador", "lm_cazaleyendas"): return "Derrotar " + LMN[id[3:]]
     sg, pl = NOUN.get(e, ("objetivo", "objetivos"))
-    return "%s %s" % (verb, ("%s" % sg) if c == 1 else "%d %s" % (c, pl))
+    if t == "tame" and e == SDE: sg, pl = "dragon de Saint's Dragons", "dragones de Saint's Dragons"
+    if e == M + "carnotaurus" and t == "kill": sg += " salvaje"
+    if c > 1: return "%s %d %s" % (verb, c, pl)
+    fem = sg.split()[0] in ("arana", "bruja", "gorgona", "hidra", "sirena", "serpiente", "criatura", "cocatriz")
+    return "%s %s%s %s" % (verb, "a " if t != "tame" else "", "una" if fem else "un", sg)
 
 import re
-ACC = [(r"\baranas\b", "arañas"), (r"\bAranas\b", "Arañas"), (r"\bGuardian\b", "Guardián"), (r"\bDragon\b", "Dragón"), (r"\bdragon\b", "dragón"), (r"\bMision\b", "Misión"), (r"\bmision\b", "misión"),
+ACC = [(r"\bvacio\b", "vacío"), (r"\bprehistorica\b", "prehistórica"), (r"\bposeido\b", "poseído"), (r"\bPoseido\b", "Poseído"), (r"\bnautica\b", "náutica"), (r"\btendras\b", "tendrás"), (r"\bReune\b", "Reúne"), (r"\baranas\b", "arañas"), (r"\bAranas\b", "Arañas"), (r"\bGuardian\b", "Guardián"), (r"\bDragon\b", "Dragón"), (r"\bdragon\b", "dragón"), (r"\bMision\b", "Misión"), (r"\bmision\b", "misión"),
        (r"\bespiritu\b", "espíritu"), (r"\bpoblacion\b", "población"), (r"\bherreria", "herrería"), (r"\bherrerias", "herrerías"), (r"\bPaladin\b", "Paladín"), (r"\bAbominacion\b", "Abominación"),
        (r"\bMimico\b", "Mímico"), (r"\bciclope", "cíclope"), (r"\bnautico\b", "náutico"), (r"\bGolem\b", "Gólem"), (r"\bAncestral\b", "Ancestral"), (r"\bHeroe\b", "Héroe"), (r"\bbiblioteca", "biblioteca"),
        (r"\bEscuadron\b", "Escuadrón"), (r"\bcompania\b", "compañía"), (r"\bCompania\b", "Compañía"), (r"\bCaza\b", "Caza"), (r"\bhipogrifo", "hipogrifo"), (r"\bGorgona\b", "Gorgona"),

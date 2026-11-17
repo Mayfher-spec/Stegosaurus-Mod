@@ -1,7 +1,7 @@
 {
   "title": "Escuadrón de dragones",
   "description": "Ten 3 dragones domados de Saint's Dragons.",
-  "category": "Dragones de Saint",
+  "category": "Saint's Dragons",
   "order": 920,
   "type": "tame",
   "count": 3,
@@ -26,5 +26,5 @@
   "requires": "sd_domar",
   "requires_mod": "saintsdragons,saints_dragons",
   "icon": "minecraft:dragon_egg",
-  "objective": "Domar 3 criaturas de Saint's Dragons"
+  "objective": "Domar 3 dragones de Saint's Dragons"
 }

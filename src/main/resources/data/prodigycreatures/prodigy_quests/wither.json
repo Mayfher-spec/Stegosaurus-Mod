@@ -26,5 +26,5 @@
   "boss": true,
   "requires": "endermen",
   "icon": "minecraft:nether_star",
-  "objective": "Derrotar Wither"
+  "objective": "Derrotar a un Wither"
 }

@@ -30,5 +30,5 @@
   "boss": true,
   "requires": "wither",
   "icon": "minecraft:dragon_head",
-  "objective": "Derrotar Dragón del Ender"
+  "objective": "Derrotar a un Dragón del Ender"
 }

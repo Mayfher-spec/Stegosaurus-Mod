@@ -23,5 +23,5 @@
   "requires": "lm_cazador",
   "requires_mod": "legendary_monsters",
   "icon": "minecraft:packed_ice",
-  "objective": "Derrotar a Gólem Escarchado"
+  "objective": "Derrotar al Gólem Escarchado"
 }

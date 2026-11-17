@@ -23,5 +23,5 @@
   "requires": "lm_cazador",
   "requires_mod": "legendary_monsters",
   "icon": "minecraft:bone",
-  "objective": "Derrotar a Skeletosaurus"
+  "objective": "Derrotar al Skeletosaurus"
 }

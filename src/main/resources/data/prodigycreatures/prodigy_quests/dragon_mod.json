@@ -26,5 +26,5 @@
   "boss": true,
   "requires": "domar_dragon",
   "icon": "minecraft:dragon_breath",
-  "objective": "Derrotar dragón"
+  "objective": "Derrotar a un dragón"
 }

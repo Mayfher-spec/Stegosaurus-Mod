@@ -352,14 +352,27 @@ public final class QuestScreen extends Screen {
         item(g, stack(Items.BOOK), x, 62, 0.75F);
         g.drawString(this.font, Component.literal("Descripción").withStyle(ChatFormatting.BOLD), x + 16, 65, INK, false);
         int y = 78;
-        int lines = 0;
-        for (FormattedCharSequence line : this.font.split(Component.literal(v.description()), 168)) { if (lines++ >= 5) break; g.drawString(this.font, line, x, y, INK, false); y += 10; }
+        java.util.List<net.minecraft.network.chat.FormattedText> dl = this.font.getSplitter().splitLines(v.description(), 168, net.minecraft.network.chat.Style.EMPTY);
+        for (int i = 0; i < Math.min(4, dl.size()); i++) {   // maximo 4 lineas: la quinta pisaba el titulo "Objetivos"
+            String ln = dl.get(i).getString();
+            if (i == 3 && dl.size() > 4) ln = ell(ln + "…", 168);
+            g.drawString(this.font, ln, x, y, INK, false);
+            y += 10;
+        }
         // marco con la ilustracion de la mision
         g.fill(330, 64, 394, 130, 0xFF2A1D0E);
         g.fillGradient(332, 66, 392, 128, 0xFF4F7F8C, 0xFF2C4A2A);
         g.fill(332, 112, 392, 128, 0xFF35502A);
         item(g, v.icon(), 342, 82, 2.5F);
-        g.drawCenteredString(this.font, this.font.plainSubstrByWidth(v.category(), 58), 362, 118, WHITE);
+        if (this.font.width(v.category()) <= 60) g.drawCenteredString(this.font, v.category(), 362, 118, WHITE);
+        else {   // categorias largas ("Monstruos Legendarios", "Raxiors of Raxor"): dos lineas mas pequenas, sin cortar
+            java.util.List<FormattedCharSequence> cl = this.font.split(Component.literal(v.category()), 80);
+            g.pose().pushPose();
+            g.pose().translate(362, cl.size() > 1 ? 113 : 117, 0);
+            g.pose().scale(0.75F, 0.75F, 1.0F);
+            for (int i = 0; i < Math.min(2, cl.size()); i++) g.drawCenteredString(this.font, cl.get(i), 0, i * 9, WHITE);
+            g.pose().popPose();
+        }
 
         int oy2 = 120;
         item(g, stack(Items.TARGET), x, oy2 - 3, 0.75F);

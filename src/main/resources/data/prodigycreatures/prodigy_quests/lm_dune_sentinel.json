@@ -23,5 +23,5 @@
   "requires": "lm_cazador",
   "requires_mod": "legendary_monsters",
   "icon": "minecraft:sandstone",
-  "objective": "Derrotar a Centinela de las Dunas"
+  "objective": "Derrotar al Centinela de las Dunas"
 }

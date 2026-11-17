@@ -1,6 +1,6 @@
 {
   "title": "Silencio en las profundidades",
-  "description": "Derrota al Warden. No hagas ruido... o tendras que correr.",
+  "description": "Derrota al Warden. No hagas ruido... o tendrás que correr.",
   "category": "Jefes",
   "order": 410,
   "type": "kill",
@@ -26,5 +26,5 @@
   "boss": true,
   "requires": "endermen",
   "icon": "minecraft:echo_shard",
-  "objective": "Derrotar Warden"
+  "objective": "Derrotar a un Warden"
 }

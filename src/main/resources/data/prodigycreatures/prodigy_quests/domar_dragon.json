@@ -25,5 +25,5 @@
   "entity": "*dragon*",
   "requires": "domar_dilo",
   "icon": "minecraft:dragon_egg",
-  "objective": "Domar dragón"
+  "objective": "Domar un dragón"
 }

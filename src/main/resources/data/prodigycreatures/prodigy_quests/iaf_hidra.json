@@ -23,5 +23,5 @@
   "requires": "iaf_gorgona",
   "requires_mod": "iceandfire",
   "icon": "minecraft:poisonous_potato",
-  "objective": "Derrotar hidra"
+  "objective": "Derrotar a una hidra"
 }

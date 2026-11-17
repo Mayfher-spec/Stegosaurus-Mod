@@ -23,5 +23,5 @@
   "requires": "iaf_trol",
   "requires_mod": "iceandfire",
   "icon": "minecraft:iron_block",
-  "objective": "Derrotar cíclope"
+  "objective": "Derrotar a un cíclope"
 }

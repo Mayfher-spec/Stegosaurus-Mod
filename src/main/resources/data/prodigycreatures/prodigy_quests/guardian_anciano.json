@@ -26,5 +26,5 @@
   "boss": true,
   "requires": "creepers",
   "icon": "minecraft:prismarine_shard",
-  "objective": "Derrotar Guardián Anciano"
+  "objective": "Derrotar a un Guardián Anciano"
 }

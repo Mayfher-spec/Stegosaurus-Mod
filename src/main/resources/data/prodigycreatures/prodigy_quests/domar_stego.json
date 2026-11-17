@@ -21,5 +21,5 @@
   "entity": "prodigycreatures:stegosaurus",
   "requires": "domador_novato",
   "icon": "prodigycreatures:stegosaurus_spawn_egg",
-  "objective": "Domar Stegosaurus"
+  "objective": "Domar un Stegosaurus"
 }
