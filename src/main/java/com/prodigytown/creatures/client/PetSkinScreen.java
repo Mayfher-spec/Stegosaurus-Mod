@@ -44,7 +44,7 @@ public final class PetSkinScreen extends Screen {
 
     // ---------------------------------------------------------------- datos por especie (coordenadas de la imagen)
     private static final class Skin {
-        final ResourceLocation[] bg = new ResourceLocation[3];
+        final ResourceLocation[] bg = new ResourceLocation[4];
         int[] texH;
         int[][] close, namebox, portrait, hp, exp, statY;
         int[][][] tabs;
@@ -69,6 +69,10 @@ public final class PetSkinScreen extends Screen {
         int circ = 96, nodeHalf;
         int[] detOff, detKey, passive, overlay0, p1, lock, nodeX, nodeY;
         String[] nodeId;
+        // ---- Compy: pestana Manada (grupo de caza)
+        int[] overlay3, pkTitle, pkDesc;
+        int[][] pkCards, pkButtons, pkCheck, pkCheckRow, pkSelRow, pkSelL, pkSelR, pkSelVal, pkChip, pkArt;
+        int pkCheckHalf, pkNameY, pkLvlY;
     }
 
     private static final Skin STEGO = new Skin(), DILO = new Skin(), COMPY = new Skin();
@@ -166,20 +170,20 @@ public final class PetSkinScreen extends Screen {
         s.colOfBranch = new int[]{0, 2, 1, 1}; // rama de la tabla -> columna (roja, verde, azul)
         // ---- compy (coordenadas generadas por tools/compy/gui.py a partir de las maquetas del usuario)
         s = COMPY;
-        for (int i = 0; i < 3; i++) s.bg[i] = new ResourceLocation(MOD, "textures/gui/compy2/" + new String[]{"cmd", "atk", "tal"}[i] + ".png");
+        for (int i = 0; i < 4; i++) s.bg[i] = new ResourceLocation(MOD, "textures/gui/compy2/" + new String[]{"cmd", "atk", "tal", "pack"}[i] + ".png");
         s.baked = true;
         s.texH = CompyGui.TEX_H;
-        s.close = new int[][]{CompyGui.CLOSE[0], CompyGui.CLOSE[1], CompyGui.CLOSE[2]};
+        s.close = CompyGui.CLOSE;
         s.tabs = CompyGui.TABS;
         s.namebox = CompyGui.NAMEBOX; s.portrait = CompyGui.PORTRAIT;
         s.lvl = CompyGui.LVL; s.hp = CompyGui.HP;
-        s.exp = new int[][]{CompyGui.EXP[0], CompyGui.EXP[1], null};
+        s.exp = new int[][]{CompyGui.EXP[0], CompyGui.EXP[1], null, CompyGui.EXP[3]};
         s.statRight = CompyGui.STAT_RIGHT; s.statY = CompyGui.STAT_Y;
         s.variantC = new int[]{0, 0}; s.pointsC = CompyGui.POINTS_C; s.resetBox = CompyGui.RESET_BOX;
         s.medal = CompyGui.MEDAL; s.bar = CompyGui.BAR;
         s.progText = CompyGui.PROG_TEXT;
         s.panelIcon = CompyGui.PANEL_ICON; s.panelPill = CompyGui.PANEL_PILL; s.btn = CompyGui.BTN;
-        s.overlay0 = CompyGui.OVERLAY0; s.overlay1 = CompyGui.OVERLAY1; s.overlay2 = CompyGui.OVERLAY2;
+        s.overlay0 = CompyGui.OVERLAY0; s.overlay1 = CompyGui.OVERLAY1; s.overlay2 = CompyGui.OVERLAY2; s.overlay3 = CompyGui.OVERLAY3;
         s.panelTitleX = CompyGui.PANEL_TITLE[0]; s.panelTitleY = CompyGui.PANEL_TITLE[1]; s.panelTitleW = CompyGui.PANEL_TITLE[2];
         s.panelEffX = CompyGui.PANEL_EFF[0]; s.panelEffY = CompyGui.PANEL_EFF[1]; s.panelEffW = CompyGui.PANEL_EFF[2];
         s.reqHeadY = CompyGui.REQ_HEAD_Y;
@@ -192,6 +196,10 @@ public final class PetSkinScreen extends Screen {
         s.detPill = CompyGui.DET_PILL; s.detOff = CompyGui.DET_OFF; s.detKey = CompyGui.DET_KEY; s.detPillOff = CompyGui.DET_OFF[0];
         s.nodeId = CompyGui.NODE_ID; s.nodeX = CompyGui.NODE_X; s.nodeY = CompyGui.NODE_Y; s.nodeHalf = CompyGui.NODE_HALF;
         s.p1 = CompyGui.P1; s.lock = CompyGui.LOCK;
+        s.pkTitle = CompyGui.PK_TITLE; s.pkDesc = CompyGui.PK_DESC; s.pkCards = CompyGui.PK_CARDS; s.pkButtons = CompyGui.PK_BUTTONS;
+        s.pkCheck = CompyGui.PK_CHECK; s.pkCheckRow = CompyGui.PK_CHECK_ROW; s.pkCheckHalf = CompyGui.PK_CHECK_HALF;
+        s.pkSelRow = CompyGui.PK_SEL_ROW; s.pkSelL = CompyGui.PK_SEL_L; s.pkSelR = CompyGui.PK_SEL_R; s.pkSelVal = CompyGui.PK_SEL_VAL;
+        s.pkChip = CompyGui.PK_CHIP; s.pkArt = CompyGui.PK_ART; s.pkNameY = CompyGui.PK_NAME_Y; s.pkLvlY = CompyGui.PK_LVL_Y;
         s.colOfBranch = new int[]{0, 2, 1, 1};
         s.colX = new int[]{0, 0, 0}; s.rowY = new int[]{0, 0, 0, 0, 0}; s.plateC = new int[][]{{0, 0, 0}, {0, 0, 0}, {0, 0, 0}}; s.ultNodesY = new int[]{0};
         s.colName = new String[]{"", "", ""}; s.colSub = new String[]{"", "", ""};
@@ -240,6 +248,7 @@ public final class PetSkinScreen extends Screen {
     private int idx(String id) { Talent[] t = prog().table(); for (int i = 0; i < t.length; i++) if (t[i].id.equals(id)) return i; return -1; }
     private boolean adult() { return compy != null || dilo == null || dilo.isAdultStage(); }
     /** Compy soldado: su interfaz esta bloqueada (modo seguidor del lider). */
+    private int tabCount() { return compy != null ? 4 : 3; }
     private boolean locked() { return compy != null && !compy.isLeader(); }
     private boolean saddled() { return compy == null && (dilo != null ? dilo.isSaddled() : stego.isSaddled()); }
     private int armorTier() { return compy != null ? 0 : dilo != null ? dilo.getArmorTier() : stego.getArmorTier(); }
@@ -330,7 +339,7 @@ public final class PetSkinScreen extends Screen {
         top = (int) ((this.height / sc - hv) / 2.0F);
         buildTree();
         addRenderableWidget(hit(skin.close[tab], b -> this.onClose()));
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < tabCount(); i++) {
             if (i == tab) continue;
             final int t = i;
             addRenderableWidget(hit(skin.tabs[tab][i], b -> { tab = t; renaming = false; rebuildWidgets(); }));
@@ -372,6 +381,7 @@ public final class PetSkinScreen extends Screen {
                     addRenderableWidget(Hit.box(X(872), Y(562), X(1030), Y(590), b -> ModNetwork.CHANNEL.sendToServer(new ModNetwork.SetOrder(pet.getId(), PetOrders.ATTACK))));
                 }
             }
+            case 3 -> initPack();
             case 1 -> {
                 for (int i = 0; i < 5; i++) {
                     final int k = i;
@@ -399,6 +409,7 @@ public final class PetSkinScreen extends Screen {
     @Override public void tick() {
         super.tick();
         if (!pet.isAlive() || pet.isRemoved()) this.onClose();
+        if (tab == 3 && compy != null && compy.isLeader() && ++pkRefresh >= 20) { pkRefresh = 0; pkSend(0, 0, 0, null); }
     }
 
     private void sendName() {
@@ -482,17 +493,18 @@ public final class PetSkinScreen extends Screen {
         switch (tab) {
             case 0 -> renderCommands(g);
             case 1 -> renderAttacks(g);
+            case 3 -> renderPack(g, mx, my);
             default -> renderTalents(g);
         }
         if (locked()) {
-            int[] o = VR(tab == 0 ? skin.overlay0 : tab == 1 ? skin.overlay1 : skin.overlay2);
+            int[] o = VR(tab == 0 ? skin.overlay0 : tab == 1 ? skin.overlay1 : tab == 3 ? skin.overlay3 : skin.overlay2);
             g.fill(o[0], o[1], o[2], o[3], 0xE6101418);
             g.renderOutline(o[0], o[1], o[2] - o[0], o[3] - o[1], 0xFFB8862A);
             float cx = (o[0] + o[2]) / 2.0F, cy = (o[1] + o[3]) / 2.0F;
             textC(g, "Soldado de la manada", cx, cy - 26, 1.6F, GOLD, true);
             textC(g, "Su interfaz está bloqueada en modo seguidor:", cx, cy - 4, 1.1F, TEXT, false);
             textC(g, "acompaña al líder y copia sus órdenes.", cx, cy + 8, 1.1F, TEXT, false);
-            textC(g, "Comandos, ataques y talentos son del líder", cx, cy + 28, 1.0F, DIM, false);
+            textC(g, "Comandos, ataques, talentos y el grupo de caza son del líder", cx, cy + 28, 1.0F, DIM, false);
             textC(g, "(el Compy con las marcas rojas en la cola).", cx, cy + 40, 1.0F, DIM, false);
         }
         if (!adult() && tab > 0) {
@@ -572,6 +584,214 @@ public final class PetSkinScreen extends Screen {
                 textC(g, "Seguro? Clic otra vez", (r[0] + r[2]) / 2.0F, (r[1] + r[3]) / 2.0F - 4.0F, 1.0F, 0xFFFFE0D0, true);
             }
         }
+    }
+
+    // ---------------------------------------------------------------- manada (grupo de caza del Compy)
+    private static final class PkMember { java.util.UUID id; String name = ""; int variant, hp, mhp, lv = -1, role = -1; }
+    private final List<PkMember> pkMembers = new ArrayList<>();
+    private int[] pkSet = {63, 0, 0, 3, 5, 0};
+    private java.util.UUID pkSel;
+    private long dissolveConfirmUntil = 0L;
+    private int pkRefresh = 0;
+    private static final int[] ROLE_COL = {0xFF3FB4FF, 0xFFE6B422, 0xFF7CE03C};
+    private static final String[] CHECK_BITMAP = {"......X", ".....XX", "X...XX.", "XX.XX..", ".XXX...", "..X...."};
+    private static final String[] BTN_HELP = {
+        "Crear grupo: reúne en este grupo a todos tus compys cercanos (y a sus manadas) hasta el máximo.",
+        "Invitar cercano: suma al compy tuyo más cercano que no esté en el grupo (a toda su manada si es líder).",
+        "Expulsar: el compy elegido deja el grupo y forma el suyo. Elígelo con un clic en su tarjeta.",
+        "Nombrar líder: el compy elegido pasa a mandar el grupo y hereda el nivel y los talentos del líder actual.",
+        "Disolver grupo: todos los soldados dejan el grupo y van cada uno por su cuenta (pulsa dos veces)."};
+    private static final String[] CHECK_HELP = {
+        "Seguir al líder: los soldados acompañan al líder y ocupan su sitio en la formación. Apagado, siguen a su dueño.",
+        "Atacar mismo objetivo: los soldados atacan lo que ataca el líder (no en modo Defensivo ni Pasivo).",
+        "Cazar en grupo: los soldados salen a cazar solos cerca del líder según el modo, el radio y la prioridad.",
+        "Volver al silbido: la tecla de silbido hace que la manada deje todo y vuelva con el líder.",
+        "Proteger al líder: los soldados atacan a quien hiera al líder.",
+        "Reagruparse si hay peligro: con el líder por debajo de la mitad de vida, los soldados se juntan a su alrededor."};
+    private static final String[] SEL_HELP = {
+        "Modo de caza: Coordinado (cazan cerca del líder), Agresivo (cazan más lejos), Defensivo (solo protegen) o Pasivo (nunca atacan).",
+        "Formación: el sitio de los soldados alrededor del líder al seguirlo (Abanico, Línea, Círculo o Libre).",
+        "Radio: distancia al líder dentro de la cual los soldados buscan presas, protegen y se reagrupan.",
+        "Tamaño máx.: miembros que admite el grupo, líder incluido (de 2 a 5). Si está lleno, nadie más cabe.",
+        "Prioridad: qué eligen cazar primero: presas pequeñas, hostiles, lo más cercano o lo más débil."};
+    private static final String[] ROLE_HELP = {
+        "Explorador: más veloz; marca con brillo a los hostiles cercanos. Clic para cambiar de rol.",
+        "Rastreador: pega un 20 % más a presas marcadas o heridas. Clic para cambiar de rol.",
+        "Apoyo: cura al compy más herido que tenga cerca, pero pega algo menos. Clic para cambiar de rol."};
+    private static final String[] PRIO_TXT = {"las presas pequeñas", "los hostiles", "lo más cercano", "lo más débil"};
+
+    private void pkSend(int action, int a, int b, java.util.UUID id) {
+        if (compy == null) return;
+        ModNetwork.CHANNEL.sendToServer(new ModNetwork.GroupAction(pet.getId(), action, a, b, id == null ? 0L : id.getMostSignificantBits(), id == null ? 0L : id.getLeastSignificantBits()));
+    }
+
+    /** Lee el estado del grupo que el servidor publica en el lider (ajustes y miembros). */
+    private void pkParse() {
+        pkMembers.clear();
+        net.minecraft.nbt.CompoundTag t = compy.getGroupTag();
+        int[] st = t.getIntArray("s");
+        if (st.length >= 6) pkSet = st;
+        net.minecraft.nbt.ListTag l = t.getList("m", 10);
+        for (int i = 0; i < l.size(); i++) {
+            net.minecraft.nbt.CompoundTag c = l.getCompound(i);
+            PkMember m = new PkMember();
+            m.id = c.getUUID("id"); m.name = c.getString("n"); m.variant = c.getInt("v"); m.hp = c.getInt("hp"); m.mhp = c.getInt("mh"); m.lv = c.getInt("lv"); m.role = c.getInt("r");
+            pkMembers.add(m);
+        }
+        if (pkMembers.isEmpty()) {   // aun sin datos del servidor: solo el lider
+            PkMember m = new PkMember();
+            m.id = compy.getUUID(); m.name = compy.hasCustomName() ? compy.getCustomName().getString() : "Compy Alfa";
+            m.hp = Math.round(compy.getHealth()); m.mhp = Math.round(compy.getMaxHealth()); m.lv = prog().level();
+            pkMembers.add(m);
+        }
+        if (pkSel != null && pkMembers.stream().noneMatch(m -> m.id.equals(pkSel))) pkSel = null;
+    }
+
+    private void initPack() {
+        pkSend(0, 0, 0, null);
+        for (int s = 1; s < 5; s++) {   // las pastillas de rol van primero: ganan el clic sobre la tarjeta
+            final int slot = s;
+            addRenderableWidget(hit(skin.pkChip[s], b -> { if (slot < pkMembers.size()) pkSend(8, 0, 0, pkMembers.get(slot).id); else pkSend(2, 0, 0, null); }));
+        }
+        for (int s = 0; s < 5; s++) {
+            final int slot = s;
+            addRenderableWidget(hit(skin.pkCards[s], b -> {
+                if (slot == 0) { pkSel = null; return; }
+                if (slot < pkMembers.size()) { java.util.UUID id = pkMembers.get(slot).id; pkSel = id.equals(pkSel) ? null : id; }
+                else pkSend(2, 0, 0, null);
+            }));
+        }
+        for (int i = 0; i < 5; i++) { final int k = i; addRenderableWidget(hit(skin.pkButtons[i], b -> pkButton(k))); }
+        for (int i = 0; i < 6; i++) {
+            final int bit = i;
+            addRenderableWidget(hit(skin.pkCheckRow[i], b -> pkSend(6, bit, ((pkSet[0] >> bit) & 1) != 0 ? 0 : 1, null)));
+        }
+        for (int i = 0; i < 5; i++) {
+            final int w = i;
+            addRenderableWidget(hit(skin.pkSelL[i], b -> pkSend(7, w, -1, null)));
+            addRenderableWidget(hit(skin.pkSelR[i], b -> pkSend(7, w, 1, null)));
+        }
+    }
+
+    private void pkButton(int k) {
+        switch (k) {
+            case 0 -> pkSend(1, 0, 0, null);
+            case 1 -> pkSend(2, 0, 0, null);
+            case 2 -> { if (pkSel != null) { pkSend(3, 0, 0, pkSel); pkSel = null; } }
+            case 3 -> { if (pkSel != null) { pkSend(4, 0, 0, pkSel); this.onClose(); } }
+            default -> {
+                long now = System.currentTimeMillis();
+                if (now < dissolveConfirmUntil) { pkSend(5, 0, 0, null); dissolveConfirmUntil = 0L; pkSel = null; }
+                else dissolveConfirmUntil = now + 3000L;
+            }
+        }
+    }
+
+    private boolean over(int[] imgRect, int mx, int my) {
+        int[] r = VR(imgRect);
+        return mx >= r[0] && mx < r[2] && my >= r[1] && my < r[3];
+    }
+
+    private void blitTex(GuiGraphics g, int[] src, int[] dst) {
+        int[] d = VR(dst);
+        g.blit(skin.bg[tab], d[0], d[1], d[2] - d[0], d[3] - d[1], (float) src[0], (float) src[1], src[2] - src[0], src[3] - src[1], 1086, skin.texH[tab]);
+    }
+
+    @org.jetbrains.annotations.Nullable private CompyEntity pkEntity(java.util.UUID id) {
+        if (id.equals(compy.getUUID())) return compy;
+        if (this.minecraft == null || this.minecraft.level == null) return null;
+        for (CompyEntity c : this.minecraft.level.getEntitiesOfClass(CompyEntity.class, compy.getBoundingBox().inflate(80.0), e -> e.getUUID().equals(id))) return c;
+        return null;
+    }
+
+    private void pkChip(GuiGraphics g, int[] chipImg, int role) {
+        int r = Math.max(0, Math.min(2, role)), col = ROLE_COL[r];
+        int[] c = VR(chipImg);
+        g.fill(c[0], c[1], c[2], c[3], 0xDD0C1410);
+        g.renderOutline(c[0], c[1], c[2] - c[0], c[3] - c[1], col);
+        int ix = c[0] + 6, iy = (c[1] + c[3]) / 2;
+        switch (r) {
+            case 0 -> { g.fill(ix - 1, iy - 2, ix + 2, iy + 3, col); g.fill(ix + 3, iy - 2, ix + 6, iy + 3, col); g.fill(ix + 2, iy - 1, ix + 3, iy, col); }   // prismaticos
+            case 1 -> { g.fill(ix, iy, ix + 5, iy + 3, col); g.fill(ix - 1, iy - 3, ix + 1, iy - 1, col); g.fill(ix + 1, iy - 4, ix + 3, iy - 2, col); g.fill(ix + 3, iy - 3, ix + 5, iy - 1, col); }   // pata
+            default -> { g.fill(ix - 1, iy - 1, ix + 6, iy + 1, col); g.fill(ix + 1, iy - 4, ix + 3, iy + 3, col); }   // cruz de apoyo
+        }
+        textC(g, CompyEntity.ROLE_NAMES[r], (c[0] + c[2]) / 2.0F + 5.0F, (c[1] + c[3]) / 2.0F - 3.5F, 0.8F, 0xFFFFFFFF, true);
+    }
+
+    private void pkCard(GuiGraphics g, int slot, PkMember m, int mx, int my) {
+        int[] cr = VR(skin.pkCards[slot]);
+        float cx = (cr[0] + cr[2]) / 2.0F;
+        int[] ar = VR(skin.pkArt[slot]);
+        CompyEntity e = pkEntity(m.id);
+        g.enableScissor((int) ((cr[0] + 3) * sc), (int) ((cr[1] + 3) * sc), (int) ((cr[2] - 3) * sc), (int) (ar[3] * sc));
+        if (e != null) InventoryScreen.renderEntityInInventoryFollowsMouse(g, (int) cx, ar[3] - 1, 58, cx - mx, (float) (ar[1] - my), e);
+        else textC(g, "?", cx, (ar[1] + ar[3]) / 2.0F - 8.0F, 2.0F, DIM, true);
+        g.disableScissor();
+        textC(g, shorten(m.name, cr[2] - cr[0] - 8, 1.0F), cx, Y(skin.pkNameY) - 4.0F, 1.0F, 0xFFFFFFFF, true);
+        textC(g, m.lv >= 0 ? "Nv. " + m.lv : "PV " + m.hp + "/" + m.mhp, cx, Y(skin.pkLvlY) - 4.0F, 0.95F, CREAM, true);
+        if (slot > 0) pkChip(g, skin.pkChip[slot], m.role);
+        if (m.id.equals(pkSel)) {
+            g.renderOutline(cr[0] - 1, cr[1] - 1, cr[2] - cr[0] + 2, cr[3] - cr[1] + 2, 0xFFFFFFFF);
+            g.renderOutline(cr[0] + 1, cr[1] + 1, cr[2] - cr[0] - 2, cr[3] - cr[1] - 2, 0x88FFFFFF);
+        }
+    }
+
+    private void drawCheck(GuiGraphics g, float cx, float cy) {
+        int x0 = (int) (cx - 7), y0 = (int) (cy - 6);
+        for (int pass = 0; pass < 2; pass++)
+            for (int r = 0; r < CHECK_BITMAP.length; r++)
+                for (int c = 0; c < CHECK_BITMAP[r].length(); c++)
+                    if (CHECK_BITMAP[r].charAt(c) == 'X') {
+                        int x = x0 + c * 2 + (pass == 0 ? 1 : 0), y = y0 + r * 2 + (pass == 0 ? 1 : 0);
+                        g.fill(x, y, x + 2, y + 2, pass == 0 ? 0xFF1C3A0C : 0xFFA6F034);
+                    }
+    }
+
+    private boolean pkFlag(int bit) { return ((pkSet[0] >> bit) & 1) != 0; }
+
+    private String pkSummary() {
+        return "Tu grupo de caza " + (pkFlag(0) ? "seguirá al líder" : "seguirá a su dueño") + (pkFlag(1) ? " y atacará el mismo objetivo" : "") + ". "
+            + (pkFlag(3) ? "Los compys se reagruparán al silbido" : "Los compys no responden al silbido") + " y priorizarán " + PRIO_TXT[Math.floorMod(pkSet[5], 4)]
+            + ". Modo " + CompyEntity.G_MODES[Math.floorMod(pkSet[1], 4)].toLowerCase(java.util.Locale.ROOT) + ", formación " + CompyEntity.G_FORMS[Math.floorMod(pkSet[2], 4)].toLowerCase(java.util.Locale.ROOT) + ".";
+    }
+
+    @org.jetbrains.annotations.Nullable private String pkHover(int mx, int my) {
+        int n = pkMembers.size();
+        for (int s = 1; s < 5; s++) if (s < n && over(skin.pkChip[s], mx, my)) return ROLE_HELP[Math.max(0, Math.min(2, pkMembers.get(s).role))];
+        for (int i = 0; i < 5; i++) if (over(skin.pkButtons[i], mx, my)) return BTN_HELP[i];
+        for (int i = 0; i < 6; i++) if (over(skin.pkCheckRow[i], mx, my)) return CHECK_HELP[i];
+        for (int i = 0; i < 5; i++) if (over(skin.pkSelRow[i], mx, my)) return SEL_HELP[i];
+        for (int s = 0; s < 5; s++) if (over(skin.pkCards[s], mx, my)) {
+            if (s == 0) return "El líder del grupo (el Compy con las marcas rojas en la cola). Sus talentos y habilidades mejoran a todo el grupo.";
+            return s < n ? "Clic para elegir a este compy (luego Expulsar o Nombrar líder); clic en su pastilla para cambiar su rol." : "Hueco libre: clic para invitar al compy tuyo más cercano.";
+        }
+        return null;
+    }
+
+    private void renderPack(GuiGraphics g, int mx, int my) {
+        pkParse();
+        int n = pkMembers.size(), max = pkSet[4];
+        textC(g, "Miembros del grupo (" + n + " / " + max + ")", X(skin.pkTitle[0]), Y(skin.pkTitle[1]) - 5.5F, 1.4F, CREAM, true);
+        for (int s = 1; s < 5; s++) {   // huecos: libre = el aspecto de "Invitar compy"; el quinto miembro ocupa el hueco estrecho
+            if (s < n) { if (s == 4) blitTex(g, skin.pkCards[3], skin.pkCards[4]); }
+            else if (s < 4) blitTex(g, skin.pkCards[4], skin.pkCards[s]);
+        }
+        for (int s = 0; s < 5 && s < n; s++) pkCard(g, s, pkMembers.get(s), mx, my);
+        boolean full = n >= max;
+        boolean[] off = {full, full, pkSel == null, pkSel == null, n <= 1};
+        for (int i = 0; i < 5; i++) if (off[i]) { int[] b = VR(skin.pkButtons[i]); g.fill(b[0] + 2, b[1] + 2, b[2] - 2, b[3] - 2, 0xA0101418); }
+        if (System.currentTimeMillis() < dissolveConfirmUntil) {
+            int[] b = VR(skin.pkButtons[4]);
+            g.fill(b[0] + 2, b[1] + 2, b[2] - 2, b[3] - 2, 0xDD3A1010);
+            g.renderOutline(b[0], b[1], b[2] - b[0], b[3] - b[1], 0xFFE0453A);
+            textC(g, "¿Seguro? Otra vez", (b[0] + b[2]) / 2.0F, (b[1] + b[3]) / 2.0F - 4.0F, 0.9F, 0xFFFFE0D0, true);
+        }
+        for (int i = 0; i < 6; i++) if (pkFlag(i)) drawCheck(g, X(skin.pkCheck[i][0]), Y(skin.pkCheck[i][1]));
+        String[] vals = {CompyEntity.G_MODES[Math.floorMod(pkSet[1], 4)], CompyEntity.G_FORMS[Math.floorMod(pkSet[2], 4)],
+            CompyEntity.G_RADII[Math.floorMod(pkSet[3], CompyEntity.G_RADII.length)] + " bloques", String.valueOf(pkSet[4]), CompyEntity.G_PRIOS[Math.floorMod(pkSet[5], 4)]};
+        for (int i = 0; i < 5; i++) textC(g, vals[i], X(skin.pkSelVal[i][0]), Y(skin.pkSelVal[i][1]) - 5.0F, 1.3F, 0xFFFFFFFF, true);
+        String desc = pkHover(mx, my);
+        para(g, desc != null ? desc : pkSummary(), X(skin.pkDesc[0]), Y(skin.pkDesc[1]), skin.pkDesc[2] * K, 1.0F, 11.0F, TEXT, 3);
     }
 
     // ---------------------------------------------------------------- comandos

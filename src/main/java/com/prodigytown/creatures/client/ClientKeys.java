@@ -36,6 +36,7 @@ public final class ClientKeys {
     public static final KeyMapping COMPY_LEAP = new KeyMapping("key.prodigycreatures.compy_leap", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_I, CATEGORY);
     public static final KeyMapping COMPY_SCREECH = new KeyMapping("key.prodigycreatures.compy_screech", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_O, CATEGORY);
     public static final KeyMapping COMPY_PACK = new KeyMapping("key.prodigycreatures.compy_pack", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_J, CATEGORY);
+    public static final KeyMapping COMPY_WHISTLE = new KeyMapping("key.prodigycreatures.compy_whistle", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_N, CATEGORY);
     private ClientKeys() {}
 
     @Mod.EventBusSubscriber(modid = ProdigyCreatures.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
@@ -55,6 +56,7 @@ public final class ClientKeys {
             event.register(COMPY_LEAP);
             event.register(COMPY_SCREECH);
             event.register(COMPY_PACK);
+            event.register(COMPY_WHISTLE);
         }
     }
 
@@ -109,6 +111,7 @@ public final class ClientKeys {
             while (COMPY_LEAP.consumeClick()) ModNetwork.CHANNEL.sendToServer(new ModNetwork.UseAbility(21));
             while (COMPY_SCREECH.consumeClick()) ModNetwork.CHANNEL.sendToServer(new ModNetwork.UseAbility(22));
             while (COMPY_PACK.consumeClick()) ModNetwork.CHANNEL.sendToServer(new ModNetwork.UseAbility(23));
+            while (COMPY_WHISTLE.consumeClick()) ModNetwork.CHANNEL.sendToServer(new ModNetwork.UseAbility(24));
             while (SHRINK.consumeClick()) { // Saint's Dragons: H = encoger/agrandar el dragon que miras (Mayus+H = todos los tuyos cercanos)
                 net.minecraft.world.entity.Entity look = mc.crosshairPickEntity;
                 ModNetwork.CHANNEL.sendToServer(new ModNetwork.ShrinkDragon(com.prodigytown.creatures.compat.SaintsDragonsCompat.isDragon(look) ? look.getId() : -1, player.isShiftKeyDown()));

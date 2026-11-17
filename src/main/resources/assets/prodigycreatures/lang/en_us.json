@@ -128,5 +128,6 @@
   "key.prodigycreatures.compy_bite": "Compy (leader): Flash Bite",
   "key.prodigycreatures.compy_leap": "Compy (leader): Evasive Leap",
   "key.prodigycreatures.compy_screech": "Compy (leader): Alarm Screech",
-  "key.prodigycreatures.compy_pack": "Compy (leader): Pack Attack"
+  "key.prodigycreatures.compy_pack": "Compy (leader): Pack Attack",
+  "key.prodigycreatures.compy_whistle": "Compy (leader): Whistle (recall the pack)"
 }

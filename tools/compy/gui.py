@@ -7,8 +7,9 @@ import numpy as np, cv2
 from PIL import Image
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from gui_lib import *
+import gui_pack as GP
 
-CROP = {'tal': (28, 8, 1432, 1046), 'atk': (40, 20, 1430, 1000), 'cmd': (38, 20, 1410, 999)}
+CROP = {'tal': (28, 8, 1432, 1046), 'atk': (40, 20, 1430, 1000), 'cmd': (38, 20, 1410, 999), 'pack': (36, 14, 1414, 1030)}
 W = 1086
 
 class Map:
@@ -122,20 +123,18 @@ def layout():
     def R(n, q): return M[n].r(q)
     def P(n, q): return M[n].p(q)
     def S(n, v): return int(round(v * M[n].s))
-    cmd, atk, tal = 'cmd', 'atk', 'tal'
+    cmd, atk, tal, pack = 'cmd', 'atk', 'tal', 'pack'
     L = {}
-    L['TEX_H'] = [M[cmd].h, M[atk].h, M[tal].h]
-    L['CLOSE'] = [R(cmd, (1315, 81, 1372, 138)), R(atk, (1335, 94, 1394, 150)), R(tal, (1344, 77, 1397, 131))]
-    L['TABS'] = [[R(cmd, q) for q in [(237, 887, 556, 950), (572, 887, 891, 950), (910, 887, 1215, 950)]],
-                 [R(atk, q) for q in [(244, 887, 569, 954), (581, 887, 902, 954), (925, 887, 1237, 954)]],
-                 [R(tal, q) for q in [(248, 961, 552, 1017), (575, 961, 875, 1017), (898, 961, 1208, 1017)]]]
-    L['NAMEBOX'] = [R(cmd, (292, 126, 556, 186)), R(atk, (296, 126, 570, 186)), R(tal, (255, 102, 455, 153))]
-    L['PORTRAIT'] = [R(cmd, (111, 217, 523, 533)), R(atk, (113, 225, 527, 537)), R(tal, (92, 186, 384, 420))]
-    L['LVL'] = P(cmd, (317, 579)) + P(atk, (322, 579)) + P(tal, (236, 474))
-    L['HP'] = [R(cmd, (152, 613, 524, 642)), R(atk, (166, 614, 526, 643)), R(tal, (124, 508, 386, 534))]
-    L['EXP'] = [R(cmd, (132, 814, 500, 838)), R(atk, (136, 812, 510, 838)), [0, 0, 0, 0]]
-    L['STAT_RIGHT'] = [M[cmd].x(500), M[atk].x(511), M[tal].x(376)]
-    L['STAT_Y'] = [[M[cmd].y(v) for v in (679, 715, 750, 785)], [M[atk].y(v) for v in (679, 715, 750, 785)], [M[tal].y(v) for v in (570, 600, 628, 657)]]
+    L['TEX_H'] = [M[cmd].h, M[atk].h, M[tal].h, M[pack].h]
+    L['CLOSE'] = [R(cmd, (1315, 81, 1372, 138)), R(atk, (1335, 94, 1394, 150)), R(tal, (1344, 77, 1397, 131)), R(pack, (1318, 84, 1378, 142))]
+    L['TABS'] = [[R(n, q) for q in GP.tab_rects(n)] for n in (cmd, atk, tal, pack)]
+    L['NAMEBOX'] = [R(cmd, (292, 126, 556, 186)), R(atk, (296, 126, 570, 186)), R(tal, (255, 102, 455, 153)), R(pack, (292, 126, 556, 186))]
+    L['PORTRAIT'] = [R(cmd, (111, 217, 523, 533)), R(atk, (113, 225, 527, 537)), R(tal, (92, 186, 384, 420)), R(pack, (112, 224, 404, 514))]
+    L['LVL'] = P(cmd, (317, 579)) + P(atk, (322, 579)) + P(tal, (236, 474)) + P(pack, (262, 567))
+    L['HP'] = [R(cmd, (152, 613, 524, 642)), R(atk, (166, 614, 526, 643)), R(tal, (124, 508, 386, 534)), R(pack, (150, 607, 410, 638))]
+    L['EXP'] = [R(cmd, (132, 814, 500, 838)), R(atk, (136, 812, 510, 838)), [0, 0, 0, 0], R(pack, (122, 809, 400, 834))]
+    L['STAT_RIGHT'] = [M[cmd].x(500), M[atk].x(511), M[tal].x(376), M[pack].x(398)]
+    L['STAT_Y'] = [[M[cmd].y(v) for v in (679, 715, 750, 785)], [M[atk].y(v) for v in (679, 715, 750, 785)], [M[tal].y(v) for v in (570, 600, 628, 657)], [M[pack].y(v) for v in (678, 710, 742, 775)]]
     L['POINTS_C'] = P(tal, (273, 720)) + [M[tal].y(752)]
     L['RESET_BOX'] = R(tal, (103, 797, 372, 842))
     L['MEDAL'] = R(tal, (598, 686, 861, 848))
@@ -147,6 +146,8 @@ def layout():
     L['OVERLAY0'] = R(cmd, (551, 205, 1356, 840))
     L['OVERLAY1'] = R(atk, (553, 210, 1376, 840))
     L['OVERLAY2'] = R(tal, (395, 145, 1385, 880))
+    L['OVERLAY3'] = R(pack, (440, 200, 1360, 910))
+    L.update(GP.layout_pack(M[pack]))
     L['PANEL_TITLE'] = P(tal, (1185, 200)) + [S(tal, 185)]
     L['PANEL_EFF'] = P(tal, (1088, 292)) + [S(tal, 282)]
     L['REQ_HEAD_Y'] = M[tal].y(590)
@@ -184,10 +185,13 @@ def write_java(repo, L, ids):
         'final class CompyGui {\n    private CompyGui() {}\n    /** Orden de NODE_X / NODE_Y. */\n    static final String[] NODE_ID = {%s};\n%s\n}\n' % (idl, body))
 
 if __name__ == '__main__':
-    repo, cmd, atk, tal = sys.argv[1:5]
-    prev = sys.argv[5] if len(sys.argv) > 5 else None
-    for name, fn, src in (('cmd', build_cmd, cmd), ('atk', build_atk, atk), ('tal', build_tal, tal)):
+    repo, cmd, atk, tal, pack = sys.argv[1:6]
+    prev = sys.argv[6] if len(sys.argv) > 6 else None
+    P = load(pack)
+    variants, origin = GP.strip_variants(P)
+    for name, fn, src, k in (('cmd', build_cmd, cmd, 0), ('atk', build_atk, atk, 1), ('tal', build_tal, tal, 2), ('pack', lambda q: GP.build_pack(q, left_panel), pack, 3)):
         a, g = fn(src)
+        if name != 'pack': GP.apply_tabs(a, name, k, variants, origin)
         save_bg(a, name, repo, prev)
     L, ids = layout()
     write_java(repo, L, ids)

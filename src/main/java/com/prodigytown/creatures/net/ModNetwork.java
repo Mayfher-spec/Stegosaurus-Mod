@@ -32,6 +32,7 @@ public final class ModNetwork {
         CHANNEL.registerMessage(2, RenamePet.class, RenamePet::encode, RenamePet::decode, RenamePet::handle);
         CHANNEL.registerMessage(3, SetOrder.class, SetOrder::encode, SetOrder::decode, SetOrder::handle);
         CHANNEL.registerMessage(4, ShrinkDragon.class, ShrinkDragon::encode, ShrinkDragon::decode, ShrinkDragon::handle);
+        CHANNEL.registerMessage(5, GroupAction.class, GroupAction::encode, GroupAction::decode, GroupAction::handle);
         com.prodigytown.creatures.quests.QuestPackets.register();
     }
 
@@ -134,6 +135,22 @@ public final class ModNetwork {
         }
     }
 
+    /** Pestana Manada del Compy: 0 actualizar, 1 crear (reunir cercanos), 2 invitar cercano, 3 expulsar, 4 nombrar lider, 5 disolver, 6 casilla (a = indice, b = 0/1), 7 selector (a = cual, b = +1/-1), 8 cambiar rol. */
+    public record GroupAction(int entityId, int action, int a, int b, long msb, long lsb) {
+        public static void encode(GroupAction m, FriendlyByteBuf buf) { buf.writeInt(m.entityId); buf.writeByte(m.action); buf.writeByte(m.a); buf.writeByte(m.b); buf.writeLong(m.msb); buf.writeLong(m.lsb); }
+        public static GroupAction decode(FriendlyByteBuf buf) { return new GroupAction(buf.readInt(), buf.readByte(), buf.readByte(), buf.readByte(), buf.readLong(), buf.readLong()); }
+        public static void handle(GroupAction m, Supplier<NetworkEvent.Context> ctx) {
+            ctx.get().enqueueWork(() -> {
+                ServerPlayer sp = ctx.get().getSender();
+                if (sp == null) return;
+                Entity e = sp.level().getEntity(m.entityId);
+                if (e instanceof com.prodigytown.creatures.CompyEntity compy && compy.isLeader() && compy.isOwnedBy(sp) && compy.distanceTo(sp) <= 40.0F)
+                    compy.groupAction(sp, m.action, m.a, m.b, new java.util.UUID(m.msb, m.lsb));
+            });
+            ctx.get().setPacketHandled(true);
+        }
+    }
+
     /** id 0 = embestida, 1 = coletazo (basico o devastador), 2 = mordida. Actua el compañero propio mas cercano (o la montura). */
     public record UseAbility(int ability) {
         public static void encode(UseAbility m, FriendlyByteBuf buf) { buf.writeByte(m.ability); }
@@ -147,7 +164,7 @@ public final class ModNetwork {
                     for (com.prodigytown.creatures.CompyEntity c : sp.level().getEntitiesOfClass(com.prodigytown.creatures.CompyEntity.class, sp.getBoundingBox().inflate(24.0),
                             c -> c.isTame() && c.isLeader() && c.isOwnedBy(sp)))
                         if (compy == null || c.distanceToSqr(sp) < compy.distanceToSqr(sp)) compy = c;
-                    if (compy != null) compy.useAbility(sp, m.ability - 20);
+                    if (compy != null) { if (m.ability == 24) compy.whistle(sp); else compy.useAbility(sp, m.ability - 20); }
                     return;
                 }
                 if (m.ability >= 10) { // dilofosaurio: 10 mordida, 11 zarpazo, 12 salto, 13 frenesi

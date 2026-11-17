@@ -85,6 +85,8 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder, Prod
     private static final EntityDataAccessor<Boolean> LEADER = SynchedEntityData.defineId(CompyEntity.class, EntityDataSerializers.BOOLEAN);
     /** Nivel, XP y talentos del lider (sincronizado para la pantalla del cliente). */
     private static final EntityDataAccessor<CompoundTag> PROGRESS = SynchedEntityData.defineId(CompyEntity.class, EntityDataSerializers.COMPOUND_TAG);
+    /** Estado del grupo de caza que ve la pantalla del lider (ajustes y miembros); lo rellena el servidor con refreshGroup(). */
+    private static final EntityDataAccessor<CompoundTag> GROUP = SynchedEntityData.defineId(CompyEntity.class, EntityDataSerializers.COMPOUND_TAG);
     private static final net.minecraft.world.entity.EntityDimensions LEADER_DIM = net.minecraft.world.entity.EntityDimensions.scalable(0.48F, 0.6F);
     /** Tamano del lider respecto al resto de la manada. */
     public static final float LEADER_SCALE = 1.2F;
@@ -110,6 +112,18 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder, Prod
     private java.util.UUID packId = java.util.UUID.randomUUID();
     @Nullable private CompyEntity leaderRef;
     private int leaderCheckAt = 0;
+    // ---- grupo de caza (los ajustes los manda el lider; el rol es del soldado)
+    public static final String[] G_MODES = {"Coordinado", "Agresivo", "Defensivo", "Pasivo"};
+    public static final String[] G_FORMS = {"Abanico", "Línea", "Círculo", "Libre"};
+    public static final int[] G_RADII = {8, 12, 16, 24, 32};
+    public static final String[] G_PRIOS = {"Presas pequeñas", "Hostiles", "Más cercano", "Más débil"};
+    public static final String[] ROLE_NAMES = {"Explorador", "Rastreador", "Apoyo"};
+    public static final String[] GREEK = {"Alfa", "Beta", "Gamma", "Delta", "Épsilon"};
+    public static final int G_MIN = 2, G_MAX = 5;
+    /** Casillas: 0 seguir al lider, 1 mismo objetivo, 2 cazar en grupo, 3 volver al silbido, 4 proteger al lider, 5 reagruparse si hay peligro. */
+    private int gFlags = 0b111111, gMode = 0, gForm = 0, gRad = 3, gMax = G_MAX, gPrio = 0;
+    private int role = -1, recallUntil = 0, memCacheAt = -100;
+    private List<CompyEntity> memCache = java.util.Collections.emptyList();
 
     public CompyEntity(EntityType<? extends CompyEntity> type, Level level) {
         super(type, level);
@@ -134,6 +148,7 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder, Prod
         this.entityData.define(ORDER, PetOrders.FOLLOW);
         this.entityData.define(LEADER, Boolean.TRUE);
         this.entityData.define(PROGRESS, ProdigyProgress.atLevel(1, Talents.COMPY).save());
+        this.entityData.define(GROUP, new CompoundTag());
     }
 
     @Override public void addAdditionalSaveData(CompoundTag tag) {
@@ -143,6 +158,7 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder, Prod
         tag.putInt("PetOrder", getOrder());
         tag.putBoolean("Leader", isLeader());
         tag.putUUID("PackId", packId);
+        tag.putIntArray("Group", new int[]{gFlags, gMode, gForm, gRad, gMax, gPrio, role});
         tag.put("Progress", progress.save());
         if (orderHome != null) tag.putLong("OrderHome", orderHome.asLong());
     }
@@ -154,6 +170,11 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder, Prod
         this.entityData.set(ORDER, PetOrders.clamp(tag.getInt("PetOrder")));
         if (tag.contains("Leader")) this.entityData.set(LEADER, tag.getBoolean("Leader"));
         if (tag.hasUUID("PackId")) this.packId = tag.getUUID("PackId");
+        int[] gs = tag.getIntArray("Group");
+        if (gs.length >= 7) {
+            gFlags = gs[0] & 0b111111; gMode = Mth.clamp(gs[1], 0, 3); gForm = Mth.clamp(gs[2], 0, 3); gRad = Mth.clamp(gs[3], 0, G_RADII.length - 1);
+            gMax = Mth.clamp(gs[4], G_MIN, G_MAX); gPrio = Mth.clamp(gs[5], 0, 3); role = Mth.clamp(gs[6], -1, 2);
+        }
         this.progress = ProdigyProgress.load(tag.getCompound("Progress"), 1, Talents.COMPY);
         this.entityData.set(PROGRESS, progress.save());
         applyRoleStats(false);
@@ -201,6 +222,8 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder, Prod
             hp = (tame ? 12.0 : 10.0) * (1.0 + 0.10 * bonusB1);
             atk = (tame ? bite * 1.5 : bite) * (1.0 + 0.10 * bonusB1 + 0.15 * bonusP1);
             armor = 0.0;
+            if (tame && role == 0) speed *= 1.15;     // Explorador: mas veloz
+            if (tame && role == 2) atk *= 0.85;       // Apoyo: pega menos, cura
         }
         var attr = this.getAttribute(Attributes.MAX_HEALTH);
         if (attr != null && attr.getBaseValue() != hp) {
@@ -232,16 +255,26 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder, Prod
         return leaderRef;
     }
 
-    /** Al domar al lider, toda la manada cercana se une a su dueno como soldados. */
+    /** Al domar al lider, la manada cercana se une a su dueno como soldados (hasta el tope del grupo); los que no caben forman otra manada salvaje con su propio lider. */
     private void recruitPack(Player owner) {
-        for (CompyEntity m : this.level().getEntitiesOfClass(CompyEntity.class, this.getBoundingBox().inflate(64.0), e -> e != this && !e.isTame() && e.isAlive() && e.packId.equals(packId))) {
+        List<CompyEntity> wild = new java.util.ArrayList<>(this.level().getEntitiesOfClass(CompyEntity.class, this.getBoundingBox().inflate(64.0), e -> e != this && !e.isTame() && e.isAlive() && e.packId.equals(packId)));
+        wild.sort(java.util.Comparator.comparingDouble((CompyEntity e) -> this.distanceToSqr(e)));
+        int slots = gMax - 1;
+        for (int i = 0; i < Math.min(slots, wild.size()); i++) {
+            CompyEntity m = wild.get(i);
             m.tame(owner);
             m.setPersistenceRequired();
             m.setTarget(null);
             m.leaderRef = this;
+            m.role = i % 3;
             m.applyRoleStats(false);
             m.setPackOrder(PetOrders.FOLLOW);
             m.level().broadcastEntityEvent(m, (byte) 7);
+        }
+        if (wild.size() > slots) {                       // el resto: otra manada con un lider nuevo
+            java.util.UUID np = java.util.UUID.randomUUID();
+            for (int i = slots; i < wild.size(); i++) { wild.get(i).packId = np; wild.get(i).leaderRef = null; }
+            wild.get(slots).setLeader(true);
         }
     }
 
@@ -263,6 +296,7 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder, Prod
         best.progress.reset();
         best.pushProgress();
         best.bonusB1 = 0; best.bonusP1 = 0;
+        best.gFlags = gFlags; best.gMode = gMode; best.gForm = gForm; best.gRad = gRad; best.gMax = gMax; best.gPrio = gPrio; best.role = -1;
         best.setLeader(true);
         best.leaderRef = null;
         if (best.isTame()) {
@@ -345,8 +379,9 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder, Prod
             @Override public boolean canUse() { return !isTame() && super.canUse(); }
         });
         this.goalSelector.addGoal(4, new FollowOwnerGoal(this, 1.15D, 3.5F, 10.0F, false) {
-            @Override public boolean canUse() { return getOrder() == PetOrders.FOLLOW && (!isFollower() || findLeader() == null) && super.canUse(); }
-            @Override public boolean canContinueToUse() { return getOrder() == PetOrders.FOLLOW && (!isFollower() || findLeader() == null) && super.canContinueToUse(); }
+            private boolean mine() { if (!isFollower()) return true; CompyEntity l = findLeader(); return l == null || !l.gOpt(0) && tickCount >= recallUntil; }
+            @Override public boolean canUse() { return getOrder() == PetOrders.FOLLOW && mine() && super.canUse(); }
+            @Override public boolean canContinueToUse() { return getOrder() == PetOrders.FOLLOW && mine() && super.canContinueToUse(); }
         });
         this.goalSelector.addGoal(4, new FollowLeaderGoal());
         this.goalSelector.addGoal(5, new MoveTowardsRestrictionGoal(this, 0.9D));
@@ -362,24 +397,48 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder, Prod
         this.targetSelector.addGoal(3, new HurtByTargetGoal(this) {   // la manada acude en ayuda de un compy salvaje herido
             @Override public boolean canUse() { return !isTame() && super.canUse(); }
         }.setAlertOthers());
+        this.targetSelector.addGoal(4, new GroupCombatGoal());
         this.targetSelector.addGoal(4, PetOrders.patrolTargeting(this));
         this.targetSelector.addGoal(5, new NearestAttackableTargetGoal<>(this, Animal.class, 30, true, false, e -> e instanceof Chicken || e instanceof Rabbit) {
             @Override public boolean canUse() { return !isTame() && CompyConfig.get(CompyConfig.HUNT_SMALL_PREY, true) && super.canUse(); }
         });
     }
 
-    /** La manada se mantiene unida: los soldados (salvajes o domados) siguen a su lider cuando se alejan. */
+    /** Puesto de este soldado alrededor de su lider segun la formacion del grupo (Libre: junto al lider). */
+    private net.minecraft.world.phys.Vec3 slotPos(CompyEntity l) {
+        net.minecraft.world.phys.Vec3 base = l.position();
+        if (l.gForm == 3) return base;
+        List<CompyEntity> mem = l.membersCached();
+        int n = Math.max(1, mem.size()), i = Math.max(0, mem.indexOf(this));
+        double yaw = Math.toRadians(l.yBodyRot);
+        double bx = Math.sin(yaw), bz = -Math.cos(yaw);             // hacia atras del lider
+        double ox, oz;
+        if (l.gForm == 0) {                                          // abanico detras
+            double t = n == 1 ? 0.0 : (double) i / (n - 1) - 0.5, ang = t * Math.toRadians(130.0), c = Math.cos(ang), sn = Math.sin(ang);
+            ox = (bx * c - bz * sn) * 2.4; oz = (bx * sn + bz * c) * 2.4;
+        } else if (l.gForm == 1) { ox = bx * 1.5 * (i + 1); oz = bz * 1.5 * (i + 1); }   // fila india
+        else { double ang = Math.PI * 2.0 * i / n; ox = Math.cos(ang) * 2.2; oz = Math.sin(ang) * 2.2; }   // circulo
+        return new net.minecraft.world.phys.Vec3(base.x + ox, base.y, base.z + oz);
+    }
+
+    /** La manada se mantiene unida: los soldados (salvajes o domados) siguen a su lider cuando se alejan (o ocupan su puesto en la formacion). */
     private final class FollowLeaderGoal extends net.minecraft.world.entity.ai.goal.Goal {
         private int recalc;
         FollowLeaderGoal() { this.setFlags(java.util.EnumSet.of(Flag.MOVE)); }
-        private boolean away(double min) {
+        private boolean tight(CompyEntity l) { return isTame() && (tickCount < recallUntil || l.gOpt(5) && l.getHealth() < l.getMaxHealth() * 0.5F); }
+        private net.minecraft.world.phys.Vec3 dest(CompyEntity l) { return isTame() && !tight(l) ? slotPos(l) : l.position(); }
+        private boolean away(boolean start) {
             if (isLeader() || isOrderedToSit() || isPassenger()) return false;
             if (isTame() && getOrder() != PetOrders.FOLLOW) return false;
             CompyEntity l = findLeader();
-            return l != null && distanceToSqr(l) > min * min;
+            if (l == null) return false;
+            if (isTame() && tickCount >= recallUntil && !l.gOpt(0)) return false;   // "Seguir al lider" desactivado: sigue al dueno
+            double min = !isTame() ? (start ? 10.0 : 5.0) : tight(l) ? (start ? 2.5 : 1.8) : l.gForm != 3 ? (start ? 1.8 : 0.9) : (start ? 4.5 : 2.8);
+            net.minecraft.world.phys.Vec3 d = dest(l);
+            return distanceToSqr(d.x, d.y, d.z) > min * min;
         }
-        @Override public boolean canUse() { return away(isTame() ? 4.5 : 10.0); }
-        @Override public boolean canContinueToUse() { return away(isTame() ? 2.8 : 5.0) && getTarget() == null; }
+        @Override public boolean canUse() { return away(true); }
+        @Override public boolean canContinueToUse() { return away(false) && getTarget() == null; }
         @Override public void start() { recalc = 0; }
         @Override public void stop() { getNavigation().stop(); }
         @Override public void tick() {
@@ -389,8 +448,72 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder, Prod
             if (--recalc > 0) return;
             recalc = 8;
             if (isTame() && distanceToSqr(l) > 24.0 * 24.0) { CompyEntity.this.teleportTo(l.getX(), l.getY(), l.getZ()); return; }
-            getNavigation().moveTo(l, isTame() ? 1.25D : 1.0D);
+            net.minecraft.world.phys.Vec3 d = dest(l);
+            getNavigation().moveTo(d.x, d.y, d.z, isTame() ? 1.25D : 1.0D);
         }
+    }
+
+    /** Un soldado ajeno al grupo? Presa valida para la caza en grupo: viva, sin nombre ni correa, ni jugador ni mascota ni compy. */
+    private boolean fair(LivingEntity e) {
+        return e != null && e.isAlive() && e != this && !(e instanceof CompyEntity) && !(e instanceof Player) && !(e instanceof TamableAnimal ta && ta.isTame())
+            && !e.isInvulnerable() && !(e instanceof net.minecraft.world.entity.monster.Creeper) && !(e instanceof Mob m && (m.isLeashed() || m.hasCustomName()));
+    }
+
+    /** Objetivo de caza segun la prioridad del grupo (presas pequenas / hostiles / mas cercano / mas debil) dentro de r bloques del lider. */
+    @Nullable private LivingEntity huntPick(CompyEntity l, double r) {
+        boolean small = CompyConfig.get(CompyConfig.HUNT_SMALL_PREY, true);
+        List<LivingEntity> prey = new java.util.ArrayList<>(), foes = new java.util.ArrayList<>();
+        for (LivingEntity e : this.level().getEntitiesOfClass(LivingEntity.class, l.getBoundingBox().inflate(r), this::fair)) {
+            if (e.getMaxHealth() > 60.0F) continue;
+            if (small && (e instanceof Chicken || e instanceof Rabbit)) prey.add(e);
+            else if (e instanceof Enemy) foes.add(e);
+        }
+        List<LivingEntity> pool;
+        if (l.gPrio == 0) pool = prey.isEmpty() ? foes : prey;
+        else if (l.gPrio == 1) pool = foes.isEmpty() ? prey : foes;
+        else { pool = new java.util.ArrayList<>(prey); pool.addAll(foes); }
+        if (pool.isEmpty()) return null;
+        java.util.Comparator<LivingEntity> cmp = l.gPrio == 3 ? java.util.Comparator.comparingDouble((LivingEntity e) -> e.getHealth()) : java.util.Comparator.comparingDouble((LivingEntity e) -> this.distanceToSqr(e));
+        return java.util.Collections.min(pool, cmp);
+    }
+
+    /** Objetivos del soldado segun los ajustes del grupo: proteger al lider y cazar en grupo (el "mismo objetivo" lo hace packTick). */
+    private final class GroupCombatGoal extends net.minecraft.world.entity.ai.goal.Goal {
+        private LivingEntity pick;
+        private int next;
+        GroupCombatGoal() { this.setFlags(java.util.EnumSet.of(Flag.TARGET)); }
+        @Override public boolean canUse() {
+            if (!isTame() || isLeader() || isOrderedToSit() || getOrder() == PetOrders.SLEEP || tickCount < recallUntil || tickCount < next) return false;
+            next = tickCount + 10 + random.nextInt(6);
+            CompyEntity l = findLeader();
+            if (l == null || l.gMode == 3 || l.gOpt(5) && l.getHealth() < l.getMaxHealth() * 0.5F) return false;
+            double rad = G_RADII[l.gRad];
+            LivingEntity t = null;
+            if (l.gOpt(4)) {
+                LivingEntity h = l.getLastHurtByMob();
+                if (h != null && tickCount - l.getLastHurtByMobTimestamp() < 100 && fair(h) && h.distanceToSqr(l) < rad * rad) t = h;
+            }
+            if (t == null && l.gMode != 2 && l.gOpt(2)) t = huntPick(l, rad * (l.gMode == 0 ? 0.6 : 1.0));
+            if (t == null) return false;
+            pick = t;
+            return true;
+        }
+        @Override public boolean canContinueToUse() {
+            CompyEntity l = findLeader();
+            LivingEntity t = getTarget();
+            if (t == null || !t.isAlive() || l == null || tickCount < recallUntil || l.gMode == 3) return false;
+            double rad = G_RADII[l.gRad] + 8.0;
+            if (t.distanceToSqr(l) > rad * rad) return false;
+            return !(l.gOpt(5) && l.getHealth() < l.getMaxHealth() * 0.5F && distanceToSqr(l) > 36.0);
+        }
+        @Override public void start() { setTarget(pick); }
+        @Override public void stop() { if (getTarget() == pick) setTarget(null); pick = null; }
+    }
+
+    /** Pasivo: los soldados de un grupo en modo Pasivo no aceptan objetivos. */
+    @Override public void setTarget(@Nullable LivingEntity t) {
+        if (t != null && isTame() && !isLeader() && !this.level().isClientSide) { CompyEntity l = findLeader(); if (l != null && l.gMode == 3) return; }
+        super.setTarget(t);
     }
 
     @Override public boolean doHurtTarget(Entity target) {
@@ -412,6 +535,7 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder, Prod
         if (target.getBbHeight() < 1.0F) dmg *= 1.25F;                                          // Cazador diminuto (pasiva)
         if (nextBiteBonus) { dmg *= 1.5F; nextBiteBonus = false; }
         if (swarmUntil > this.tickCount) dmg *= swarmMul;
+        if (!isLeader() && role == 1 && (target.hasEffect(MobEffects.GLOWING) || target.getHealth() < target.getMaxHealth() * 0.6F)) dmg *= 1.2F;   // Rastreador: remata presas marcadas o heridas
         int a5 = rk("A5");
         if (a5 > 0 && this.random.nextFloat() < new float[]{0F, 0.08F, 0.14F, 0.20F}[a5]) {
             dmg *= 1.6F;
@@ -471,7 +595,9 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder, Prod
             if (want == PetOrders.WANDER || want == PetOrders.PATROL) want = PetOrders.FOLLOW;   // el lider pasea; los soldados lo acompanan
             if (getOrder() != want) setPackOrder(want);
             LivingEntity t = l.getTarget();
-            if (getTarget() == null && t != null && t.isAlive() && t != this && !(t instanceof Player) && !(t instanceof TamableAnimal ta && ta.isTame()) && getOrder() != PetOrders.SLEEP) setTarget(t);
+            if (getTarget() == null && t != null && t.isAlive() && t != this && !(t instanceof Player) && !(t instanceof TamableAnimal ta && ta.isTame()) && getOrder() != PetOrders.SLEEP
+                    && l.gOpt(1) && l.gMode < 2 && this.tickCount >= recallUntil) setTarget(t);
+            roleTick(l);
         } else if (isLeader() && this.tickCount % 100 == 3) {
             for (CompyEntity o : this.level().getEntitiesOfClass(CompyEntity.class, this.getBoundingBox().inflate(48.0), e -> e != this && e.isLeader() && e.packId.equals(packId)))
                 if (o.getUUID().compareTo(this.getUUID()) < 0) { setLeader(false); break; }   // por si dos lideres coinciden: queda uno solo
@@ -555,20 +681,215 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder, Prod
         return InteractionResult.PASS;   // el Compy es demasiado pequeno para montarlo
     }
 
-    // ------------------------------------------------------------------ grupo de caza (solo del Compy)
+    // ------------------------------------------------------------------ grupo de caza (solo del Compy): ajustes, roles y operaciones de la pestana Manada
 
-    /** Seleccion pendiente de cada jugador: el lider elegido y cuando (para que caduque). Solo servidor. */
+    /** Seleccion pendiente de cada jugador para el clic con la mano vacia: el lider elegido y cuando (para que caduque). Solo servidor. */
     private static final Map<java.util.UUID, Object[]> GROUP_PICK = new HashMap<>();
-    private static final int GROUP_PICK_TICKS = 600, GROUP_RANGE = 32;
+    private static final int GROUP_PICK_TICKS = 600, GROUP_RANGE = 24;
 
-    private int groupSize() {
-        return 1 + this.level().getEntitiesOfClass(CompyEntity.class, this.getBoundingBox().inflate(64.0), e -> e != this && e.isTame() && e.isAlive() && e.packId.equals(packId)).size();
+    @Nullable private CompyEntity chief() { return isLeader() ? this : findLeader(); }
+    /** Casilla de ajustes del grupo (la del lider; sin lider cerca: activada). */
+    private boolean gOpt(int bit) { CompyEntity l = chief(); return l == null || ((l.gFlags >> bit) & 1) != 0; }
+    public CompoundTag getGroupTag() { return this.entityData.get(GROUP); }
+
+    /** Soldados domados de mi manada cerca (orden estable por UUID). Solo servidor. */
+    private List<CompyEntity> members() {
+        List<CompyEntity> l = new java.util.ArrayList<>(this.level().getEntitiesOfClass(CompyEntity.class, this.getBoundingBox().inflate(64.0),
+            e -> e != this && e.isTame() && !e.isLeader() && e.isAlive() && e.packId.equals(packId)));
+        l.sort(java.util.Comparator.comparing(Entity::getUUID));
+        return l;
+    }
+    private List<CompyEntity> membersCached() {
+        if (this.tickCount - memCacheAt >= 10) { memCache = members(); memCacheAt = this.tickCount; }
+        return memCache;
+    }
+    private int groupSize() { return 1 + members().size(); }
+    private int capLeft() { return gMax - groupSize(); }
+
+    private static CompoundTag memberTag(CompyEntity c, int slot) {
+        CompoundTag t = new CompoundTag();
+        t.putUUID("id", c.getUUID());
+        t.putString("n", c.hasCustomName() ? c.getCustomName().getString() : "Compy " + GREEK[Math.min(slot, GREEK.length - 1)]);
+        t.putInt("v", c.getVariant());
+        t.putInt("hp", Math.round(c.getHealth()));
+        t.putInt("mh", Math.round(c.getMaxHealth()));
+        t.putInt("lv", c.isLeader() ? c.progress.level() : -1);
+        t.putInt("r", c.role);
+        return t;
+    }
+
+    /** Publica el estado del grupo (ajustes y miembros) para la pantalla del lider. Solo servidor. */
+    public void refreshGroup() {
+        if (this.level().isClientSide || !isLeader()) return;
+        CompoundTag t = new CompoundTag();
+        t.putIntArray("s", new int[]{gFlags, gMode, gForm, gRad, gMax, gPrio});
+        net.minecraft.nbt.ListTag m = new net.minecraft.nbt.ListTag();
+        m.add(memberTag(this, 0));
+        List<CompyEntity> mem = members();
+        for (int i = 0; i < mem.size(); i++) {
+            CompyEntity c = mem.get(i);
+            if (c.role < 0) { c.role = i % 3; c.applyRoleStats(false); }
+            m.add(memberTag(c, i + 1));
+        }
+        t.put("m", m);
+        this.entityData.set(GROUP, t);
+    }
+
+    private static void msg(Player p, String text) { p.displayClientMessage(Component.literal(text), true); }
+
+    /** Efectos de rol de un soldado (cada 10 ticks): Explorador marca con brillo a los hostiles cercanos; Apoyo cura al mas herido cerca. */
+    private void roleTick(CompyEntity l) {
+        if (!isTame() || isOrderedToSit() || getOrder() == PetOrders.SLEEP) return;
+        if (role == 0 && this.tickCount % 40 == 3) {
+            double r = Math.min(20.0, G_RADII[l.gRad]);
+            LivingEntity foe = null; double bd = Double.MAX_VALUE;
+            for (LivingEntity e : this.level().getEntitiesOfClass(LivingEntity.class, this.getBoundingBox().inflate(r), e -> e instanceof Enemy && e.isAlive() && !e.hasEffect(MobEffects.GLOWING))) {
+                double d = this.distanceToSqr(e);
+                if (d < bd) { bd = d; foe = e; }
+            }
+            if (foe != null) foe.addEffect(new MobEffectInstance(MobEffects.GLOWING, 100, 0, false, false));
+        } else if (role == 2 && this.tickCount % 60 == 3) {
+            LivingEntity best = null; float bf = 1.0F;
+            List<LivingEntity> near = new java.util.ArrayList<>(this.level().getEntitiesOfClass(CompyEntity.class, this.getBoundingBox().inflate(8.0), e -> e.isTame() && e.isAlive() && e.packId.equals(packId)));
+            for (LivingEntity e : near) {
+                float f = e.getHealth() / Math.max(1.0F, e.getMaxHealth());
+                if (f < bf) { bf = f; best = e; }
+            }
+            if (best != null && bf < 0.999F) {
+                best.heal(1.0F);
+                if (this.level() instanceof ServerLevel sl) sl.sendParticles(ParticleTypes.HEART, best.getX(), best.getY() + best.getBbHeight() + 0.1, best.getZ(), 1, 0.1, 0.1, 0.1, 0.0);
+            }
+        }
+    }
+
+    /** Silbido del lider: la manada deja lo que hace y vuelve (si "Volver al silbido" esta activo). */
+    public void whistle(Player p) {
+        if (this.level().isClientSide || !isLeader() || !isTame()) return;
+        if ((gFlags & 8) == 0) { msg(p, "El silbido está desactivado en Ajustes de caza"); return; }
+        int n = 0;
+        for (CompyEntity m : members()) { m.recallUntil = m.tickCount + 160; m.setTarget(null); m.getNavigation().stop(); n++; }
+        this.setTarget(null);
+        this.playSound(ModSounds.COMPY_HAPPY.get(), 1.0F, 1.5F);
+        msg(p, n == 0 ? "¡Silbido! (no tienes soldados cerca)" : "¡Silbido! La manada vuelve contigo (" + n + ")");
+    }
+
+    /** Pasa un compy al grupo de este lider (sin liderazgo propio y con la orden de seguir). */
+    private void adopt(CompyEntity m) {
+        m.packId = this.packId;
+        m.leaderRef = this;
+        if (m.isLeader()) m.setLeader(false);
+        m.bonusB1 = 0; m.bonusP1 = 0;
+        m.role = -1;
+        m.setTarget(null);
+        m.setPackOrder(PetOrders.FOLLOW);
+        m.applyRoleStats(false);
+        m.level().broadcastEntityEvent(m, (byte) 7);
+    }
+
+    /** Deja un soldado fuera del grupo: pasa a ser lider de una manada propia (conserva el nivel que tuviera). */
+    private void detach(CompyEntity m) {
+        m.packId = java.util.UUID.randomUUID();
+        m.leaderRef = null;
+        m.role = -1;
+        m.setLeader(true);
+        m.setPackOrder(PetOrders.FOLLOW);
+        m.level().broadcastEntityEvent(m, (byte) 7);
+    }
+
+    /** Manadas de compys de este dueno cerca que no son la mia (cada una con su lider delante y sus soldados), la mas cercana primero. */
+    private List<List<CompyEntity>> nearbyUnits(Player owner, double range) {
+        List<CompyEntity> all = new java.util.ArrayList<>(this.level().getEntitiesOfClass(CompyEntity.class, this.getBoundingBox().inflate(range),
+            e -> e != this && e.isTame() && e.isAlive() && e.isOwnedBy(owner) && !e.packId.equals(packId)));
+        all.sort(java.util.Comparator.comparingDouble((CompyEntity e) -> this.distanceToSqr(e)));
+        List<List<CompyEntity>> out = new java.util.ArrayList<>();
+        java.util.Set<java.util.UUID> seen = new java.util.HashSet<>();
+        for (CompyEntity c : all) {
+            if (!seen.add(c.packId)) continue;
+            List<CompyEntity> unit = new java.util.ArrayList<>();
+            CompyEntity lead = c.isLeader() ? c : null;
+            if (lead == null) for (CompyEntity o : all) if (o.packId.equals(c.packId) && o.isLeader()) { lead = o; break; }
+            if (lead != null) { unit.add(lead); unit.addAll(lead.members()); }
+            else unit.add(c);                          // soldado suelto de otra manada
+            out.add(unit);
+        }
+        return out;
+    }
+
+    private int joinUnit(List<CompyEntity> unit, Player owner) {
+        if (unit.size() > capLeft()) return -1;
+        for (CompyEntity c : unit) adopt(c);
+        return unit.size();
+    }
+
+    /** Acciones de la pestana Manada (el lider debe ser del jugador): 0 actualizar, 1 crear (reunir cercanos), 2 invitar cercano, 3 expulsar, 4 nombrar lider, 5 disolver, 6 casilla, 7 selector, 8 cambiar rol. */
+    public void groupAction(Player p, int action, int a, int b, java.util.UUID target) {
+        if (this.level().isClientSide || !isLeader() || !isTame() || !isOwnedBy(p)) return;
+        switch (action) {
+            case 1 -> {
+                int added = 0, skipped = 0;
+                for (List<CompyEntity> u : nearbyUnits(p, GROUP_RANGE)) { int n = joinUnit(u, p); if (n < 0) skipped++; else added += n; }
+                msg(p, added == 0 ? (skipped > 0 ? "No caben más compys en el grupo (máx. " + gMax + ")" : "No hay compys tuyos cerca (" + GROUP_RANGE + " bloques)")
+                    : "Se unen " + added + " compys al grupo (" + groupSize() + " / " + gMax + ")");
+            }
+            case 2 -> {
+                List<List<CompyEntity>> us = nearbyUnits(p, GROUP_RANGE);
+                if (us.isEmpty()) { msg(p, "No hay compys tuyos cerca (" + GROUP_RANGE + " bloques)"); break; }
+                List<CompyEntity> u = us.get(0).size() > 1 && !us.get(0).get(0).isLeader() ? us.get(0).subList(0, 1) : us.get(0);
+                int n = joinUnit(u, p);
+                msg(p, n < 0 ? "No cabe en el grupo (máx. " + gMax + ")" : "Se une " + (n == 1 ? "1 compy" : n + " compys") + " al grupo (" + groupSize() + " / " + gMax + ")");
+            }
+            case 3 -> {
+                for (CompyEntity m : members()) if (m.getUUID().equals(target)) { detach(m); msg(p, "Un compy deja el grupo y forma el suyo"); break; }
+            }
+            case 4 -> {
+                for (CompyEntity m : members()) if (m.getUUID().equals(target)) { promote(m); msg(p, m.getDisplayName().getString() + " es el nuevo líder del grupo"); break; }
+            }
+            case 5 -> {
+                List<CompyEntity> mem = members();
+                for (CompyEntity m : mem) detach(m);
+                msg(p, mem.isEmpty() ? "No hay grupo que disolver" : "Grupo disuelto: " + mem.size() + " compys van por su cuenta");
+            }
+            case 6 -> { if (a >= 0 && a < 6) gFlags = b != 0 ? gFlags | (1 << a) : gFlags & ~(1 << a); }
+            case 7 -> {
+                int d = b >= 0 ? 1 : -1;
+                switch (a) {
+                    case 0 -> gMode = Math.floorMod(gMode + d, G_MODES.length);
+                    case 1 -> gForm = Math.floorMod(gForm + d, G_FORMS.length);
+                    case 2 -> gRad = Math.floorMod(gRad + d, G_RADII.length);
+                    case 3 -> gMax = Mth.clamp(gMax + d, G_MIN, G_MAX);
+                    case 4 -> gPrio = Math.floorMod(gPrio + d, G_PRIOS.length);
+                    default -> { }
+                }
+            }
+            case 8 -> { for (CompyEntity m : members()) if (m.getUUID().equals(target)) { m.role = Math.floorMod(m.role + 1, 3); m.applyRoleStats(false); break; } }
+            default -> { }
+        }
+        refreshGroup();
+    }
+
+    /** El soldado m pasa a ser el lider: hereda nivel, XP y ajustes; yo paso a soldado. */
+    private void promote(CompyEntity m) {
+        ProdigyProgress mine = this.progress;
+        m.progress = mine.copy(); m.pushProgress();
+        this.progress = ProdigyProgress.atLevel(1, Talents.COMPY); this.pushProgress();
+        m.gFlags = gFlags; m.gMode = gMode; m.gForm = gForm; m.gRad = gRad; m.gMax = gMax; m.gPrio = gPrio;
+        m.role = -1; m.bonusB1 = 0; m.bonusP1 = 0;
+        int ord = this.getOrder();
+        m.setLeader(true);
+        m.leaderRef = null;
+        this.leaderRef = m;
+        this.role = -1;
+        this.setLeader(false);
+        this.setPackOrder(PetOrders.FOLLOW);
+        m.setPackOrder(ord);
+        this.level().broadcastEntityEvent(m, (byte) 7);
+        m.refreshGroup();
     }
 
     /**
-     * Clic derecho con la mano vacia sobre un Compy tuyo. 1) Sobre un lider: lo elige como lider del grupo de caza. 2) Luego, sobre otro lider
-     * tuyo: ese lider y su manada pasan a ser sus subditos. Sobre un soldado de otra manada lo traspasa al grupo; sobre un soldado del propio
-     * grupo lo separa (queda como lider de uno nuevo). Sobre el elegido otra vez cancela. Sin eleccion, un soldado dice a que grupo pertenece.
+     * Clic derecho con la mano vacia sobre un Compy tuyo (atajo sin abrir la pantalla). 1) Sobre un lider: lo elige como lider del grupo. 2) Luego, sobre
+     * otro lider tuyo: ese lider y su manada pasan a ser sus subditos (si caben). Sobre un soldado de otra manada lo traspasa; sobre un soldado del
+     * propio grupo lo separa. Sobre el elegido otra vez cancela. Sin eleccion, un soldado dice a que grupo pertenece.
      */
     private InteractionResult huntGroupInteract(Player player) {
         boolean client = this.level().isClientSide;
@@ -585,52 +906,35 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder, Prod
             if (isLeader()) {
                 GROUP_PICK.put(player.getUUID(), new Object[]{this.getUUID(), now});
                 if (this.level() instanceof ServerLevel sl) sl.sendParticles(ParticleTypes.GLOW, getX(), getY() + getBbHeight() + 0.2, getZ(), 6, 0.2, 0.1, 0.2, 0.02);
-                msg(player, this.getDisplayName().getString() + " lidera el grupo de caza (" + groupSize() + "). Clic con la mano vacía en otro líder tuyo para unirlo");
+                msg(player, this.getDisplayName().getString() + " lidera el grupo de caza (" + groupSize() + " / " + gMax + "). Clic con la mano vacía en otro líder tuyo para unirlo");
             } else {
                 CompyEntity l = findLeader();
-                msg(player, l == null ? "Soldado sin líder cerca" : "Soldado del grupo de caza de " + l.getDisplayName().getString() + " (" + l.groupSize() + " miembros)");
+                msg(player, l == null ? "Soldado sin líder cerca" : "Soldado del grupo de caza de " + l.getDisplayName().getString() + " (" + l.groupSize() + " / " + l.gMax + ")");
             }
             return InteractionResult.SUCCESS;
         }
         if (chosen == this) {
             GROUP_PICK.remove(player.getUUID());
-            msg(player, "Grupo de caza de " + chosen.getDisplayName().getString() + ": " + chosen.groupSize() + " miembros. Selección terminada");
+            msg(player, "Grupo de caza de " + chosen.getDisplayName().getString() + ": " + chosen.groupSize() + " / " + chosen.gMax + ". Selección terminada");
             return InteractionResult.SUCCESS;
         }
-        if (this.distanceTo(chosen) > GROUP_RANGE) { msg(player, "Están muy lejos: acércalos a menos de " + GROUP_RANGE + " bloques"); return InteractionResult.SUCCESS; }
+        if (this.distanceTo(chosen) > GROUP_RANGE + 8) { msg(player, "Están muy lejos: acércalos a menos de " + (GROUP_RANGE + 8) + " bloques"); return InteractionResult.SUCCESS; }
         GROUP_PICK.put(player.getUUID(), new Object[]{chosen.getUUID(), now});
         if (isLeader()) {                                   // otro lider: toda su manada pasa al grupo del elegido
-            java.util.List<CompyEntity> crew = this.level().getEntitiesOfClass(CompyEntity.class, this.getBoundingBox().inflate(64.0), e -> e != this && e.isTame() && e.isAlive() && e.packId.equals(packId));
-            chosen.adopt(this);
-            for (CompyEntity m : crew) chosen.adopt(m);
-            msg(player, this.getDisplayName().getString() + " y su manada siguen ahora a " + chosen.getDisplayName().getString() + " (" + chosen.groupSize() + " en el grupo)");
+            List<CompyEntity> unit = new java.util.ArrayList<>();
+            unit.add(this); unit.addAll(members());
+            int n = chosen.joinUnit(unit, player);
+            msg(player, n < 0 ? "No caben en el grupo (máx. " + chosen.gMax + ")" : this.getDisplayName().getString() + " y su manada siguen ahora a " + chosen.getDisplayName().getString() + " (" + chosen.groupSize() + " / " + chosen.gMax + ")");
         } else if (this.packId.equals(chosen.packId)) {     // soldado del propio grupo: se separa y forma el suyo
-            this.packId = java.util.UUID.randomUUID();
-            this.leaderRef = null;
-            this.setLeader(true);
-            this.setPackOrder(PetOrders.FOLLOW);
-            this.level().broadcastEntityEvent(this, (byte) 7);
+            chosen.detach(this);
             msg(player, "Un soldado se separa y forma su propio grupo de caza");
         } else {                                            // soldado de otra manada: pasa al grupo del elegido
-            chosen.adopt(this);
-            msg(player, "Un soldado se une al grupo de caza de " + chosen.getDisplayName().getString() + " (" + chosen.groupSize() + " en el grupo)");
+            int n = chosen.joinUnit(java.util.Collections.singletonList(this), player);
+            msg(player, n < 0 ? "No cabe en el grupo (máx. " + chosen.gMax + ")" : "Un soldado se une al grupo de caza de " + chosen.getDisplayName().getString() + " (" + chosen.groupSize() + " / " + chosen.gMax + ")");
         }
+        chosen.refreshGroup();
         return InteractionResult.SUCCESS;
     }
-
-    /** Hace de {@code m} un subdito de este lider: mismo grupo, sin liderazgo propio y orden de seguir. */
-    private void adopt(CompyEntity m) {
-        m.packId = this.packId;
-        m.leaderRef = this;
-        if (m.isLeader()) m.setLeader(false);
-        m.bonusB1 = 0; m.bonusP1 = 0;
-        m.setTarget(null);
-        m.setPackOrder(PetOrders.FOLLOW);
-        m.applyRoleStats(false);
-        m.level().broadcastEntityEvent(m, (byte) 7);
-    }
-
-    private static void msg(Player p, String text) { p.displayClientMessage(Component.literal(text), true); }
 
     /** Cada carne sube su confianza (con una pausa entre bocados); al llegar al total se doma. En Creativo, al instante. */
     private void feedWild(Player player, ItemStack held) {
