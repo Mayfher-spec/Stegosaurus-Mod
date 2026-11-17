@@ -13,12 +13,12 @@ public final class ClientHooks {
         Minecraft.getInstance().setScreen(new OrdersScreen(stego));
     }
     public static void openCarno(com.prodigytown.creatures.CarnotaurusEntity carno) {
-        Minecraft.getInstance().setScreen(new CarnoScreen(carno));
+        Minecraft.getInstance().setScreen(new PetScreen(carno));
     }
     public static void openDilo(com.prodigytown.creatures.DilophosaurusEntity dilo) {
-        Minecraft.getInstance().setScreen(new DiloScreen(dilo));
+        Minecraft.getInstance().setScreen(new PetScreen(dilo));
     }
     public static void openTalents(StegosaurusEntity stego) {
-        Minecraft.getInstance().setScreen(new TalentScreen(stego));
+        Minecraft.getInstance().setScreen(new PetScreen(stego));
     }
 }

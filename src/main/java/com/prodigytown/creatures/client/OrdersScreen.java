@@ -78,7 +78,7 @@ public final class OrdersScreen extends Screen {
                 ModNetwork.CHANNEL.sendToServer(new ModNetwork.SetOrder(pet.getId(), order))));
         }
         if (adult != null) {
-            this.addRenderableWidget(Button.builder(Component.literal("Habilidades"), b -> Minecraft.getInstance().setScreen(new TalentScreen(adult)))
+            this.addRenderableWidget(Button.builder(Component.literal("Habilidades"), b -> Minecraft.getInstance().setScreen(new PetScreen(adult)))
                 .bounds(left + W - 100, top + 8, 90, 16).build());
         } else if (pet instanceof ChibiStego) {
             this.addRenderableWidget(Button.builder(Component.literal("Evolucionar a adulto"), b ->
