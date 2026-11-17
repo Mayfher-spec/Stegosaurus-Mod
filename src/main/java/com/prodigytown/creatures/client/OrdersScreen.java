@@ -21,6 +21,8 @@ import java.util.List;
 /** Pantalla de ordenes (adulto y chibi), con una imagen por orden: seguir, quieto, deambular, patrullar, sentarse, dormir. Solo cliente; el servidor valida. */
 public final class OrdersScreen extends Screen {
     private static final int W = 400, H = 232;
+    /** Casillas con imagen (las 6 clasicas); defender y atacar objetivo llegan en la pantalla unificada. */
+    private static final int SHOWN = 6;
     private static final int GOLD = 0xFFFFD35A, EDGE = 0xFFB8862A, DIM = 0xFF9AA0A6;
     /** Imagen de cada orden segun el dino: a<variante adulta>_<orden> (0 cibernetico, 1 dorado, 2 magma, 3 esmeralda, 4 natural) o c<raza chibi>_<orden> (0 natural, 1 cibernetico, 2 magma, 3 dorado, 4 glacial). */
     private static ResourceLocation icon(TamableAnimal pet, int order) {
@@ -33,7 +35,7 @@ public final class OrdersScreen extends Screen {
     private final TamableAnimal pet;
     private final StegosaurusEntity adult;
     private int left, top;
-    private final OrderTile[] tiles = new OrderTile[PetOrders.COUNT];
+    private final OrderTile[] tiles = new OrderTile[SHOWN];
 
     public OrdersScreen(TamableAnimal pet) {
         super(Component.literal("Ordenes"));
@@ -70,7 +72,7 @@ public final class OrdersScreen extends Screen {
     @Override protected void init() {
         left = (this.width - W) / 2;
         top = (this.height - H) / 2;
-        for (int i = 0; i < PetOrders.COUNT; i++) {
+        for (int i = 0; i < SHOWN; i++) {
             final int order = i;
             tiles[i] = this.addRenderableWidget(new OrderTile(left + 166 + (i % 3) * 78, top + 34 + (i / 3) * 70, i, icon(pet, i), b ->
                 ModNetwork.CHANNEL.sendToServer(new ModNetwork.SetOrder(pet.getId(), order))));

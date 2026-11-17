@@ -384,10 +384,11 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
         this.goalSelector.addGoal(4, new MoveTowardsRestrictionGoal(this, 0.9));
         this.goalSelector.addGoal(5, new PetOrders.PatrolGoal(this));
         this.goalSelector.addGoal(5, new RandomStrollGoal(this, 0.5, 60) { // ronda inquieta pero sin trotar: el galope se reserva para la caza
-            @Override public boolean canUse() { return !isTame() || (getOrder() != PetOrders.STAY && getOrder() != PetOrders.PATROL && getOrder() != PetOrders.FOLLOW && !isFallen() && super.canUse()); }
+            @Override public boolean canUse() { return !isTame() || (getOrder() != PetOrders.STAY && getOrder() != PetOrders.PATROL && !PetOrders.followsOwner(getOrder()) && getOrder() != PetOrders.ATTACK && !isFallen() && super.canUse()); }
         });
         this.goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 10.0f));
         this.goalSelector.addGoal(7, new RandomLookAroundGoal(this));
+        this.targetSelector.addGoal(0, PetOrders.orderTargeting(this));
         this.targetSelector.addGoal(1, new OwnerHurtByTargetGoal(this));
         this.targetSelector.addGoal(2, new OwnerHurtTargetGoal(this));
         this.targetSelector.addGoal(3, new HurtByTargetGoal(this, CarnotaurusEntity.class).setAlertOthers());
@@ -572,12 +573,12 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
         private LivingEntity owner() { return CarnotaurusEntity.this.getOwner(); }
         @Override public boolean canUse() {
             LivingEntity o = owner();
-            if (o == null || o.isSpectator() || !isTame() || isOrderedToSit() || isLeashed() || getOrder() != PetOrders.FOLLOW || isFallen()) return false;
+            if (o == null || o.isSpectator() || !isTame() || isOrderedToSit() || isLeashed() || !PetOrders.followsOwner(getOrder()) || isFallen()) return false;
             return CarnotaurusEntity.this.distanceToSqr(o) >= startDist() * startDist();
         }
         @Override public boolean canContinueToUse() {
             LivingEntity o = owner();
-            if (o == null || isOrderedToSit() || getOrder() != PetOrders.FOLLOW || isFallen()) return false;
+            if (o == null || isOrderedToSit() || !PetOrders.followsOwner(getOrder()) || isFallen()) return false;
             return CarnotaurusEntity.this.distanceToSqr(o) > stopDist() * stopDist();
         }
         @Override public void start() { recalc = 0; }
@@ -1196,6 +1197,7 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
         if (player.isShiftKeyDown() && held.isEmpty()) { // Mayus + clic con la mano vacia: cambia la orden
             if (!client) {
                 int next = (getOrder() + 1) % PetOrders.COUNT;
+                if (next == PetOrders.ATTACK) next = PetOrders.FOLLOW;
                 PetOrders.setOrder(this, next);
                 player.displayClientMessage(Component.literal("Orden: " + PetOrders.NAMES[next]), true);
             }

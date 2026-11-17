@@ -354,10 +354,12 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         });
         this.goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 12.0f));
         this.goalSelector.addGoal(7, new RandomLookAroundGoal(this));
+        this.targetSelector.addGoal(0, PetOrders.orderTargeting(this));
         this.targetSelector.addGoal(1, new OwnerHurtByTargetGoal(this));
         this.targetSelector.addGoal(2, new OwnerHurtTargetGoal(this));
         this.targetSelector.addGoal(3, new HurtByTargetGoal(this));
         this.targetSelector.addGoal(4, PetOrders.patrolTargeting(this));
+        this.targetSelector.addGoal(4, PetOrders.defendTargeting(this));
     }
 
     /** En "quieto" solo se defiende de lo que tiene al lado (no sale a perseguir). */
@@ -1485,12 +1487,12 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         private LivingEntity owner() { return StegosaurusEntity.this.getOwner(); }
         @Override public boolean canUse() {
             LivingEntity o = owner();
-            if (o == null || o.isSpectator() || StegosaurusEntity.this.isOrderedToSit() || StegosaurusEntity.this.isLeashed() || getOrder() != PetOrders.FOLLOW) return false;
+            if (o == null || o.isSpectator() || StegosaurusEntity.this.isOrderedToSit() || StegosaurusEntity.this.isLeashed() || !PetOrders.followsOwner(getOrder())) return false;
             return StegosaurusEntity.this.distanceToSqr(o) >= (double)(startDist * startDist);
         }
         @Override public boolean canContinueToUse() {
             LivingEntity o = owner();
-            if (o == null || StegosaurusEntity.this.isOrderedToSit() || getOrder() != PetOrders.FOLLOW) return false;
+            if (o == null || StegosaurusEntity.this.isOrderedToSit() || !PetOrders.followsOwner(getOrder())) return false;
             return StegosaurusEntity.this.distanceToSqr(o) > (double)(stopDist * stopDist);
         }
         @Override public void start() { recalc = 0; }
