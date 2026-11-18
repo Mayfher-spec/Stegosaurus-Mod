@@ -32,7 +32,7 @@ public final class ModNetwork {
         CHANNEL.registerMessage(2, RenamePet.class, RenamePet::encode, RenamePet::decode, RenamePet::handle);
         CHANNEL.registerMessage(3, SetOrder.class, SetOrder::encode, SetOrder::decode, SetOrder::handle);
         CHANNEL.registerMessage(4, ShrinkDragon.class, ShrinkDragon::encode, ShrinkDragon::decode, ShrinkDragon::handle);
-        CHANNEL.registerMessage(5, GroupAction.class, GroupAction::encode, GroupAction::decode, GroupAction::handle);
+        CHANNEL.registerMessage(7, GroupAction.class, GroupAction::encode, GroupAction::decode, GroupAction::handle);
         com.prodigytown.creatures.quests.QuestPackets.register();
     }
 
