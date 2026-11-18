@@ -65,12 +65,12 @@ def region_geom(c,face,r):
     return (x0,y0,x1,y1),np.stack([x.ravel(),y.ravel(),z.ravel()],-1),np.array(n,float),ii.ravel(),jj.ravel(),fu.ravel(),fv.ravel()
 # ---------------------------------------------------------------- paletas
 PAL={
- 'scarlet':dict(dark=(176,48,34),mid=(222,86,46),stripe=(122,32,32),belly=(232,200,150),belly2=(206,166,118),horn_a=(236,224,186),horn_b=(112,90,66),spike_a=(100,72,58),spike_b=(54,40,38),claw_a=(44,36,36),claw_b=(176,160,130),tooth=(242,238,222),gum=(168,66,76),tongue=(196,78,94),eye=(255,196,40),pupil=(30,14,10),scar_a=(150,62,52),scar_b=(246,200,164)),
- 'green':dict(dark=(48,92,44),mid=(124,160,66),stripe=(16,40,28),belly=(216,210,148),belly2=(178,174,110),horn_a=(230,222,174),horn_b=(94,74,46),spike_a=(64,80,38),spike_b=(28,36,22),claw_a=(36,32,26),claw_b=(206,198,160),tooth=(240,236,214),gum=(150,60,62),tongue=(190,82,92),eye=(255,184,28),pupil=(28,14,6),scar_a=(196,170,100),scar_b=(240,228,176)),
- 'steel':dict(dark=(86,95,108),mid=(152,163,178),stripe=(46,52,63),belly=(200,208,218),belly2=(158,166,178),horn_a=(150,160,174),horn_b=(238,244,252),spike_a=(84,92,106),spike_b=(216,224,234),claw_a=(30,34,42),claw_b=(204,212,222),tooth=(238,242,246),gum=(96,74,82),tongue=(150,92,102),eye=(120,214,255),pupil=(8,18,30),scar_a=(168,178,192),scar_b=(240,246,252)),
- 'arena':dict(dark=(122,106,70),mid=(188,171,122),stripe=(90,40,84),belly=(216,202,162),belly2=(184,168,124),horn_a=(230,216,174),horn_b=(98,74,52),spike_a=(226,210,164),spike_b=(112,86,58),claw_a=(38,30,26),claw_b=(228,216,182),tooth=(240,230,198),gum=(112,26,40),tongue=(188,80,94),eye=(255,178,30),pupil=(34,12,4),scar_a=(136,58,54),scar_b=(226,178,152)),
+ # g0/g1/g2 = piel oscura/base/clara, orA/orB = naranja del lomo y del muslo (claro/oscuro), pat = patron en espiral de los flancos
+ 'green':dict(g0=(38,72,34),g1=(80,134,40),g2=(150,190,66),orA=(240,164,30),orB=(206,100,18),pat=(232,222,180),belly=(228,214,168),belly2=(190,176,124),horn_a=(236,224,182),horn_b=(176,150,104),spike_a=(176,92,18),spike_b=(248,184,48),claw_a=(124,96,62),claw_b=(232,220,180),tooth=(244,240,220),gum=(150,60,62),tongue=(190,82,92),eye=(255,184,28),pupil=(28,14,6),scar_a=(196,170,100),scar_b=(240,228,176)),
+ 'scarlet':dict(g0=(66,16,22),g1=(148,38,38),g2=(208,72,60),orA=(244,170,44),orB=(208,104,26),pat=(240,212,184),belly=(236,204,158),belly2=(204,166,122),horn_a=(240,224,192),horn_b=(184,148,108),spike_a=(170,86,20),spike_b=(250,190,56),claw_a=(120,88,62),claw_b=(236,222,188),tooth=(244,240,224),gum=(168,66,76),tongue=(196,78,94),eye=(255,196,40),pupil=(30,14,10),scar_a=(190,110,90),scar_b=(246,200,164)),
+ 'steel':dict(g0=(34,38,48),g1=(86,96,110),g2=(150,160,174),orA=(236,166,44),orB=(200,104,22),pat=(226,222,208),belly=(212,206,190),belly2=(170,164,150),horn_a=(226,220,204),horn_b=(160,154,140),spike_a=(172,92,22),spike_b=(248,186,54),claw_a=(104,98,90),claw_b=(228,222,206),tooth=(240,240,232),gum=(110,70,78),tongue=(156,92,102),eye=(255,196,60),pupil=(12,14,20),scar_a=(176,184,196),scar_b=(240,246,252)),
+ 'dark':dict(g0=(24,16,36),g1=(62,44,84),g2=(110,80,134),orA=(255,136,24),orB=(206,58,16),pat=(226,208,176),belly=(214,198,164),belly2=(176,160,128),horn_a=(214,200,184),horn_b=(150,134,118),spike_a=(150,50,16),spike_b=(244,150,40),claw_a=(86,72,64),claw_b=(214,200,184),tooth=(236,228,212),gum=(112,26,40),tongue=(188,80,94),eye=(255,170,30),pupil=(34,12,4),scar_a=(150,110,100),scar_b=(226,190,170)),
 }
-SCALE_K={'arena':1.0,'scarlet':0.85,'green':0.85,'steel':0.4}
 def tooth_tex(role,face,ii,jj,fu,fv,pal,big):
     col=np.tile(np.array(pal['tooth'],float),(len(ii),1)); gl=np.zeros_like(col)
     gum=(fv<(0.22 if big else 0.34)) if role=='tooth' and face in('xmin','xmax','north','south') else np.zeros(len(ii),bool)
@@ -110,96 +110,105 @@ def seg_mask(loc,p0,p1,wd):
     d=np.linalg.norm(loc-(a+t[:,None]*ab),axis=1)
     return np.clip(1.0-d/wd,0,1)
 def base_skin(var,P,N,ly,ctx,face):
-    """color de piel + brillo para un conjunto de texels."""
+    """Piel (v1.13): base moteada, lomo/muslo naranja, flancos con espirales claras, vientre crema de borde nitido. Todo en 3D => sin costuras."""
     pal=PAL[var]; n=len(P); q=P/ctx['qs']
-    n1=fbm(q*0.045,3); d1,d2,rid=voronoi(P/3.4,5)
-    cell=(0.94+0.12*rid)*(1-0.22*ss(0.10,0.0,d2-d1))
-    wave=np.sin(q[:,2]*0.30+2.2*fbm(q*0.035+7,11,2)+0.5*np.sin(q[:,1]*0.07))
-    st=ss(0.22,0.58,wave)
-    opt=ctx['opt']; grp=ctx['grp']
-    dw=ss(0.18,0.62,ly)
-    if grp=='leg': dw=dw*0.55 if ctx['part'].startswith('thigh') else dw*0.0
-    if grp=='arm': dw=dw*0.3
-    if opt.get('head') or opt.get('brow') or opt.get('nostril'): dw=dw*0.35
-    if face=='up': dw=np.ones(n)*(0.6 if grp=='leg' else 1.0)*(0.35 if opt.get('head') else 1.0)
+    opt=ctx['opt']; grp=ctx['grp']; part=ctx['part']; lg=ctx['stage']=='adult'
+    top=np.ones(n) if face=='up' else ly
+    n1=fbm(q*0.05,3); d1,d2,rid=voronoi(P/3.0,5)
+    seam=ss(0.10,0.0,d2-d1)
+    nz=fbm(q*0.09+5,41,3)-0.5
+    qb=np.floor(P/2.0)*2.0/ctx['qs']    # posicion cuantizada: bloques de ~2 unidades
+    m1=fbm(qb*0.22+3,7,3); m2=fbm(qb*0.60+9,13,2)
+    # --- base verde/roja/gris/oscura con claros y oscuros (granulado de pixel)
+    col=lerp(pal['g0'],pal['g1'],ss(0.20,0.78,n1))
+    col=lerp(col,pal['g2'],ss(0.56,0.80,0.6*m1+0.4*m2)*0.70)
+    col=lerp(col,np.array(pal['g0'],float)*0.80,ss(0.40,0.22,0.6*m1+0.4*m2)*0.60)
+    col=col*(0.90+0.20*rid)[:,None]*(1.0-0.20*seam)[:,None]
+    # --- escamas grandes (relieve de piel)
+    e1,e2,rp=voronoi(q/4.0,53); sm=ss(0.14,0.0,e2-e1)
+    wr=np.abs(np.sin(q[:,2]*0.85+3.0*fbm(q*0.08,5,2)+q[:,1]*0.25))
+    scl=(0.93+0.14*rp)*(1-0.24*sm)*(0.95+0.05*wr)
+    sK=0.55 if lg else 0.40
+    col=col*(1.0+(scl-1.0)*sK)[:,None]
+    gr=hsh(np.floor(P[:,0]/1.6),np.floor(P[:,1]/1.6),np.floor(P[:,2]/1.6),77)   # grano de pixel
+    col=col*(0.84+0.32*gr)[:,None]
+    col=lerp(col,pal['g2'],ss(0.86,0.97,gr)*0.45)
+    # --- cuanto lomo/muslo naranja
+    isthigh=part.startswith('thigh'); ishead=bool(opt.get('head') or opt.get('brow') or opt.get('nostril'))
+    pfd=1.0
+    if ishead: pfd=0.55
+    if grp=='leg' and not isthigh: pfd=0.0
+    if grp=='arm': pfd=0.0
+    if grp=='tail': pfd=0.95
+    dd=ss(0.70,1.0,top+0.30*nz)*pfd
+    if isthigh:
+        outer=(face=='xmax') if part.endswith('_l') else (face=='xmin')
+        tb=ss(0.10,0.66,ly+0.38*nz)*(1.0 if outer else 0.30)
+        if face=='up': tb=np.ones(n)
+        dd=np.maximum(dd,tb*0.98)
+    sp=fbm(qb*0.34+1,17,2)
+    om=ss(0.48,0.56,dd*1.0+(sp-0.5)*0.75-0.22)
+    ocol=lerp(pal['orB'],pal['orA'],ss(0.25,0.75,fbm(q*0.5+8,19,2)))*(0.92+0.16*rid)[:,None]
+    ocol=lerp(ocol,pal['g1'],ss(0.80,0.95,sp)*0.5)     # motas verdes dentro del naranja
+    col=lerp(col,ocol,om)
+    b_pre=ss(0.0,0.035,0.27+0.10*nz-ly) if opt.get('bf') else (np.ones(n) if (face=='down' or ctx['role']=='belly') else np.zeros(n))
+    # --- espirales claras en los flancos (cintas de contorno de un ruido => laberinto)
+    side=1.0 if face in('xmin','xmax') else (0.0 if face in('up','down') else 0.7)
+    band=ss(0.10,0.26,ly)*ss(0.84,0.60,ly)*side
+    pfp={'body':1.0,'neck':0.8,'tail':0.9}.get(grp,0.0)
+    if isthigh: pfp=0.0
+    if part in('tail4','tail5'): pfp=0.0
+    # banda crema en el flanco (borde irregular) con manchas del color de la piel dentro
+    lo=0.20+0.07*np.sin(q[:,2]*0.11+2.0)+0.12*nz; hi=0.60+0.05*np.sin(q[:,2]*0.07)+0.14*nz
+    if grp=='tail': hi=hi-0.10
+    inb=ss(0.0,0.05,ly-lo)*ss(0.0,0.05,hi-ly)*side*pfp
+    blob=ss(0.52,0.60,fbm(qb*0.17+np.array([4.0,1.0,9.0]),31,2)+0.10*(gr-0.5))
+    pm=inb*(1.0-blob)
+    pcol=np.array(pal['pat'],float)*(0.92+0.12*rid)[:,None]
+    col=lerp(col,pcol,pm)
+    # obsidiana: venas de lava que brillan (salen tambien en la capa de brillo)
+    vgl=np.zeros((n,3))
+    if var=='dark':
+        fv=fbm(q*0.07+np.array([7.0,3.0,1.0]),61,3)
+        vein=ss(0.024,0.010,np.abs(fv-0.5))*ss(0.18,0.34,top)*(1.0-b_pre)*(1.0-pm)*(1.0 if grp in('body','neck','tail') else 0.4)
+        em=ss(0.93,0.99,gr)*ss(0.15,0.5,top)*(1.0-b_pre)*(1.0-pm)*0.6
+        vv=np.clip(vein+em,0,1)
+        vcol=lerp(pal['orB'],pal['orA'],fbm(q*0.4,5,2))
+        col=lerp(col,vcol,vv); vgl=np.array(vcol)*(vv[:,None]>0.5)
+    # --- vientre crema de borde nitido (+ escudos transversales)
+    jit=0.10*nz
     b=np.zeros(n)
-    if opt.get('bf'): b=1-ss(0.10,0.36,ly)
-    if opt.get('jaw'): b=1-ss(0.35,0.70,ly)
+    if opt.get('bf'): b=ss(0.0,0.035,0.27+jit-ly)
+    if opt.get('jaw'): b=ss(0.0,0.05,0.52+jit-ly)
     if face=='down' and not opt.get('leg') and grp!='arm' and grp!='horn': b=np.ones(n)
     if ctx['role']=='belly': b=np.ones(n)
-    col=lerp(pal['dark'],pal['mid'],n1)*cell[:,None]
-    gl=np.zeros((n,3))
-    col=lerp(col,np.array(pal['stripe'])*cell[:,None],(st*dw*0.9))
-    if var=='green':
-        # verde natural: moteado claro en flancos y lomo, mas suave en cabeza y patas
-        spk=ss(0.60,0.78,fbm(q*0.14+9,23,2)); col=lerp(col,np.array(pal['mid'])*1.14,spk*0.42*dw)
-    if var=='steel':
-        # placas de acero: costuras oscuras entre placas grandes, brillo suave en el centro y rebordes
-        d1p,d2p,rp=voronoi(P/7.5,17)
-        seam=ss(0.16,0.02,d2p-d1p); sheen=ss(0.55,0.0,d1p)
-        col=col*(0.90+0.18*rp)[:,None]*(1-0.42*seam)[:,None]*(0.96+0.12*sheen)[:,None]
-    lg=ctx['stage']=='adult'
-    if lg or var=='arena':
-        # escamas grandes y arrugas (referencia fotografica): fuertes en Arena, mas suaves en el resto
-        d1p,d2p,rp=voronoi(q/4.0,53)
-        seam=ss(0.14,0.0,d2p-d1p)
-        wr=np.abs(np.sin(q[:,2]*0.85+3.0*fbm(q*0.08,5,2)+q[:,1]*0.25))
-        scl=(0.92+0.16*rp)*(1-0.30*seam)*(0.94+0.06*wr)
-        col=col*(1.0+(scl-1.0)*SCALE_K[var])[:,None]
-        part=ctx['part']
-        pf=1.0
-        if opt.get('head') or opt.get('brow') or opt.get('nostril'): pf=0.5
-        if grp=='leg': pf=0.6 if part.startswith('thigh') else 0.0
-        if grp=='arm': pf=0.25
-        top=np.where(face=='up',1.0,ly)*pf
-        nz=fbm(q*0.045+5,41,3)-0.5
-        sk=(0.80+0.34*rp)*(1-0.38*seam)*cell*(0.92+0.16*n1)
-        if var=='arena':
-            # lomo carmesi que baja a morado por los flancos
-            pur=ss(0.26,0.52,top+0.35*nz); cri=ss(0.52,0.80,top+0.35*nz)
-            blot=ss(0.56,0.74,fbm(q*0.05+11,9,3))*pf*ss(0.15,0.5,top)
-            col=lerp(col,np.array((112,46,96))*sk[:,None],pur*0.88)
-            col=lerp(col,lerp((132,28,46),(190,50,68),np.clip(n1*1.4-0.2,0,1))*sk[:,None],cri*0.94)
-            col=lerp(col,np.array((78,32,74))*sk[:,None],blot*0.5)
-        elif var=='scarlet':
-            dd=ss(0.42,0.80,top+0.30*nz)
-            col=lerp(col,np.array((118,24,30))*sk[:,None],dd*0.62)
-        elif var=='steel':
-            dd=ss(0.40,0.80,top+0.30*nz)
-            col=col*(1.0-0.30*dd)[:,None]
-        # cicatrices de batalla (solo en el adulto; coordenadas locales de cada pieza)
-        if lg:
-            sc_=np.zeros(n)
-            for (pn,p0,p1,wd,sgn) in SCARS:
-                if part!=pn: continue
-                if (loc_sign(face)!=sgn): continue
-                sc_=np.maximum(sc_,seg_mask(ctx['loc'],p0,p1,wd))
-            if sc_.any():
-                col=lerp(col,np.array(pal['scar_a']),np.clip(sc_*1.6,0,1)*0.9)
-                col=lerp(col,np.array(pal['scar_b']),np.clip(sc_*2.2-1.0,0,1))
-    # vientre con escudos transversales
     sc=((P[:,2]/3.8)%1.0<0.16)
-    bcol=lerp(pal['belly'],pal['belly2'],np.where(sc,0.8,fbm(q*0.1+2,13,2)*0.5))*(0.97+0.06*rid)[:,None]
+    bcol=lerp(pal['belly'],pal['belly2'],np.where(sc,0.8,fbm(q*0.1+2,13,2)*0.5))*(0.96+0.08*rid)[:,None]
     col=lerp(col,bcol,b)
-    return col,gl
+    # --- cicatrices de batalla (solo en el adulto; coordenadas locales de cada pieza)
+    if lg:
+        sc_=np.zeros(n)
+        for (pn,p0,p1,wd,sgn) in SCARS:
+            if part!=pn: continue
+            if (loc_sign(face)!=sgn): continue
+            sc_=np.maximum(sc_,seg_mask(ctx['loc'],p0,p1,wd))
+        if sc_.any():
+            col=lerp(col,np.array(pal['scar_a']),np.clip(sc_*1.6,0,1)*0.9)
+            col=lerp(col,np.array(pal['scar_b']),np.clip(sc_*2.2-1.0,0,1))
+    return col,vgl
 def horn_tex(var,ly,ctx,ii,jj):
     pal=PAL[var]; k=ctx['opt'].get('k',0); g=(k+ly)/3.0
-    ridge=np.where((jj%3)==0,0.88,1.0)
+    ridge=np.where((jj%3)==0,0.90,1.0)
+    col=lerp(pal['horn_a'],pal['horn_b'],g**1.3)*ridge[:,None]
+    col=lerp(col,pal['orB'],ss(0.20,0.0,g)*0.85)      # base naranja del cuerno
     gl=np.zeros((len(ly),3))
-    if var=='scarlet':
-        col=lerp(pal['horn_a'],pal['horn_b'],g**1.3)*ridge[:,None]
-    elif var=='green':
-        col=lerp(pal['horn_a'],pal['horn_b'],g**1.2)*ridge[:,None]
-    elif var=='arena':
-        col=lerp(pal['horn_a'],pal['horn_b'],g**1.25)*ridge[:,None]
-    else:
-        col=lerp(pal['horn_a'],pal['horn_b'],g**1.1)*ridge[:,None]
     if ctx['stage']=='adult':
         # adulto: puntas de los cuernos incandescentes en el color de sus ojos
         t=ss(0.80,1.0,g)*0.6; gc=np.array(pal['eye'],float); col=lerp(col,gc,t*0.8); gl=gc*t[:,None]
     return col,gl
 def spike_tex(var,ly,ctx,ii,jj):
-    pal=PAL[var]; col=lerp(pal['spike_a'],pal['spike_b'],ly**1.2); gl=np.zeros_like(col)
+    pal=PAL[var]; sp=0.92+0.16*np.cos(ii*1.7+jj*2.3)
+    col=lerp(pal['spike_a'],pal['spike_b'],ss(0.10,0.95,ly)**1.1)*sp[:,None]; gl=np.zeros_like(col)
     return col,gl
 def claw_tex(var,fu,fv,ctx,face,loc):
     pal=PAL[var]; t=ctx['claw_t'](loc)

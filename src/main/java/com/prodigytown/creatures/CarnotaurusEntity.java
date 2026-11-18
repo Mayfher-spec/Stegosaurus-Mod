@@ -76,9 +76,9 @@ import java.util.UUID;
  * Comparte con el estegosaurio las ordenes y el estado "caido" (ver PetOrders y PetEvents).
  */
 public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder, ProdigyPet {
-    /** Colores: Rojo, Verde, Acero y Arena. El adulto es siempre el "Brutus": grande, robusto y agresivo. */
+    /** Colores: Rojo, Verde, Gris (STEEL) y Obsidiana (ARENA: el id interno se conserva por compatibilidad con mundos y huevos ya existentes). El adulto es siempre el "Brutus": grande, robusto y agresivo. */
     public static final int SCARLET = 0, GREEN = 1, STEEL = 2, ARENA = 3, VARIANTS = 4;
-    public static final String[] VARIANT_NAMES = {"Rojo", "Verde", "Acero", "Arena"};
+    public static final String[] VARIANT_NAMES = {"Rojo", "Verde", "Gris", "Obsidiana"};
     public static final int CHARGE_LEN = 24, BUTT_LEN = 14, ROAR_LEN = 40;
     /** Furia: por debajo de este porcentaje de vida el adulto corre y muerde mas fuerte. */
     private static final float ENRAGE_BELOW = 0.40F;
@@ -1016,7 +1016,7 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
 
     /**
      * Rugido ancestral (definitiva desde el nivel 50): onda de choque con dano y un efecto segun el color.
-     * Rojo: arde. Verde: veneno (y cura a los aliados). Acero: aturde (y protege a los aliados). Arena: ciega (y acelera a los aliados).
+     * Rojo: arde. Verde: veneno (y cura a los aliados). Gris: aturde (y protege a los aliados). Obsidiana: ciega (y acelera a los aliados).
      */
     private void ancestralRoar(ServerLevel server, int ul, float atk) {
         float dmg = atk * new float[]{1.0F, 1.5F, 2.0F, 2.5F}[ul] * (1.0F + new float[]{0F, 0.15F, 0.30F, 0.50F}[progress.rank("U1")]);

@@ -12,11 +12,11 @@ import net.minecraft.util.Mth;
 
 /**
  * Destello al terminar la evolucion o al volver a ser cria: arranca en blanco puro y se apaga pasando por el color de la variante
- * (rojo, verde, acero o arena), con un doble latido al principio. Al encoger es mas corto y de un blanco azulado.
+ * (rojo, verde, gris u obsidiana), con un doble latido al principio. Al encoger es mas corto y de un blanco azulado.
  */
 public final class CarnotaurusFlashLayer extends RenderLayer<CarnotaurusEntity, CarnotaurusModel<CarnotaurusEntity>> {
-    /** Tinte de apagado por variante (rojo, verde, acero, arena). */
-    private static final float[][] TINT = {{1.00F, 0.42F, 0.28F}, {0.42F, 1.00F, 0.52F}, {0.58F, 0.78F, 1.00F}, {1.00F, 0.84F, 0.46F}};
+    /** Tinte de apagado por variante (rojo, verde, gris, obsidiana). */
+    private static final float[][] TINT = {{1.00F, 0.42F, 0.28F}, {0.42F, 1.00F, 0.52F}, {0.58F, 0.78F, 1.00F}, {1.00F, 0.56F, 0.26F}};
 
     public CarnotaurusFlashLayer(RenderLayerParent<CarnotaurusEntity, CarnotaurusModel<CarnotaurusEntity>> parent) { super(parent); }
 

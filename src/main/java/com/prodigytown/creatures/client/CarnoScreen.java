@@ -59,7 +59,7 @@ public final class CarnoScreen extends Screen {
 
     private static final int GOLD = 0xFFFFD35A, CREAM = 0xFFF6E3A1, TEXT = 0xFFEDEDED, DIM = 0xFF9AA0A6;
     private static final int[] BRANCH_COLOR = {0xFFE8602C, 0xFF3FB4FF, 0xFF7CE03C};
-    private static final String[] VARIANT = {"Rojo", "Verde", "Acero", "Arena"};
+    private static final String[] VARIANT = {"Rojo", "Verde", "Gris", "Obsidiana"};
 
     private final CarnotaurusEntity pet;
     private int tab = 0, selCmd = -1, selAtk = 0, selected = 0;

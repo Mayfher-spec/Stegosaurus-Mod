@@ -18,8 +18,8 @@ import net.minecraftforge.fml.common.Mod;
 public final class CarnoMountHud {
     private CarnoMountHud() {}
 
-    /** Color de acento por variante: rojo, verde, acero, arena. */
-    private static final int[] ACCENT = {0xFFD9442E, 0xFF5FB35A, 0xFF8FA6B8, 0xFFD9B56A};
+    /** Color de acento por variante: rojo, verde, gris, obsidiana. */
+    private static final int[] ACCENT = {0xFFD9442E, 0xFF5FB35A, 0xFF8FA6B8, 0xFFE8742A};
     private static final String[] BTN = {"charge", "butt", "bite", "roar"};
     private static final ResourceLocation[] FRAME_BTN = new ResourceLocation[4];
     private static final ResourceLocation[][] ICON = new ResourceLocation[4][4];

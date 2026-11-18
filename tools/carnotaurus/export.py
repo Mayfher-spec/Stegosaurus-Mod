@@ -32,11 +32,11 @@ final class CarnotaurusLayers {
 %s}
 '''%(H,('%.3f'%hy['adult']),('%.3f'%hy['chibi']),layer('adult'),layer('chibi'))
 open(os.path.join(repo,'src/main/java/com/prodigytown/creatures/client/CarnotaurusLayers.java'),'w').write(src)
-for var in ('scarlet','green','steel','arena'):
+for var,fn in (('scarlet','scarlet'),('green','green'),('steel','steel'),('dark','arena')):   # 'arena' = nombre de archivo heredado del color Oscuro
     a,g=paint.make_atlas(var)
     a=paint.dilate(a); a[paint.saddle_mask()]=0; a[paint.armor_mask()]=0   # los cubos de la montura y la armadura quedan invisibles sin ella
-    Image.fromarray(a).save(os.path.join(tex,'carnotaurus_%s.png'%var),optimize=True)
-    Image.fromarray(g).save(os.path.join(tex,'carnotaurus_%s_glow.png'%var),optimize=True)
+    Image.fromarray(a).save(os.path.join(tex,'carnotaurus_%s.png'%fn),optimize=True)
+    Image.fromarray(g).save(os.path.join(tex,'carnotaurus_%s_glow.png'%fn),optimize=True)
 Image.fromarray(paint.make_saddle()).save(os.path.join(tex,'carnotaurus_saddle.png'),optimize=True)
 for tier in paint.ARMOR_TIERS:
     a,g=paint.make_armor(tier)

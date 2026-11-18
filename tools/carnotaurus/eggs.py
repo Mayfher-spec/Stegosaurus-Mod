@@ -10,7 +10,7 @@ PAL={
  'scarlet':[(176,52,40),(138,36,30),(236,170,120),(96,24,22),(250,206,150)],
  'green':  [(98,142,62),(66,106,46),(218,210,152),(30,60,36),(246,232,150)],
  'steel':  [(120,130,144),(92,102,116),(190,200,212),(52,60,72),(150,225,255)],
- 'arena':  [(196,176,126),(168,148,102),(150,40,60),(112,36,70),(232,92,70)],
+ 'arena':  [(56,46,68),(36,30,46),(228,98,38),(112,52,122),(250,158,52)],   # 'arena' = id interno (se conserva por compatibilidad); es el huevo OSCURO
 }
 def faces(u,v,w,h,d):
     return {"top":(u+d,v,w,d),"bottom":(u+d+w,v,w,d),"west":(u,v+d,d,h),"front":(u+d,v+d,w,h),"east":(u+d+w,v+d,d,h),"back":(u+2*d+w,v+d,w,h)}
@@ -33,7 +33,7 @@ def base_img(name):
                     elif name=='steel':
                         if (gx%5==0 or gy%5==0): c=p[3]                      # junta de placas
                         elif blob in (0,1) and r<.7: c=p[2]
-                    else:  # arena: crema con manchas carmesi y moteado
+                    else:  # oscuro: gris violaceo con vetas de lava naranja y manchas moradas
                         if blob in (0,1) and (i+j)%3!=0: c=p[2]
                         elif blob==5 and r<.6: c=p[3]
                     img.putpixel((gx,gy),c+(255,))
@@ -46,7 +46,7 @@ def base_img(name):
     return img
 def cracks(stage,name):
     img=Image.new('RGBA',(64,64),(0,0,0,0)); rnd=random.Random(99)
-    col=(30,24,20,255) if name in ('scarlet','arena') else (245,245,235,255)
+    col=(30,24,20,255) if name=='scarlet' else (245,245,235,255)
     for (w,h,d),(u,v) in CUBES[1:5]:
         for fname in ("front","east","west","back"):
             x,y,fw,fh=faces(u,v,w,h,d)[fname]

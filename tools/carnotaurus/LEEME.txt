@@ -18,9 +18,10 @@ Los .bbmodel de custom_assets/carnotaurus/ son los que aporto el usuario (v1.1.3
 La anatomia (cuello en S, pata de 4 tramos, cola gruesa y larga) se inspira en la forma de los dinos de alta calidad, pero toda la geometria y las texturas son originales.
 
 El adulto es SIEMPRE el Brutus (malla 'adult' en rig.py: escalas por eje en STAGES, posturas en ROT_OVERRIDE, espinas/dientes extra marcados con B); la malla adulta anterior (v1.1.0-1.1.5) ya no existe.
-Cada textura de color (Rojo, Verde, Acero, Arena) contiene las dos mallas: adulto y cria. En el adulto paint.py anade escamas, cicatrices (SCARS) y puntas de cuerno brillantes
-con el color de cada paleta; "Arena" (variante 3) es el color tostado/carmesi de la foto de referencia.
-En el juego: variante en NBT "Variant" (0 Rojo, 1 Verde, 2 Acero, 3 Arena), p. ej.  /summon prodigycreatures:carnotaurus ~ ~ ~ {Variant:1,Adult:1b}
+Cada textura de color (Rojo, Verde, Gris, Obsidiana) contiene las dos mallas: adulto y cria. En el adulto paint.py anade escamas, cicatrices (SCARS) y puntas de cuerno brillantes
+con el color de cada paleta; "Obsidiana" (variante 3; paleta 'dark' en paint.py, archivos *_arena* por compatibilidad) sustituye al antiguo Arena. Piel v1.13: lomo y muslo naranja, espirales claras en los flancos, vientre crema (ficha "Carnotaurus mejorado").
+Vista previa sin abrir el juego: python3 tools/carnotaurus/preview.py <green|scarlet|steel|dark> adult salida.png [yaw] [elev]
+En el juego: variante en NBT "Variant" (0 Rojo, 1 Verde, 2 Gris, 3 Obsidiana), p. ej.  /summon prodigycreatures:carnotaurus ~ ~ ~ {Variant:1,Adult:1b}
 Hitbox adulto 2.7 x 3.8 (tambien en ProdigyCreatures: sized) y cria 1.1 x 1.8; escala de dibujo 0.36 / 0.38 en CarnotaurusRenderer.
 
 MONTURA 3D del Brutus (v1.1.10): rig.py -> saddle_body() y saddle_chest() (cubos en unidades finales, marco del cuerpo/pecho; roles 'cloth', 'leather', 'metal').
