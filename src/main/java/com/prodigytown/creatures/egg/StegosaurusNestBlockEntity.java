@@ -76,6 +76,7 @@ public class StegosaurusNestBlockEntity extends BlockEntity {
         double x = pos.getX() + 0.5, y = pos.getY() + 0.375, z = pos.getZ() + 0.5;
         level.setBlock(pos, state.setValue(StegosaurusNestBlock.EGG, 0), 3);
         UUID who = owner;
+        com.prodigytown.creatures.ProdigyAdvancements.grant(level, who, "hatch_egg");
         clearIncubation();
         level.playSound(null, pos, SoundEvents.TURTLE_EGG_HATCH, SoundSource.BLOCKS, 1.4F, 0.9F);
         level.playSound(null, pos, SoundEvents.SNIFFER_EGG_HATCH, SoundSource.BLOCKS, 1.0F, 1.1F);

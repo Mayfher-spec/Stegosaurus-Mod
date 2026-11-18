@@ -1256,6 +1256,7 @@ public class DilophosaurusEntity extends TamableAnimal implements PetOrders.Hold
         if (this.level().isClientSide || !isAdultStage()) return;
         int old = getArmorTier();
         this.entityData.set(ARMOR_TIER, Math.max(0, Math.min(4, tier)));
+        if (tier > 0 && this.getOwner() instanceof Player armorOwner) com.prodigytown.creatures.ProdigyAdvancements.grant(armorOwner, "armored");
         if (old > 0 && old != tier) this.spawnAtLocation(new ItemStack(ProdigyCreatures.DILO_ARMOR_ITEMS.get(old - 1).get()));
         applyStageStats(true);
     }
@@ -1440,7 +1441,7 @@ public class DilophosaurusEntity extends TamableAnimal implements PetOrders.Hold
             return InteractionResult.sidedSuccess(client);
         }
         if (isAdultStage() && isSaddled() && !player.isShiftKeyDown() && held.isEmpty() && !isOrderedToSit()) {
-            if (!client) player.startRiding(this);
+            if (!client && player.startRiding(this)) com.prodigytown.creatures.ProdigyAdvancements.grant(player, "ride_dilo");
             return InteractionResult.sidedSuccess(client);
         }
         return InteractionResult.PASS;
@@ -1501,7 +1502,7 @@ public class DilophosaurusEntity extends TamableAnimal implements PetOrders.Hold
         setAdultStage(true);
         this.level().broadcastEntityEvent(this, (byte) 64);
         if (this.level() instanceof ServerLevel sl) sl.sendParticles(ParticleTypes.TOTEM_OF_UNDYING, getX(), getY() + 1.0, getZ(), 36, 0.7, 0.9, 0.7, 0.3);
-        if (this.getOwner() instanceof Player p) p.displayClientMessage(Component.literal("Tu dilofosaurio es ahora un adulto"), true);
+        if (this.getOwner() instanceof Player p) { p.displayClientMessage(Component.literal("Tu dilofosaurio es ahora un adulto"), true); com.prodigytown.creatures.ProdigyAdvancements.grant(p, "grow_up"); }
     }
 
     private void finishRevert() {
@@ -1512,7 +1513,7 @@ public class DilophosaurusEntity extends TamableAnimal implements PetOrders.Hold
             sl.sendParticles(ParticleTypes.POOF, getX(), getY() + 0.7, getZ(), 20, 0.5, 0.4, 0.5, 0.05);
             sl.sendParticles(ParticleTypes.END_ROD, getX(), getY() + 0.8, getZ(), 12, 0.4, 0.4, 0.4, 0.06);
         }
-        if (this.getOwner() instanceof Player p) p.displayClientMessage(Component.literal("Tu dilofosaurio volvió a ser una cría"), true);
+        if (this.getOwner() instanceof Player p) { p.displayClientMessage(Component.literal("Tu dilofosaurio volvió a ser una cría"), true); com.prodigytown.creatures.ProdigyAdvancements.grant(p, "back_to_chibi"); }
     }
 
     /** Cuenta atras de la transformacion (solo servidor): remolino de luz y chispas; al llegar a 0 cambia de etapa y destella. */

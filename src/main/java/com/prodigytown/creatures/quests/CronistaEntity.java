@@ -174,7 +174,7 @@ public class CronistaEntity extends PathfinderMob {
 
     public void addCompanion(UUID id) { this.companions.add(id); }
 
-    /** Se muda a la cama indicada: ya no se marcha, duerme de noche y se queda cerca. El caballo se queda como regalo: sin correa, domado por quien le dio el hogar y ensillado. */
+    /** Se muda a la cama indicada: ya no se marcha, duerme de noche y se queda cerca. El Compy se queda como regalo (domado, sin correa, con 1 o 2 compys mas como soldados); un caballo de partidas antiguas, domado y ensillado. */
     public void settle(BlockPos bed, @Nullable ServerPlayer owner) {
         this.settled = true;
         this.home = bed.immutable();
@@ -194,6 +194,8 @@ public class CronistaEntity extends PathfinderMob {
                 if (e instanceof Mob m) {
                     if (m.isLeashed()) m.dropLeash(true, false);
                     if (!discard && owner != null && m instanceof AbstractHorse horse) { horse.tameWithName(owner); horse.equipSaddle(SoundSource.NEUTRAL); }
+                    if (!discard && owner != null && m instanceof com.prodigytown.creatures.CompyEntity compy) compy.giftTo(owner, 1 + this.random.nextInt(2));
+                    if (discard && m instanceof com.prodigytown.creatures.CompyEntity tamed && tamed.isTame()) continue;   // el que ya domaste es tuyo: no se va con ella
                     if (discard) { sl.sendParticles(ParticleTypes.POOF, m.getX(), m.getY() + 0.8, m.getZ(), 10, 0.3, 0.4, 0.3, 0.02); m.discard(); }
                 }
             }

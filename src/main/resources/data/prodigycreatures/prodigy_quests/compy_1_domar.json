@@ -1,0 +1,24 @@
+{
+  "title": "Un amigo de la Cronista",
+  "description": "Domar al Compy que viaja con la Cronista: dale carne cruda (res, cerdo o cordero) varias veces hasta que confíe en ti. Si aún no ha llegado, sirve cualquier Compy líder (el de la marca roja en la cola).",
+  "category": "Compy",
+  "order": 20,
+  "type": "tame",
+  "count": 1,
+  "rewards": {
+    "xp": 150,
+    "items": [
+      {
+        "item": "minecraft:beef",
+        "count": 6
+      },
+      {
+        "item": "minecraft:name_tag",
+        "count": 1
+      }
+    ]
+  },
+  "entity": "prodigycreatures:compy",
+  "icon": "prodigycreatures:compy_spawn_egg",
+  "objective": "Domar a un Compy líder"
+}

@@ -13,8 +13,9 @@ import java.util.List;
 
 /** Definicion de una mision (cargada desde data/<ns>/prodigy_quests/*.json). */
 public final class QuestDef {
+    /** EVENT: el codigo avisa de un hecho concreto (id en "entity": compy_named, compy_order, compy_pack) con QuestData.onEvent. */
     /** HOME: preparar un hogar (cama, atril, luz y techo) para el Cronista; siempre vale 4 puntos (uno por requisito). */
-    public enum Type { KILL, TAME, RAID, MANUAL, VILLAGE, HOME }
+    public enum Type { KILL, TAME, RAID, MANUAL, VILLAGE, HOME, EVENT }
 
     public final String id, title, description, category;
     public final int order, target, xp;

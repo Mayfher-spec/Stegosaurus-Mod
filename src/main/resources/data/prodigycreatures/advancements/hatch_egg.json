@@ -1,0 +1,23 @@
+{
+  "display": {
+    "icon": {
+      "item": "prodigycreatures:stegosaurus_egg_natural"
+    },
+    "title": {
+      "translate": "advancements.prodigycreatures.hatch_egg.title"
+    },
+    "description": {
+      "translate": "advancements.prodigycreatures.hatch_egg.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "parent": "prodigycreatures:root"
+}

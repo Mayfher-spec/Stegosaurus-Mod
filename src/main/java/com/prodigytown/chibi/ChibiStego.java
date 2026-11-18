@@ -487,7 +487,7 @@ public class ChibiStego extends TamableAnimal implements GeoEntity, ProdigyPet, 
         adult.setHealth(Math.max(1.0F, adult.getMaxHealth() * (getHealth() / getMaxHealth())));
         server.addFreshEntity(adult);
         adult.startEvolution(isQuickEvolve());
-        if (getOwner() instanceof Player p) p.displayClientMessage(Component.literal("Tu chibi evoluciono a Estegosaurio adulto"), false);
+        if (getOwner() instanceof Player p) { p.displayClientMessage(Component.literal("Tu chibi evoluciono a Estegosaurio adulto"), false); com.prodigytown.creatures.ProdigyAdvancements.grant(p, "grow_up"); }
         discard();
     }
 

@@ -1,0 +1,25 @@
+{
+  "title": "Dale una orden",
+  "description": "En la pestaña Comandos de su pantalla pulsa una orden (Quieto, Deambular, Seguir, Patrullar, Sentarse o Dormir). Mayús + clic con la mano vacía también cambia la orden.",
+  "category": "Compy",
+  "order": 22,
+  "type": "event",
+  "count": 1,
+  "rewards": {
+    "xp": 100,
+    "items": [
+      {
+        "item": "minecraft:string",
+        "count": 8
+      },
+      {
+        "item": "minecraft:bone",
+        "count": 4
+      }
+    ]
+  },
+  "entity": "compy_order",
+  "requires": "compy_2_nombre",
+  "icon": "prodigycreatures:compy_spawn_egg",
+  "objective": "Dar una orden desde su pantalla"
+}

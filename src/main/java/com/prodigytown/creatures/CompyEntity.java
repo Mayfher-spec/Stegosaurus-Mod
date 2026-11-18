@@ -278,6 +278,35 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder, Prod
         }
     }
 
+    /**
+     * Regalo de la Cronista: este lider (si aun es salvaje, lo doma) y {@code extras} compys mas pasan a ser del jugador, los extras como soldados de su manada. Solo servidor.
+     */
+    public void giftTo(Player owner, int extras) {
+        if (this.level().isClientSide || !isLeader() || !(this.level() instanceof ServerLevel sl)) return;
+        if (!isTame()) {
+            this.tame(owner);
+            if (owner instanceof net.minecraft.server.level.ServerPlayer qsp) com.prodigytown.creatures.quests.QuestData.onTame(qsp, this);
+            this.setPersistenceRequired();
+            applyRoleStats(false);
+            PetOrders.setOrder(this, PetOrders.FOLLOW);
+        } else if (!isOwnedBy(owner)) return;
+        for (int i = 0; i < extras; i++) {
+            CompyEntity c = ProdigyCreatures.COMPY.get().create(sl);
+            if (c == null) break;
+            c.moveTo(getX() + (this.random.nextDouble() - 0.5) * 2.0, getY(), getZ() + (this.random.nextDouble() - 0.5) * 2.0, this.random.nextFloat() * 360.0F, 0.0F);
+            c.finalizeSpawn(sl, sl.getCurrentDifficultyAt(c.blockPosition()), MobSpawnType.EVENT, null, null);
+            c.tame(owner);
+            c.setPersistenceRequired();
+            c.variantFixed = true;
+            c.setVariant(getVariant());
+            sl.addFreshEntity(c);
+            adopt(c);
+        }
+        refreshGroup();
+        this.playSound(ModSounds.COMPY_HAPPY.get(), 1.0F, 1.0F);
+        this.level().broadcastEntityEvent(this, (byte) 7);
+    }
+
     /** Orden de grupo (solo la fija el propio sistema de la manada: los soldados no aceptan ordenes sueltas). */
     private void setPackOrder(int order) {
         syncingOrder = true;
@@ -818,6 +847,7 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder, Prod
     private int joinUnit(List<CompyEntity> unit, Player owner) {
         if (unit.size() > capLeft()) return -1;
         for (CompyEntity c : unit) adopt(c);
+        if (!unit.isEmpty() && owner instanceof net.minecraft.server.level.ServerPlayer sp) { com.prodigytown.creatures.quests.QuestData.onEvent(sp, "compy_pack"); com.prodigytown.creatures.ProdigyAdvancements.grant(sp, "pack_formed"); if (groupSize() >= 5) com.prodigytown.creatures.ProdigyAdvancements.grant(sp, "full_pack"); }
         return unit.size();
     }
 
@@ -869,6 +899,7 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder, Prod
 
     /** El soldado m pasa a ser el lider: hereda nivel, XP y ajustes; yo paso a soldado. */
     private void promote(CompyEntity m) {
+        if (this.getOwner() instanceof Player po) com.prodigytown.creatures.ProdigyAdvancements.grant(po, "new_leader");
         ProdigyProgress mine = this.progress;
         m.progress = mine.copy(); m.pushProgress();
         this.progress = ProdigyProgress.atLevel(1, Talents.COMPY); this.pushProgress();
@@ -954,6 +985,7 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder, Prod
             this.tame(player);
             if (player instanceof net.minecraft.server.level.ServerPlayer qsp) com.prodigytown.creatures.quests.QuestData.onTame(qsp, this);
             this.setPersistenceRequired();
+            if (this.isLeashed() && this.getLeashHolder() instanceof com.prodigytown.creatures.quests.CronistaEntity) this.dropLeash(true, false);   // el compy de la Cronista ya es tuyo: sin correa
             applyRoleStats(false);
             PetOrders.setOrder(this, PetOrders.FOLLOW);
             recruitPack(player);

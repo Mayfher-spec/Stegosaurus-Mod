@@ -106,7 +106,18 @@ public final class QuestData {
         p.playNotifySound(SoundEvents.PLAYER_LEVELUP, SoundSource.PLAYERS, 0.9F, 1.0F);
         p.displayClientMessage(Component.literal("Recompensa reclamada: " + q.title).withStyle(ChatFormatting.GREEN), true);
         if (q.type == QuestDef.Type.HOME) settleCronista(p, q);
+        grantQuestAdvancements(p, q);
         return true;
+    }
+
+    private static void grantQuestAdvancements(ServerPlayer p, QuestDef q) {
+        com.prodigytown.creatures.ProdigyAdvancements.grant(p, "quest_first");
+        if (q.type == QuestDef.Type.HOME) com.prodigytown.creatures.ProdigyAdvancements.grant(p, "chronicler_home");
+        if (q.id.equals("compy_4_manada")) com.prodigytown.creatures.ProdigyAdvancements.grant(p, "compy_tutorial");
+        int n = 0;
+        for (QuestDef d : QuestManager.all()) if (claimedFlag(p, d.id)) n++;
+        if (n >= 10) com.prodigytown.creatures.ProdigyAdvancements.grant(p, "quests_10");
+        if (n >= 25) com.prodigytown.creatures.ProdigyAdvancements.grant(p, "quests_25");
     }
 
     // ------------------------------------------------------------------ mision del hogar
@@ -184,9 +195,17 @@ public final class QuestData {
     }
 
     public static void onTame(ServerPlayer p, Entity animal) {
+        com.prodigytown.creatures.ProdigyAdvancements.onTame(p, animal);
         if (!markSeen(p, animal)) return;   // ya contado (p. ej. por el barrido de propiedad)
         boolean changed = false;
         for (QuestDef q : QuestManager.all()) if (q.type == QuestDef.Type.TAME && q.matches(animal.getType())) changed |= add(p, q, 1);
+        if (changed) sync(p, -1);
+    }
+
+    /** Hecho de juego que usan las misiones de tipo EVENT (el id va en "entity"): compy_named, compy_order, compy_pack. */
+    public static void onEvent(ServerPlayer p, String event) {
+        boolean changed = false;
+        for (QuestDef q : QuestManager.all()) if (q.type == QuestDef.Type.EVENT && q.entity.equals(event)) changed |= add(p, q, 1);
         if (changed) sync(p, -1);
     }
 

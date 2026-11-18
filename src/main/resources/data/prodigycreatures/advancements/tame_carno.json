@@ -1,0 +1,23 @@
+{
+  "display": {
+    "icon": {
+      "item": "prodigycreatures:carnotaurus_spawn_egg"
+    },
+    "title": {
+      "translate": "advancements.prodigycreatures.tame_carno.title"
+    },
+    "description": {
+      "translate": "advancements.prodigycreatures.tame_carno.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "done": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "parent": "prodigycreatures:root"
+}

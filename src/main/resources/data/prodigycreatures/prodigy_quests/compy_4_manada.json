@@ -1,0 +1,29 @@
+{
+  "title": "Una manada propia",
+  "description": "Reúne a un segundo Compy domado con el primero: clic con la mano vacía en un líder y luego en el otro, o el botón Crear / Invitar de la pestaña Manada. Cada líder tiene hasta 5 miembros.",
+  "category": "Compy",
+  "order": 23,
+  "type": "event",
+  "count": 1,
+  "rewards": {
+    "xp": 300,
+    "items": [
+      {
+        "item": "minecraft:golden_carrot",
+        "count": 8
+      },
+      {
+        "item": "minecraft:cooked_porkchop",
+        "count": 8
+      },
+      {
+        "item": "minecraft:experience_bottle",
+        "count": 3
+      }
+    ]
+  },
+  "entity": "compy_pack",
+  "requires": "compy_3_orden",
+  "icon": "prodigycreatures:compy_spawn_egg",
+  "objective": "Formar un grupo de caza con 2 compys"
+}

@@ -1,0 +1,21 @@
+{
+  "title": "Ponle nombre",
+  "description": "Acércate a tu Compy y pulsa la tecla K para abrir su pantalla. Pulsa la tarjeta de arriba, escribe su nombre y confirma con Intro.",
+  "category": "Compy",
+  "order": 21,
+  "type": "event",
+  "count": 1,
+  "rewards": {
+    "xp": 100,
+    "items": [
+      {
+        "item": "minecraft:cooked_beef",
+        "count": 4
+      }
+    ]
+  },
+  "entity": "compy_named",
+  "requires": "compy_1_domar",
+  "icon": "prodigycreatures:compy_spawn_egg",
+  "objective": "Ponerle nombre a tu Compy"
+}

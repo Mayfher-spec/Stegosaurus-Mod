@@ -26,7 +26,7 @@ import java.util.Map;
  * Carga las misiones desde los datapacks: data/&lt;namespace&gt;/prodigy_quests/&lt;id&gt;.json. Asi se pueden anadir o cambiar misiones sin tocar el codigo.
  * <pre>
  * { "title": "...", "description": "...", "category": "Jefes", "order": 100,
- *   "type": "kill" | "tame" | "raid" | "manual" | "village" | "home", "entity": "minecraft:wither" (o "#tag", "*dragon*", "mod:*", varios con coma), "count": 1, "boss": true,
+ *   "type": "kill" | "tame" | "raid" | "manual" | "village" | "home" | "event", "entity": "minecraft:wither" (o "#tag", "*dragon*", "mod:*", varios con coma), "count": 1, "boss": true,
  *   "requires": "otra_mision", "requires_mod": "iceandfire" (varios con coma: basta uno),
  *   "tab": 0-3 (Fundacion, Asedios, Dinosaurios, Jefes), "icon": "minecraft:bone", "objective": "Derrota zombis",
  *   (village, requiere MCA) "metric": "population" | "buildings" | "building_types" | "level" | "building", "building": "blacksmith",
@@ -94,7 +94,7 @@ public final class QuestManager extends SimpleJsonResourceReloadListener {
             GsonHelper.getAsString(o, "entity", "*"), GsonHelper.getAsInt(o, "count", 1), GsonHelper.getAsBoolean(o, "boss", false),
             o.has("requires") ? GsonHelper.getAsString(o, "requires") : null, List.copyOf(items), xp,
             GsonHelper.getAsString(o, "metric", "population"), GsonHelper.getAsString(o, "building", ""));
-        int dflt = type == QuestDef.Type.VILLAGE || type == QuestDef.Type.HOME ? 0 : type == QuestDef.Type.RAID ? 1 : type == QuestDef.Type.TAME ? 2 : def.boss ? 3 : 1;
+        int dflt = type == QuestDef.Type.VILLAGE || type == QuestDef.Type.HOME ? 0 : type == QuestDef.Type.RAID ? 1 : type == QuestDef.Type.TAME || type == QuestDef.Type.EVENT ? 2 : def.boss ? 3 : 1;
         def.tab = Math.max(0, Math.min(3, GsonHelper.getAsInt(o, "tab", dflt)));
         def.iconId = GsonHelper.getAsString(o, "icon", "");
         def.objective = GsonHelper.getAsString(o, "objective", "");

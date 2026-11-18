@@ -113,6 +113,7 @@ public final class ModNetwork {
                         && t.isTame() && t.isOwnedBy(sp) && t.distanceTo(sp) <= 40.0F) {
                     if (t instanceof DilophosaurusEntity dilo && m.order == com.prodigytown.creatures.PetOrders.ATTACK) dilo.commandAttack(sp);
                     else com.prodigytown.creatures.PetOrders.setOrder(t, m.order);
+                    if (t instanceof com.prodigytown.creatures.CompyEntity) com.prodigytown.creatures.quests.QuestData.onEvent(sp, "compy_order");
                 }
             });
             ctx.get().setPacketHandled(true);
@@ -131,7 +132,7 @@ public final class ModNetwork {
                 if (e instanceof StegosaurusEntity stego && stego.isOwnedBy(sp) && stego.distanceTo(sp) <= 40.0F) stego.rename(m.name);
                 else if (e instanceof CarnotaurusEntity carno && carno.isOwnedBy(sp) && carno.distanceTo(sp) <= 40.0F) carno.rename(m.name);
                 else if (e instanceof DilophosaurusEntity dilo && dilo.isOwnedBy(sp) && dilo.distanceTo(sp) <= 40.0F) dilo.rename(m.name);
-                else if (e instanceof com.prodigytown.creatures.CompyEntity compy && compy.isLeader() && compy.isOwnedBy(sp) && compy.distanceTo(sp) <= 40.0F) compy.setCustomName(m.name.isBlank() ? null : net.minecraft.network.chat.Component.literal(m.name.trim()));
+                else if (e instanceof com.prodigytown.creatures.CompyEntity compy && compy.isLeader() && compy.isOwnedBy(sp) && compy.distanceTo(sp) <= 40.0F) { compy.setCustomName(m.name.isBlank() ? null : net.minecraft.network.chat.Component.literal(m.name.trim())); if (!m.name.isBlank()) com.prodigytown.creatures.quests.QuestData.onEvent(sp, "compy_named"); }
             });
             ctx.get().setPacketHandled(true);
         }

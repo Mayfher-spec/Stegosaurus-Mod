@@ -12,9 +12,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.MobSpawnType;
-import net.minecraft.world.entity.animal.horse.Horse;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraftforge.event.TickEvent;
@@ -25,7 +23,7 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Visitas del Cronista, al estilo del mercader errante: a partir del dia 5, si el jugador tiene su base cerca (su cama de reaparicion
- * o una aldea de MCA), cada dia hay una probabilidad de que llegue con un caballo de maximas estadisticas. Se queda unos 3 dias y se marcha si nadie le da
+ * o una aldea de MCA), cada dia hay una probabilidad de que llegue con un Compy lider salvaje (el tutorial de domar). Se queda unos 3 dias y se marcha si nadie le da
  * un hogar (mision "Un hogar para la Cronista"). Cuando se instala, las visitas terminan para ese jugador.
  */
 @Mod.EventBusSubscriber(modid = ProdigyCreatures.MODID)
@@ -81,7 +79,7 @@ public final class ChroniclerVisits {
         return McaBridge.near(sp) != null;
     }
 
-    /** Hace llegar al Cronista (con un caballo) cerca del jugador. Devuelve false si no hay un sitio adecuado. Tambien lo usa el comando "arrive". */
+    /** Hace llegar al Cronista (con un Compy) cerca del jugador. Devuelve false si no hay un sitio adecuado. Tambien lo usa el comando "arrive". */
     public static boolean tryArrive(ServerPlayer sp) {
         ServerLevel level = sp.serverLevel();
         if (level.dimension() != Level.OVERWORLD) return false;
@@ -94,20 +92,16 @@ public final class ChroniclerVisits {
         npc.setYHeadRot(yaw);
         npc.makeVisitor(STAY_TICKS);
         level.addFreshEntity(npc);
-        // el mejor caballo posible de Minecraft base: 30 de vida (15 corazones), velocidad maxima 0.3375 (~14,5 bloques/s) y salto maximo 1.0 (~5,3 bloques)
-        Horse horse = EntityType.HORSE.create(level);
-        if (horse != null) {
-            horse.moveTo(spot.getX() + 1.6, spot.getY(), spot.getZ() + 0.5, yaw, 0.0F);
-            if (!level.noCollision(horse)) horse.moveTo(spot.getX() + 0.5, spot.getY(), spot.getZ() + 0.5, yaw, 0.0F);
-            horse.finalizeSpawn(level, level.getCurrentDifficultyAt(spot), MobSpawnType.EVENT, null, null);   // color y manchas al azar; las estadisticas se fijan despues
-            horse.getAttribute(Attributes.MAX_HEALTH).setBaseValue(30.0);
-            horse.getAttribute(Attributes.MOVEMENT_SPEED).setBaseValue(0.3375);
-            horse.getAttribute(Attributes.JUMP_STRENGTH).setBaseValue(1.0);
-            horse.setHealth(30.0F);
-            horse.setPersistenceRequired();
-            level.addFreshEntity(horse);
-            horse.setLeashedTo(npc, true);
-            npc.addCompanion(horse.getUUID());
+        // el Compy de la Cronista: un lider salvaje atado a ella (se doma con carne cruda: es el tutorial) que se queda de regalo si se instala
+        com.prodigytown.creatures.CompyEntity compy = ProdigyCreatures.COMPY.get().create(level);
+        if (compy != null) {
+            compy.moveTo(spot.getX() + 1.4, spot.getY(), spot.getZ() + 0.5, yaw, 0.0F);
+            if (!level.noCollision(compy)) compy.moveTo(spot.getX() + 0.5, spot.getY(), spot.getZ() + 0.5, yaw, 0.0F);
+            compy.finalizeSpawn(level, level.getCurrentDifficultyAt(spot), MobSpawnType.EVENT, null, null);
+            compy.setPersistenceRequired();
+            level.addFreshEntity(compy);
+            compy.setLeashedTo(npc, true);
+            npc.addCompanion(compy.getUUID());
         }
         long day = level.getDayTime() / 24000L;
         CompoundTag d = data(sp);

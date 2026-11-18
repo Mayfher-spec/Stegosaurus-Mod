@@ -913,6 +913,7 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
         if (this.level().isClientSide || !isAdultStage()) return;
         int old = getArmorTier();
         this.entityData.set(ARMOR_TIER, Math.max(0, Math.min(4, tier)));
+        if (tier > 0 && this.getOwner() instanceof Player armorOwner) com.prodigytown.creatures.ProdigyAdvancements.grant(armorOwner, "armored");
         if (old > 0 && old != tier) this.spawnAtLocation(new net.minecraft.world.item.ItemStack(ProdigyCreatures.CARNO_ARMOR_ITEMS.get(old - 1).get()));
         applyStageStats(true);
     }
@@ -1200,7 +1201,7 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
             return InteractionResult.sidedSuccess(client);
         }
         if (isAdultStage() && isSaddled() && !player.isShiftKeyDown() && held.isEmpty() && !isOrderedToSit()) {
-            if (!client) player.startRiding(this);
+            if (!client && player.startRiding(this)) com.prodigytown.creatures.ProdigyAdvancements.grant(player, "ride_carno");
             return InteractionResult.sidedSuccess(client);
         }
         return InteractionResult.PASS;
@@ -1231,7 +1232,7 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
         setAdultStage(true);
         this.level().broadcastEntityEvent(this, (byte) 64); // destello sobre la textura final
         if (this.level() instanceof ServerLevel sl) sl.sendParticles(ParticleTypes.TOTEM_OF_UNDYING, getX(), getY() + 1.2, getZ(), 40, 0.8, 1.0, 0.8, 0.3);
-        if (this.getOwner() instanceof Player p) p.displayClientMessage(Component.literal("Tu carnotauro es ahora un adulto"), true);
+        if (this.getOwner() instanceof Player p) { p.displayClientMessage(Component.literal("Tu carnotauro es ahora un adulto"), true); com.prodigytown.creatures.ProdigyAdvancements.grant(p, "grow_up"); }
     }
 
     private void finishRevert() {
@@ -1242,7 +1243,7 @@ public class CarnotaurusEntity extends TamableAnimal implements PetOrders.Holder
             sl.sendParticles(ParticleTypes.POOF, getX(), getY() + 0.8, getZ(), 24, 0.6, 0.5, 0.6, 0.05);
             sl.sendParticles(ParticleTypes.END_ROD, getX(), getY() + 1.0, getZ(), 14, 0.5, 0.5, 0.5, 0.06);
         }
-        if (this.getOwner() instanceof Player p) p.displayClientMessage(Component.literal("Tu carnotauro volvio a ser una cria"), true);
+        if (this.getOwner() instanceof Player p) { p.displayClientMessage(Component.literal("Tu carnotauro volvio a ser una cria"), true); com.prodigytown.creatures.ProdigyAdvancements.grant(p, "back_to_chibi"); }
     }
 
     /** Cuenta atras de la transformacion (solo servidor): remolino de luz y chispas; al llegar a 0 cambia de etapa y destella. */

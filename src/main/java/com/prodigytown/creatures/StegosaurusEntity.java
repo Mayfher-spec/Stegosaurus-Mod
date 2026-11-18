@@ -438,7 +438,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
             // Con silla: clic = montar. Sentar/levantar se hace desde la pantalla de habilidades.
             if (!this.level().isClientSide && !this.isVehicle()) {
                 PetOrders.setOrder(this, PetOrders.FOLLOW);
-                player.startRiding(this);
+                if (player.startRiding(this)) com.prodigytown.creatures.ProdigyAdvancements.grant(player, "ride_stego");
             }
             return InteractionResult.sidedSuccess(this.level().isClientSide);
         }
@@ -489,6 +489,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         if (this.level().isClientSide) return;
         int old = getArmorTier();
         this.entityData.set(ARMOR_TIER, Math.max(0, Math.min(4, tier)));
+        if (tier > 0 && this.getOwner() instanceof Player armorOwner) com.prodigytown.creatures.ProdigyAdvancements.grant(armorOwner, "armored");
         if (old > 0 && old != tier) this.spawnAtLocation(new ItemStack(ProdigyCreatures.ARMOR_ITEMS.get(old - 1).get()));
         applyStats();
     }
@@ -547,7 +548,7 @@ public class StegosaurusEntity extends TamableAnimal implements com.prodigytown.
         server.addFreshEntity(chibi);
         server.sendParticles(net.minecraft.core.particles.ParticleTypes.POOF, getX(), getY() + 0.4, getZ(), 18, 0.4, 0.3, 0.4, 0.04);
         server.sendParticles(net.minecraft.core.particles.ParticleTypes.END_ROD, getX(), getY() + 0.5, getZ(), 12, 0.3, 0.3, 0.3, 0.06);
-        if (getOwner() instanceof net.minecraft.world.entity.player.Player p) p.displayClientMessage(net.minecraft.network.chat.Component.literal("Tu estegosaurio volvio a ser un chibi"), false);
+        if (getOwner() instanceof net.minecraft.world.entity.player.Player p) { p.displayClientMessage(net.minecraft.network.chat.Component.literal("Tu estegosaurio volvio a ser un chibi"), false); com.prodigytown.creatures.ProdigyAdvancements.grant(p, "back_to_chibi"); }
         discard();
     }
 
