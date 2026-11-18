@@ -174,5 +174,9 @@
   "advancements.prodigycreatures.quests_25.description": "Reclama veinticinco misiones.",
   "item.prodigycreatures.stegosaurus_scale": "Escama de estegosaurio",
   "item.prodigycreatures.carnotaurus_fang": "Colmillo de carnotauro",
-  "item.prodigycreatures.dilophosaurus_scale": "Escama de dilofosaurio"
+  "item.prodigycreatures.dilophosaurus_scale": "Escama de dilofosaurio",
+  "subtitles.prodigycreatures.cronista.hello": "La Cronista saluda",
+  "subtitles.prodigycreatures.cronista.happy": "La Cronista se alegra",
+  "subtitles.prodigycreatures.cronista.hurt": "La Cronista se queja",
+  "subtitles.prodigycreatures.cronista.death": "La Cronista muere"
 }

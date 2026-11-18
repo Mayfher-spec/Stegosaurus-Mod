@@ -33,6 +33,11 @@ public final class ModSounds {
     public static final RegistryObject<SoundEvent> CARNO_EVOLUTION = reg("carnotaurus.evolution");
     public static final RegistryObject<SoundEvent> CARNO_REVERT = reg("carnotaurus.revert");
     public static final RegistryObject<SoundEvent> COMPY_AMBIENT = reg("compy.ambient");
+    /** Voz de la Cronista (archivos .ogg propios en sounds/cronista/, ver LEEME.txt de esa carpeta). */
+    public static final RegistryObject<SoundEvent> CRONISTA_HELLO = reg("cronista.hello");
+    public static final RegistryObject<SoundEvent> CRONISTA_HAPPY = reg("cronista.happy");
+    public static final RegistryObject<SoundEvent> CRONISTA_HURT = reg("cronista.hurt");
+    public static final RegistryObject<SoundEvent> CRONISTA_DEATH = reg("cronista.death");
     public static final RegistryObject<SoundEvent> COMPY_HURT = reg("compy.hurt");
     public static final RegistryObject<SoundEvent> COMPY_DEATH = reg("compy.death");
     public static final RegistryObject<SoundEvent> COMPY_BITE = reg("compy.bite");

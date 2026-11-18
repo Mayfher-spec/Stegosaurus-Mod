@@ -174,5 +174,9 @@
   "advancements.prodigycreatures.quests_25.description": "Claim twenty-five quests.",
   "item.prodigycreatures.stegosaurus_scale": "Stegosaurus Scale",
   "item.prodigycreatures.carnotaurus_fang": "Carnotaurus Fang",
-  "item.prodigycreatures.dilophosaurus_scale": "Dilophosaurus Scale"
+  "item.prodigycreatures.dilophosaurus_scale": "Dilophosaurus Scale",
+  "subtitles.prodigycreatures.cronista.hello": "Chronicler greets",
+  "subtitles.prodigycreatures.cronista.happy": "Chronicler cheers",
+  "subtitles.prodigycreatures.cronista.hurt": "Chronicler hurts",
+  "subtitles.prodigycreatures.cronista.death": "Chronicler dies"
 }

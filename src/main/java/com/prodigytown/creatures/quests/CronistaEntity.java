@@ -158,7 +158,7 @@ public class CronistaEntity extends PathfinderMob {
             this.talkTicks = 80;
             this.getNavigation().stop();
             this.getLookControl().setLookAt(player, 30.0F, 30.0F);
-            this.playSound(SoundEvents.VILLAGER_YES, 0.9F, 0.7F);
+            this.playSound(com.prodigytown.creatures.ModSounds.CRONISTA_HELLO.get(), 1.0F, this.getVoicePitch());
             QuestData.sync(sp, this.getId());
         }
         return InteractionResult.sidedSuccess(this.level().isClientSide);
@@ -183,7 +183,7 @@ public class CronistaEntity extends PathfinderMob {
         releaseCompanions(false, owner);
         if (this.level() instanceof ServerLevel sl) {
             sl.sendParticles(ParticleTypes.HAPPY_VILLAGER, this.getX(), this.getY() + 1.2, this.getZ(), 14, 0.4, 0.6, 0.4, 0.02);
-            this.playSound(SoundEvents.VILLAGER_CELEBRATE, 1.0F, 0.75F);
+            this.playSound(com.prodigytown.creatures.ModSounds.CRONISTA_HAPPY.get(), 1.0F, this.getVoicePitch());
         }
     }
 
@@ -278,7 +278,9 @@ public class CronistaEntity extends PathfinderMob {
         @Override public void stop() { if (isSleeping()) stopSleeping(); }
     }
 
-    @Override protected SoundEvent getAmbientSound() { return SoundEvents.VILLAGER_AMBIENT; }
-    @Override protected SoundEvent getHurtSound(DamageSource source) { return SoundEvents.VILLAGER_HURT; }
-    @Override public float getVoicePitch() { return 0.72F + this.random.nextFloat() * 0.08F; }
+    // voz propia (sin sonidos de aldeano): saluda al hablarle, celebra al instalarse, se queja al recibir dano
+    @Override protected SoundEvent getAmbientSound() { return null; }
+    @Override protected SoundEvent getHurtSound(DamageSource source) { return com.prodigytown.creatures.ModSounds.CRONISTA_HURT.get(); }
+    @Override protected SoundEvent getDeathSound() { return com.prodigytown.creatures.ModSounds.CRONISTA_DEATH.get(); }
+    @Override public float getVoicePitch() { return 0.97F + this.random.nextFloat() * 0.06F; }
 }

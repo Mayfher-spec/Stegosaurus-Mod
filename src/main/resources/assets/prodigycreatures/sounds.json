@@ -755,5 +755,57 @@
         "stream": false
       }
     ]
+  },
+  "cronista.hello": {
+    "subtitle": "subtitles.prodigycreatures.cronista.hello",
+    "sounds": [
+      {
+        "name": "prodigycreatures:cronista/hello1",
+        "stream": false
+      },
+      {
+        "name": "prodigycreatures:cronista/hello2",
+        "stream": false
+      },
+      {
+        "name": "prodigycreatures:cronista/hello3",
+        "stream": false
+      }
+    ]
+  },
+  "cronista.happy": {
+    "subtitle": "subtitles.prodigycreatures.cronista.happy",
+    "sounds": [
+      {
+        "name": "prodigycreatures:cronista/happy1",
+        "stream": false
+      },
+      {
+        "name": "prodigycreatures:cronista/happy2",
+        "stream": false
+      }
+    ]
+  },
+  "cronista.hurt": {
+    "subtitle": "subtitles.prodigycreatures.cronista.hurt",
+    "sounds": [
+      {
+        "name": "prodigycreatures:cronista/hurt1",
+        "stream": false
+      },
+      {
+        "name": "prodigycreatures:cronista/hurt2",
+        "stream": false
+      }
+    ]
+  },
+  "cronista.death": {
+    "subtitle": "subtitles.prodigycreatures.cronista.death",
+    "sounds": [
+      {
+        "name": "prodigycreatures:cronista/death1",
+        "stream": false
+      }
+    ]
   }
 }
