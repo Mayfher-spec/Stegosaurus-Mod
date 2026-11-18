@@ -1476,6 +1476,12 @@ public class DilophosaurusEntity extends TamableAnimal implements PetOrders.Hold
         }
     }
 
+    /** Boton de la interfaz: hace crecer a la cria sin necesitar carne (solo la cria viva). Solo servidor. */
+    public void growNow() {
+        if (this.level().isClientSide || !isAlive() || isFallen() || isAdultStage() || getMorph() > 0) return;
+        grow();
+    }
+
     /** Empieza la evolucion: silueta blanca que crece (cinematica); el cambio a adulto ocurre al final, en finishGrow(). */
     private void grow() {
         growth = 0;

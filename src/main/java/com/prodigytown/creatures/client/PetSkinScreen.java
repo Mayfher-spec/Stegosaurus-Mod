@@ -312,16 +312,22 @@ public final class PetSkinScreen extends Screen {
         }
         private void draw(GuiGraphics g) {
             int x = getX(), y = getY();
-            boolean on = this.active, armed = System.currentTimeMillis() < chibiConfirmUntil;
+            boolean on = this.active, armed = System.currentTimeMillis() < chibiConfirmUntil, up = !adult();
             g.fill(x, y, x + width, y + height, on ? 0xCC10161C : 0x8810161C);
             g.renderOutline(x, y, width, height, !on ? 0xFF4A4F54 : armed ? 0xFFE0453A : (isHoveredOrFocused() ? GOLD : 0xFFB8862A));
             g.pose().pushPose();
             g.pose().translate(x + 3.0F, y + 3.0F, 0.0F);
             if (!on) g.setColor(1.0F, 1.0F, 1.0F, 0.35F);
-            g.renderItem(new ItemStack(Items.EGG), 0, 0);
+            g.renderItem(new ItemStack(up ? Items.BEEF : Items.EGG), 0, 0);
             g.setColor(1.0F, 1.0F, 1.0F, 1.0F);
             g.pose().popPose();
-            if (on) {
+            if (on && up) {
+                int cx = x + width - 4;
+                g.fill(cx - 1, y + 3, cx + 1, y + 8, 0xFF6FE06A);
+                g.fill(cx - 3, y + 4, cx + 3, y + 5, 0xFF6FE06A);
+                g.fill(cx - 2, y + 3, cx + 2, y + 4, 0xFF6FE06A);
+                g.fill(cx - 1, y + 2, cx + 1, y + 3, 0xFF6FE06A);
+            } else if (on) {
                 int cx = x + width - 4;
                 g.fill(cx - 1, y + 2, cx + 1, y + 7, 0xFF58C7F2);
                 g.fill(cx - 3, y + 6, cx + 3, y + 7, 0xFF58C7F2);
@@ -358,12 +364,15 @@ public final class PetSkinScreen extends Screen {
             addRenderableWidget(new GearButton(pr[2] - 26, pr[3] - 28, true, b -> ModNetwork.CHANNEL.sendToServer(new ModNetwork.TalentAction(pet.getId(), 4, 0))));
             ChibiButton toChibi = new ChibiButton((pr[0] + pr[2]) / 2 - 11, pr[3] - 28, b -> {
                 long now = System.currentTimeMillis();
-                if (now < chibiConfirmUntil) {
+                if (!adult()) {
+                    ModNetwork.CHANNEL.sendToServer(new ModNetwork.TalentAction(pet.getId(), 6, 0));
+                    this.onClose();
+                } else if (now < chibiConfirmUntil) {
                     ModNetwork.CHANNEL.sendToServer(new ModNetwork.TalentAction(pet.getId(), 5, 0));
                     this.onClose();
                 } else chibiConfirmUntil = now + 3000L;
             });
-            toChibi.active = adult();
+            toChibi.active = true;
             addRenderableWidget(toChibi);
         }
         if (locked()) return;   // soldado: solo se puede mirar (pestanas, cerrar); nada de ordenes, habilidades ni talentos
@@ -513,14 +522,14 @@ public final class PetSkinScreen extends Screen {
             g.renderOutline(o[0], o[1], o[2] - o[0], o[3] - o[1], 0xFFB8862A);
             float cx = (o[0] + o[2]) / 2.0F, cy = (o[1] + o[3]) / 2.0F;
             textC(g, tab == 1 ? "Sus ataques se despiertan al crecer" : "Los talentos se desbloquean al crecer", cx, cy - 10, 1.5F, GOLD, true);
-            textC(g, "Alimentalo con carne cruda hasta que sea adulto.", cx, cy + 10, 1.1F, TEXT, false);
+            textC(g, "Alimentalo con carne cruda o usa el boton de carne del retrato.", cx, cy + 10, 1.1F, TEXT, false);
         }
         super.render(g, mx, my, pt);
         int[] pr = VR(skin.portrait[tab]);
         if (compy == null && my >= pr[3] - 28 && my < pr[3] - 6) {
             if (mx >= pr[0] + 4 && mx < pr[0] + 26) g.renderTooltip(this.font, Component.literal(saddled() ? "Quitar silla" : "Sin silla (clic con una silla en la mano)"), rmx, rmy);
             else if (mx >= pr[2] - 26 && mx < pr[2] - 4) g.renderTooltip(this.font, Component.literal(armorTier() > 0 ? "Quitar armadura" : "Sin armadura (clic con una en la mano)"), rmx, rmy);
-            else if (mx >= (pr[0] + pr[2]) / 2 - 11 && mx < (pr[0] + pr[2]) / 2 + 11) g.renderTooltip(this.font, Component.literal(!adult() ? "Ya es una cria"
+            else if (mx >= (pr[0] + pr[2]) / 2 - 11 && mx < (pr[0] + pr[2]) / 2 + 11) g.renderTooltip(this.font, Component.literal(!adult() ? "Hacerlo crecer (adulto)"
                 : System.currentTimeMillis() < chibiConfirmUntil ? "Pulsa otra vez para confirmar" : "Volver a pequeno (conserva silla y armadura)"), rmx, rmy);
         }
         int[] nb = VR(skin.namebox[tab]);

@@ -36,7 +36,7 @@ public final class ModNetwork {
         com.prodigytown.creatures.quests.QuestPackets.register();
     }
 
-    /** action 0 = subir rango de un talento (index), 1 = restablecer, 2 = sentar/levantar, 3 = quitar silla, 4 = quitar armadura, 5 = volver a chibi. */
+    /** action 0 = subir rango de un talento (index), 1 = restablecer, 2 = sentar/levantar, 3 = quitar silla, 4 = quitar armadura, 5 = volver a chibi, 6 = hacer crecer a la cria (carnotauro / dilofosaurio). */
     public record TalentAction(int entityId, int action, int index) {
         public static void encode(TalentAction m, FriendlyByteBuf buf) { buf.writeInt(m.entityId); buf.writeByte(m.action); buf.writeByte(m.index); }
         public static TalentAction decode(FriendlyByteBuf buf) { return new TalentAction(buf.readInt(), buf.readByte(), buf.readByte()); }
@@ -52,6 +52,7 @@ public final class ModNetwork {
                     else if (m.action == 3) dilo.removeSaddle();
                     else if (m.action == 4) dilo.removeArmor();
                     else if (m.action == 5) dilo.revertToChibi();
+                    else if (m.action == 6) dilo.growNow();
                     return;
                 }
                 if (e instanceof com.prodigytown.creatures.CompyEntity compy && compy.isLeader() && compy.isOwnedBy(sp) && compy.distanceTo(sp) <= 40.0F) {
@@ -67,6 +68,7 @@ public final class ModNetwork {
                     else if (m.action == 3) carno.removeSaddle();
                     else if (m.action == 4) carno.removeArmor();
                     else if (m.action == 5) carno.revertToChibi();
+                    else if (m.action == 6) carno.growNow();
                     return;
                 }
                 if (!(e instanceof StegosaurusEntity stego) || !stego.isOwnedBy(sp) || stego.distanceTo(sp) > 40.0F) return;
