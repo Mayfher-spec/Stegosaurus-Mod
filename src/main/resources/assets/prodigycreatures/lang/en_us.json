@@ -130,9 +130,6 @@
   "key.prodigycreatures.compy_screech": "Compy (leader): Alarm Screech",
   "key.prodigycreatures.compy_pack": "Compy (leader): Pack Attack",
   "key.prodigycreatures.compy_whistle": "Compy (leader): Whistle (recall the pack)",
-  "item.prodigycreatures.dino_scale": "Dinosaur Scale",
-  "item.prodigycreatures.dino_claw": "Dinosaur Claw",
-  "item.prodigycreatures.dino_fang": "Dinosaur Fang",
   "advancements.prodigycreatures.root.title": "The Stegosaurus Mod",
   "advancements.prodigycreatures.root.description": "Prodigy creatures: tame them, raise them and build your pack.",
   "advancements.prodigycreatures.tame_stego.title": "Friend of the Plates",
@@ -174,5 +171,8 @@
   "advancements.prodigycreatures.quests_10.title": "Adventurer",
   "advancements.prodigycreatures.quests_10.description": "Claim ten quests.",
   "advancements.prodigycreatures.quests_25.title": "Legend",
-  "advancements.prodigycreatures.quests_25.description": "Claim twenty-five quests."
+  "advancements.prodigycreatures.quests_25.description": "Claim twenty-five quests.",
+  "item.prodigycreatures.stegosaurus_scale": "Stegosaurus Scale",
+  "item.prodigycreatures.carnotaurus_fang": "Carnotaurus Fang",
+  "item.prodigycreatures.dilophosaurus_scale": "Dilophosaurus Scale"
 }

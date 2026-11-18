@@ -106,10 +106,10 @@ public class ProdigyCreatures {
     public static final RegistryObject<Item> CARNOTAURUS_EGG = ITEMS.register("carnotaurus_spawn_egg", () ->
         new ForgeSpawnEggItem(() -> CARNOTAURUS.get(), 0x8E2F25, 0xE0C9A0, new Item.Properties()));
     /** Carne de cordero dorada (cordero cocido rodeado de oro): reanima a un carnotauro caido. */
-    /** Materiales de armadura que sueltan las criaturas salvajes: escama (estegosaurio y compy), garra (carnotauro) y colmillo (dilofosaurio). */
-    public static final RegistryObject<Item> DINO_SCALE = ITEMS.register("dino_scale", () -> new Item(new Item.Properties()));
-    public static final RegistryObject<Item> DINO_CLAW = ITEMS.register("dino_claw", () -> new Item(new Item.Properties()));
-    public static final RegistryObject<Item> DINO_FANG = ITEMS.register("dino_fang", () -> new Item(new Item.Properties()));
+    /** Materiales de armadura que sueltan las criaturas salvajes: escama de estegosaurio, colmillo de carnotauro y escama de dilofosaurio (esta tambien la sueltan los compys). */
+    public static final RegistryObject<Item> STEGO_SCALE = ITEMS.register("stegosaurus_scale", () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> CARNO_FANG = ITEMS.register("carnotaurus_fang", () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> DILO_SCALE = ITEMS.register("dilophosaurus_scale", () -> new Item(new Item.Properties()));
     public static final RegistryObject<Item> GOLDEN_MUTTON = ITEMS.register("golden_mutton", () -> new Item(new Item.Properties().stacksTo(16).rarity(net.minecraft.world.item.Rarity.RARE)));
 
     public static final RegistryObject<Item> STEGOSAURUS_EGG = ITEMS.register("stegosaurus_spawn_egg", () ->
@@ -192,9 +192,9 @@ public class ProdigyCreatures {
                 for (RegistryObject<Item> egg : DILO_EGG_ITEMS) event.accept(egg.get());
             }
             if (event.getTabKey() == CreativeModeTabs.INGREDIENTS) {
-                event.accept(DINO_SCALE.get());
-                event.accept(DINO_CLAW.get());
-                event.accept(DINO_FANG.get());
+                event.accept(STEGO_SCALE.get());
+                event.accept(CARNO_FANG.get());
+                event.accept(DILO_SCALE.get());
             }
             if (event.getTabKey() == CreativeModeTabs.FOOD_AND_DRINKS) {
                 event.accept(TAMING_SALAD.get());

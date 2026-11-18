@@ -130,9 +130,6 @@
   "key.prodigycreatures.compy_screech": "Compy (líder): Chillido de alarma",
   "key.prodigycreatures.compy_pack": "Compy (líder): Ataque en bandada",
   "key.prodigycreatures.compy_whistle": "Compy (líder): Silbido (la manada vuelve)",
-  "item.prodigycreatures.dino_scale": "Escama de dinosaurio",
-  "item.prodigycreatures.dino_claw": "Garra de dinosaurio",
-  "item.prodigycreatures.dino_fang": "Colmillo de dinosaurio",
   "advancements.prodigycreatures.root.title": "The Stegosaurus Mod",
   "advancements.prodigycreatures.root.description": "Criaturas prodigio: domalas, críalas y forma tu manada.",
   "advancements.prodigycreatures.tame_stego.title": "Amigo de las placas",
@@ -174,5 +171,8 @@
   "advancements.prodigycreatures.quests_10.title": "Aventurero",
   "advancements.prodigycreatures.quests_10.description": "Reclama diez misiones.",
   "advancements.prodigycreatures.quests_25.title": "Leyenda",
-  "advancements.prodigycreatures.quests_25.description": "Reclama veinticinco misiones."
+  "advancements.prodigycreatures.quests_25.description": "Reclama veinticinco misiones.",
+  "item.prodigycreatures.stegosaurus_scale": "Escama de estegosaurio",
+  "item.prodigycreatures.carnotaurus_fang": "Colmillo de carnotauro",
+  "item.prodigycreatures.dilophosaurus_scale": "Escama de dilofosaurio"
 }
