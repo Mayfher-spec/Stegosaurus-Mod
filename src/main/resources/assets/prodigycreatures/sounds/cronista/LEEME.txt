@@ -1,11 +1,11 @@
-VOZ DE LA CRONISTA - archivos de audio que faltan (formato .ogg, mono, 44100 Hz, 1-2 s)
+VOZ DE LA CRONISTA (archivos .ogg, mono, 44100 Hz)
 
-Pon aqui, con estos nombres exactos:
-  hello1.ogg hello2.ogg hello3.ogg   saludo al hablarle ("hola", "hello", "hey"...), voz de chica
-  happy1.ogg happy2.ogg              alegria al instalarse en tu base ("yay", risita)
-  hurt1.ogg hurt2.ogg                queja al recibir dano ("ay", "ouch")
-  death1.ogg                         al morir
+  hello1.ogg  "Hello!"      hello2.ogg  "¡Hola!"      hello3.ogg  "Hey there!"   saludo al hablarle
+  happy1.ogg  "Yay!"        happy2.ogg  "Wonderful!"                              al instalarse en tu base
+  hurt1.ogg   "Ouch!"       hurt2.ogg   "Ow!"                                     al recibir dano
+  death1.ogg  "Ahh!"                                                              al morir
 
-Si falta alguno, ese sonido simplemente no suena (Minecraft solo avisa en el log).
-Convertir de mp3/wav:  ffmpeg -i entrada.wav -ac 1 -ar 44100 -c:a libvorbis -q:a 4 hello1.ogg
-Usa audios propios o con licencia que permita su uso en mods (no copies los archivos de otros mods).
+Generados con el modelo de voz Kokoro-82M (licencia Apache 2.0, voces af_heart y ef_dora).
+Para cambiar una voz basta sustituir el archivo por otro .ogg mono con el mismo nombre:
+  ffmpeg -i entrada.wav -ac 1 -ar 44100 -c:a libvorbis -q:a 4 hello1.ogg
+Si falta alguno, ese sonido no suena (Minecraft solo avisa en el log).
