@@ -1,11 +1,11 @@
-VOZ DE LA CRONISTA (archivos .ogg, mono, 44100 Hz)
+VOZ DE LA CRONISTA, en espanol latino (archivos .ogg, mono, 44100 Hz)
 
-  hello1.ogg  "Hello!"      hello2.ogg  "¡Hola!"      hello3.ogg  "Hey there!"   saludo al hablarle
-  happy1.ogg  "Yay!"        happy2.ogg  "Wonderful!"                              al instalarse en tu base
-  hurt1.ogg   "Ouch!"       hurt2.ogg   "Ow!"                                     al recibir dano
-  death1.ogg  "Ahh!"                                                              al morir
+  hello1.ogg  "¡Hola!"   hello2.ogg  "¡Que gusto verte!"   hello3.ogg  "¡Buenas!"   saludo al hablarle
+  happy1.ogg  "¡Que bien!"   happy2.ogg  "¡Gracias!"                                  al instalarse en tu base
+  hurt1.ogg   "¡Ay!"     hurt2.ogg   "¡Auch!"                                         al recibir dano
+  death1.ogg  "¡Aaay!"                                                                al morir
 
-Generados con el modelo de voz Kokoro-82M (licencia Apache 2.0, voces af_heart y ef_dora).
+Generados con el modelo de voz Kokoro-82M (licencia Apache 2.0, voz ef_dora) con pronunciacion latina.
 Para cambiar una voz basta sustituir el archivo por otro .ogg mono con el mismo nombre:
   ffmpeg -i entrada.wav -ac 1 -ar 44100 -c:a libvorbis -q:a 4 hello1.ogg
 Si falta alguno, ese sonido no suena (Minecraft solo avisa en el log).
