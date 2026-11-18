@@ -5,7 +5,8 @@ VOZ DE LA CRONISTA, en espanol latino (archivos .ogg, mono, 44100 Hz)
   hurt1.ogg   "¡Ay!"     hurt2.ogg   "¡Auch!"                                         al recibir dano
   death1.ogg  "¡Aaay!"                                                                al morir
 
-Generados con el modelo de voz Kokoro-82M (licencia Apache 2.0, voz ef_dora) con pronunciacion latina.
+Generados con el modelo de voz Kokoro-82M (licencia Apache 2.0, voz ef_dora) con pronunciacion latina,
+con el tono subido (x1.32, formantes preservados) y un ajuste suave de timbre hacia una voz de referencia.
 Para cambiar una voz basta sustituir el archivo por otro .ogg mono con el mismo nombre:
   ffmpeg -i entrada.wav -ac 1 -ar 44100 -c:a libvorbis -q:a 4 hello1.ogg
 Si falta alguno, ese sonido no suena (Minecraft solo avisa en el log).
