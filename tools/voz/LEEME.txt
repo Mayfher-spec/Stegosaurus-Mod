@@ -1,0 +1,20 @@
+HERRAMIENTAS DE VOZ DE LA CRONISTA (no entran en el jar)
+
+Estado: la voz actual de sounds/cronista/*.ogg es provisional (Kokoro-82M, voz ef_dora, espanol latino, tono x1.32).
+El plan es sustituirla por grabaciones reales: ver GUION_GRABACION.txt.
+
+Entorno usado (sin PyPI, que esta bloqueado): onnxruntime + numpy + scipy + ffmpeg (con libvorbis y rubberband).
+Modelos (se bajan de GitHub Releases, ~350 MB, NO se versionan):
+  curl -L -o kokoro.onnx https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.onnx
+  curl -L -o voices.bin  https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin
+  curl -L https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-whisper-base.tar.bz2 | tar xj
+
+Scripts:
+  kokoro_gen_es.py       genera los 8 sonidos (fonemas escritos a mano; la tabla de simbolos de Kokoro esta en V)
+  ajustar_timbre.py      sube el tono (rubberband) y acerca el timbre a una nota de referencia v.wav (EQ suave, tope 3 dB)
+  f0.py                  estima la altura (Hz) de una voz
+  transcribir_whisper.py transcribe un wav de 16 kHz (whisper base en onnx)
+
+Pasos para convertir grabaciones propias a los .ogg del mod:
+  ffmpeg -i grabacion.m4a -ac 1 -ar 44100 -af "silenceremove=start_periods=1:start_threshold=-45dB,areverse,silenceremove=start_periods=1:start_threshold=-45dB,areverse,loudnorm=I=-18:TP=-2" -c:a libvorbis -q:a 4 hello1.ogg
+La nota de voz de referencia NO se guarda en el repo (es una voz privada).

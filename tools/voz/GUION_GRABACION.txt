@@ -1,0 +1,17 @@
+GUION PARA GRABAR LA VOZ DE LA CRONISTA (espanol latino)
+
+Cada frase en un audio corto (1-2 s), tono simpatico, sin ruido de fondo, sin dejar silencio largo al inicio o al final.
+Se puede mandar un solo audio largo con pausas de 1-2 s entre frases; yo lo corto.
+
+  hello1  "¡Hola!"                  saludo al hablarle
+  hello2  "¡Que gusto verte!"       saludo
+  hello3  "¡Buenas!"                saludo
+  happy1  "¡Que bien!"              al instalarse en tu base
+  happy2  "¡Gracias!"               al instalarse en tu base
+  hurt1   "¡Ay!"                    al recibir dano
+  hurt2   "¡Auch!"                  al recibir dano
+  death1  "¡Aaay!" (largo, 1-2 s)  al morir
+
+Opcional (si se quieren mas variantes): "¡Hey!", "¡Hola, viajero!", "¡Wow!", "¡Cuidado!".
+Los nombres de archivo del mod son hello1-3, happy1-2, hurt1-2 y death1 (.ogg, mono, 44100 Hz) en
+src/main/resources/assets/prodigycreatures/sounds/cronista/.
