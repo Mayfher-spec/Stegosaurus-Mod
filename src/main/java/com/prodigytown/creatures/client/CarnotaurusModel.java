@@ -22,7 +22,11 @@ public final class CarnotaurusModel<T extends CarnotaurusEntity> extends EntityM
     public static final ModelLayerLocation LAYER_CHIBI = new ModelLayerLocation(new ResourceLocation(ProdigyCreatures.MODID, "carnotaurus"), "chibi");
     /** Armadura ligera (v1.14): mismos huesos que el adulto, con sus propios cubos y atlas (CarnotaurusArmorLayers, generado por tools/carnotaurus/armor2.py). */
     public static final ModelLayerLocation LAYER_ARMOR = new ModelLayerLocation(new ResourceLocation(ProdigyCreatures.MODID, "carnotaurus"), "armor");
+    public static final ModelLayerLocation LAYER_ARMOR_CHIBI = new ModelLayerLocation(new ResourceLocation(ProdigyCreatures.MODID, "carnotaurus"), "armor_chibi");
+    public static final ModelLayerLocation LAYER_SADDLE_CHIBI = new ModelLayerLocation(new ResourceLocation(ProdigyCreatures.MODID, "carnotaurus"), "saddle_chibi");
     public static LayerDefinition createArmorLayer() { return CarnotaurusArmorLayers.adult(); }
+    public static LayerDefinition createArmorChibiLayer() { return CarnotaurusArmorLayers.chibi(); }
+    public static LayerDefinition createSaddleChibiLayer() { return CarnotaurusArmorLayers.saddleChibi(); }
     public static LayerDefinition createAdultLayer() { return CarnotaurusLayers.adult(); }
     public static LayerDefinition createChibiLayer() { return CarnotaurusLayers.chibi(); }
 

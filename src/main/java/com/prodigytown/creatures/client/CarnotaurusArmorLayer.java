@@ -13,18 +13,19 @@ import net.minecraft.client.renderer.entity.layers.RenderLayer;
 import net.minecraft.resources.ResourceLocation;
 
 /**
- * Armadura ligera del Brutus (hierro / oro / diamante / netherita): yelmo, tejas dorsales, hombreras, arnes y estandarte.
+ * Armadura ligera del Brutus (la cria lleva una version simplificada con su propio modelo) (hierro / oro / diamante / netherita): yelmo, tejas dorsales, hombreras, arnes y estandarte.
  * Usa un modelo PROPIO con los mismos huesos que el adulto (CarnotaurusModel.LAYER_ARMOR) y su propio atlas; en cada fotograma
  * se anima con el mismo estado del carnotauro, asi sigue toda su animacion.
  * GENERADA junto a la malla por tools/carnotaurus/armor2.py.
  */
 public final class CarnotaurusArmorLayer extends RenderLayer<CarnotaurusEntity, CarnotaurusModel<CarnotaurusEntity>> {
     private static final String[] TIERS = {"iron", "gold", "diamond", "netherite"};
-    private final CarnotaurusModel<CarnotaurusEntity> armorModel;
+    private final CarnotaurusModel<CarnotaurusEntity> armorModel, chibiModel;
 
     public CarnotaurusArmorLayer(RenderLayerParent<CarnotaurusEntity, CarnotaurusModel<CarnotaurusEntity>> parent, EntityModelSet models) {
         super(parent);
         this.armorModel = new CarnotaurusModel<>(models.bakeLayer(CarnotaurusModel.LAYER_ARMOR), true);
+        this.chibiModel = new CarnotaurusModel<>(models.bakeLayer(CarnotaurusModel.LAYER_ARMOR_CHIBI), false);
     }
 
     private static ResourceLocation texture(int tier) {
@@ -35,9 +36,10 @@ public final class CarnotaurusArmorLayer extends RenderLayer<CarnotaurusEntity, 
                                 float limbSwing, float limbSwingAmount, float partialTick, float ageInTicks,
                                 float netHeadYaw, float headPitch) {
         int tier = entity.getArmorTier();
-        if (tier <= 0 || !entity.isAdultStage() || entity.isInvisible() || entity.getMorph() > 0) return;
-        this.armorModel.setupAnim(entity, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch);
+        if (tier <= 0 || entity.isInvisible() || entity.getMorph() > 0) return;
+        CarnotaurusModel<CarnotaurusEntity> m = entity.isAdultStage() ? this.armorModel : this.chibiModel;   // la cria lleva una version simplificada
+        m.setupAnim(entity, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch);
         VertexConsumer vc = buffers.getBuffer(RenderType.entityCutoutNoCull(texture(tier)));
-        this.armorModel.renderToBuffer(stack, vc, packedLight, LivingEntityRenderer.getOverlayCoords(entity, 0.0F), 1.0F, 1.0F, 1.0F, 1.0F);
+        m.renderToBuffer(stack, vc, packedLight, LivingEntityRenderer.getOverlayCoords(entity, 0.0F), 1.0F, 1.0F, 1.0F, 1.0F);
     }
 }

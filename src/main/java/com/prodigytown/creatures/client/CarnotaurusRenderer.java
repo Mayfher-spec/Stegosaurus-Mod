@@ -25,7 +25,7 @@ public final class CarnotaurusRenderer extends MobRenderer<CarnotaurusEntity, Ca
         super(context, new CarnotaurusModel<>(context.bakeLayer(CarnotaurusModel.LAYER_ADULT), true), 1.5F);
         this.adultModel = this.model;
         this.chibiModel = new CarnotaurusModel<>(context.bakeLayer(CarnotaurusModel.LAYER_CHIBI), false);
-        this.addLayer(new CarnotaurusSaddleLayer(this));
+        this.addLayer(new CarnotaurusSaddleLayer(this, context.getModelSet()));
         this.addLayer(new CarnotaurusArmorLayer(this, context.getModelSet()));
         this.addLayer(new CarnotaurusGlowLayer(this));
         this.addLayer(new CarnotaurusFlashLayer(this));

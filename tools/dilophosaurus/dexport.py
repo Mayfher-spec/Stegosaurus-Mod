@@ -19,8 +19,8 @@ for var in dpaint.VARIANTS:
     Image.fromarray(a).save(os.path.join(tex, 'dilophosaurus_%s_closed.png' % var), optimize=True)
     Image.fromarray(g).save(os.path.join(tex, 'dilophosaurus_%s_closed_glow.png' % var), optimize=True)
 Image.fromarray(dgear.make_saddle()).save(os.path.join(tex, 'dilophosaurus_saddle.png'), optimize=True)
-for tier in dpaint.cp.ARMOR_TIERS:
+for tier in dgear.lp.ARMOR_TIERS:
     a, g = dgear.make_armor(tier)
     Image.fromarray(dpaint.cp.dilate(a)).save(os.path.join(tex, 'dilophosaurus_armor_%s.png' % tier), optimize=True)
-    if tier == dpaint.cp.ARMOR_TIERS[0]: Image.fromarray(g).save(os.path.join(tex, 'dilophosaurus_armor_glow.png'), optimize=True)
+    if tier == dgear.lp.ARMOR_TIERS[0]: Image.fromarray(g).save(os.path.join(tex, 'dilophosaurus_armor_glow.png'), optimize=True)
 print('H', H, 'hy', hy)

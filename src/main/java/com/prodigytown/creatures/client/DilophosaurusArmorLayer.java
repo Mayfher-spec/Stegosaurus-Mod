@@ -24,7 +24,7 @@ public final class DilophosaurusArmorLayer extends RenderLayer<DilophosaurusEnti
                                 float limbSwing, float limbSwingAmount, float partialTick, float ageInTicks,
                                 float netHeadYaw, float headPitch) {
         int tier = entity.getArmorTier();
-        if (tier <= 0 || !entity.isAdultStage() || entity.isInvisible() || entity.getMorph() > 0) return;
+        if (tier <= 0 || entity.isInvisible() || entity.getMorph() > 0) return;
         ResourceLocation tex = new ResourceLocation(ProdigyCreatures.MODID, "textures/entity/dilophosaurus_armor_" + TIERS[Math.max(1, Math.min(4, tier)) - 1] + ".png");
         VertexConsumer vc = buffers.getBuffer(RenderType.entityCutoutNoCull(tex));
         this.getParentModel().renderToBuffer(stack, vc, packedLight, LivingEntityRenderer.getOverlayCoords(entity, 0.0F), 1.0F, 1.0F, 1.0F, 1.0F);

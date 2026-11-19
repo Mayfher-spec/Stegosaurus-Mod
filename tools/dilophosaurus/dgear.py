@@ -2,12 +2,13 @@
 Reutiliza los pintores de tools/carnotaurus/paint.py (saddle_tex / armor_tex / APAL)."""
 import numpy as np, drig
 from drig import crig
-import dpaint
+import dpaint, paint_legacy
 cp = dpaint.cp
+lp = paint_legacy   # armadura: aspecto congelado
 
 def _gear(roles, painter):
     out, H = drig.get_all(); atlas = np.zeros((H, dpaint.W, 4), np.uint8); glow = np.zeros((H, dpaint.W, 4), np.uint8)
-    for c in out['adult'][1]:
+    for c in out['adult'][1] + out['chibi'][1]:
         if c['role'] not in roles: continue
         for face, r in crig.regions(c).items():
             rect, loc, nl, ii, jj, fu, fv = cp.region_geom(c, face, r)
@@ -27,12 +28,12 @@ def make_saddle():
     return _gear(drig.SADDLE_ROLES, p)[0]
 
 def make_armor(tier):
-    return _gear(drig.ARMOR_ROLES, lambda c, f, l, i, j, u, v: cp.armor_tex(tier, c, f, l, i, j, u, v))
+    return _gear(drig.ARMOR_ROLES, lambda c, f, l, i, j, u, v: lp.armor_tex(tier, c, f, l, i, j, u, v))
 
 def gear_mask():
     """texels de la malla ocupados por silla/armadura (en la piel deben quedar transparentes)."""
     out, H = drig.get_all(); m = np.zeros((H, dpaint.W), bool)
-    for c in out['adult'][1]:
+    for c in out['adult'][1] + out['chibi'][1]:
         if c['role'] in drig.GEAR_ROLES:
             for face, r in crig.regions(c).items():
                 x0, y0, x1, y1 = crig.prect(r); m[y0:y1, x0:x1] = True

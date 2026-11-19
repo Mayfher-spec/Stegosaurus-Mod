@@ -44,6 +44,8 @@ public final class ClientModEvents {
         event.registerLayerDefinition(CarnotaurusModel.LAYER_ADULT, CarnotaurusModel::createAdultLayer);
         event.registerLayerDefinition(CarnotaurusModel.LAYER_CHIBI, CarnotaurusModel::createChibiLayer);
         event.registerLayerDefinition(CarnotaurusModel.LAYER_ARMOR, CarnotaurusModel::createArmorLayer);
+        event.registerLayerDefinition(CarnotaurusModel.LAYER_ARMOR_CHIBI, CarnotaurusModel::createArmorChibiLayer);
+        event.registerLayerDefinition(CarnotaurusModel.LAYER_SADDLE_CHIBI, CarnotaurusModel::createSaddleChibiLayer);
         event.registerLayerDefinition(DilophosaurusModel.LAYER_ADULT, DilophosaurusModel::createAdultLayer);
         event.registerLayerDefinition(DilophosaurusModel.LAYER_CHIBI, DilophosaurusModel::createChibiLayer);
         event.registerLayerDefinition(StegosaurusModel.LAYER_LOCATION, StegosaurusModel::createBodyLayer);

@@ -21,7 +21,7 @@ public final class DilophosaurusSaddleLayer extends RenderLayer<DilophosaurusEnt
     @Override public void render(PoseStack stack, MultiBufferSource buffers, int packedLight, DilophosaurusEntity entity,
                                 float limbSwing, float limbSwingAmount, float partialTick, float ageInTicks,
                                 float netHeadYaw, float headPitch) {
-        if (!entity.isSaddled() || !entity.isAdultStage() || entity.isInvisible() || entity.getMorph() > 0) return;
+        if (!entity.isSaddled() || entity.isInvisible() || entity.getMorph() > 0) return;
         VertexConsumer vc = buffers.getBuffer(RenderType.entityCutoutNoCull(TEXTURE));
         this.getParentModel().renderToBuffer(stack, vc, packedLight, LivingEntityRenderer.getOverlayCoords(entity, 0.0F), 1.0F, 1.0F, 1.0F, 1.0F);
     }

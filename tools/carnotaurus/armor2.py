@@ -62,23 +62,43 @@ def geometry():
         add('body',_c(_mx(19.7,0.9,sgn),-22.0,7.0,0.9,34.0,15.0,'banner',r='banner',side=sgn),
                    _c(_mx(19.4,1.8,sgn),11.6,6.0,1.8,2.4,17.0,'strap',r='bar',side=sgn))
     return A,extra
-def build():
-    """(spec, cubes, H): esqueleto del adulto con SOLO los cubos de armadura, ya escalado, y su atlas propio."""
-    A,extra=geometry()
-    spec=rig.build_spec('adult')
+def geometry_chibi():
+    """version SIMPLIFICADA para la cria: yelmo, 2 tejas en el pecho, 3 en el cuerpo, 2 en la cola, hombrera, una cincha con hebilla y grebas."""
+    A={}; extra=[]
+    def add(part,*cs): A.setdefault(part,[]).extend(cs)
+    add('head',_c(-14.8,13.6,-8.6,29.6,3.0,27.2,'plate',r='crown'),
+               _c(-11.4,10.2,24.0,22.8,2.6,12.0,'plate',r='snout'),
+               _c(-10.0,8.2,36.0,20.0,2.6,9.4,'plate',r='snout'),
+               _c(-15.4,7.6,6.0,30.8,2.6,5.0,'plate',r='brow'))
+    def shingle(bone,top,z0,k,hw=15.6,wlen=9.0,d=9.0,th=3.0):
+        add(bone,_c(-hw,top,z0,2*hw,th,d,'plate',r='shingle',k=k))
+        for sgn in (1,-1):
+            extra.append(dict(name='wing_%s_%d_%s'%(bone,k,'l' if sgn>0 else 'r'),parent=bone,piv=(sgn*hw,top+th/2.0,z0+d/2.0),rotz=sgn,
+                              cubes=[_c(0 if sgn>0 else -wlen,-th,-d/2.0,wlen,th,d,'plate',r='wing',k=k,side=sgn)],grp='body'))
+    for k,z0 in enumerate((10.0,-1.0)): shingle('chest',22.2+0.3*k,z0,k,hw=19.5,wlen=10.0,d=10.0)
+    for k,z0 in enumerate((14.0,0.0,-14.0)): shingle('body',24.4+0.1*k,z0,k+3,hw=19.5,wlen=10.0,d=12.0)
+    for k,z0 in enumerate((-4.0,-17.0)): shingle('tail1',14.3+0.1*k,z0,k+20,hw=14.4,wlen=10.0,d=11.0)
+    for sgn,nn in ((1,'l'),(-1,'r')):
+        add('thigh_'+nn,_c(_mx(12.0,2.0,sgn),-28.0,-12.0,2.0,24.0,24.0,'plate',r='thigh',side=sgn))
+        add('shin_'+nn,_c(-8.8,-23.0,-8.8,17.6,7.0,17.6,'plate',r='greave'))
+        add('chest',_c(_mx(19.1,3.0,sgn),-2.0,3.0,3.0,20.0,16.0,'plate',r='pad1',side=sgn))
+        add('body',_c(_mx(19.1,2.0,sgn),-24.0,22.0,2.0,45.0,3.6,'strap',r='side',side=sgn),
+                   _c(_mx(20.5,1.6,sgn),-9.0,21.0,1.6,7.0,6.2,'gold',r='buckle',side=sgn))
+    add('body',_c(-19.6,24.6,22.0,39.2,2.0,3.6,'strap',r='top'),_c(-19.6,-24.0,22.0,39.2,2.0,3.6,'strap',r='bottom'))
+    return A,extra
+def _stage_spec(stage,A,extra):
+    spec=rig.build_spec(stage)
     for p in spec: p['cubes']=list(A.get(p['name'],[]))
     byn={p['name']:p for p in spec}
     for e in extra:
-        par=byn[e['parent']]; sgn=e['rotz']
-        # giro del ala: debe caer hacia fuera (probar el signo contra el marco real)
-        a=0.78
+        sgn=e['rotz']; a=0.78
         for sg in (a,-a):
             R=paint.Rz(-sg); v=R@np.array([sgn,0,0.0])
             if v[1]<0: rz=sg; break
         q=dict(name=e['name'],parent=e['parent'],piv=e['piv'],rot=(0,0,rz),cubes=e['cubes'],grp=e['grp']); spec.append(q); byn[q['name']]=q
-    sc=rig.STAGES['adult']
+    sc=rig.STAGES[stage]
     for p in spec: p['sv']=rig._v3(sc[p['grp']]); p['s']=p['sv'][1]
-    for nm,rot in rig.ROT_OVERRIDE['adult'].items(): byn[nm]['rot']=rot
+    for nm,rot in rig.ROT_OVERRIDE.get(stage,{}).items(): byn[nm]['rot']=rot
     for p in spec:
         par=byn.get(p['parent'])
         if par: p['piv']=tuple(q*k for q,k in zip(p['piv'],par['sv']))
@@ -87,17 +107,23 @@ def build():
     cubes=[]
     for p in spec:
         for i,c in enumerate(p['cubes']):
-            cubes.append(dict(part=p['name'],grp=p['grp'],s=p['s'],sv=p['sv'],i=i,x0=c[0],y0=c[1],z0=c[2],w=c[3],h=c[4],d=c[5],role=c[6],opt=c[7],stage='adult'))
-    # empaquetado en un atlas propio de AW px de ancho
-    for c in cubes:
+            cubes.append(dict(part=p['name'],grp=p['grp'],s=p['s'],sv=p['sv'],i=i,x0=c[0],y0=c[1],z0=c[2],w=c[3],h=c[4],d=c[5],role=c[6],opt=c[7],stage=stage))
+    return spec,cubes
+def build_all():
+    """({'adult':(spec,cubes),'chibi':(spec,cubes)}, H): ambos modelos de armadura en UN atlas propio de AW px de ancho."""
+    out={'adult':_stage_spec('adult',*geometry()),'chibi':_stage_spec('chibi',*geometry_chibi())}
+    allc=out['adult'][1]+out['chibi'][1]
+    for c in allc:
         w,h,d=c['w'],c['h'],c['d']; cw,ch,cd=math.ceil(w-1e-6),math.ceil(h-1e-6),math.ceil(d-1e-6); c['alloc']=(2*(cd+cw)+1,cd+ch+1)
-    items=sorted(cubes,key=lambda c:-c['alloc'][1]); x=y=rowh=0
+    items=sorted(allc,key=lambda c:-c['alloc'][1]); x=y=rowh=0
     for c in items:
         fw,fh=c['alloc']
         if x+fw>AW: x=0; y+=rowh; rowh=0
         c['uv']=(x,y); x+=fw; rowh=max(rowh,fh)
     H=int(math.ceil((y+rowh)/32.0)*32)
-    return spec,cubes,H
+    return out,H
+def build():
+    out,H=build_all(); return out['adult'][0],out['adult'][1]+out['chibi'][1],H
 # ---------------------------------------------------------------- pintura
 C=lambda *v: np.array(v,float)
 LEATHER=dict(base=C(112,70,38),light=C(160,108,60),dark=C(62,38,20),stitch=C(214,172,110))
@@ -234,6 +260,53 @@ def make_atlas(tier,spec,cubes,H):
             col,m=tex(tier,c,face,loc,ii,jj,fu,fv)
             atlas[jj[m],ii[m],:3]=np.clip(col[m],0,255).astype(np.uint8); atlas[jj[m],ii[m],3]=255
     return atlas
+
+# ---------------------------------------------------------------- silla de la cria (modelo y atlas propios, simplificada)
+SW=128
+def saddle_chibi_geometry():
+    """cubos en unidades FINALES de la cria; se pasan a unidades de diseno (la cria escala todo x0.52)."""
+    k=rig.STAGES['chibi']['body']; A={}
+    def add(part,cs):
+        for c in cs: A.setdefault(part,[]).append((c[0]/k,c[1]/k,c[2]/k,c[3]/k,c[4]/k,c[5]/k,c[6],c[7]))
+    b=[]
+    b+=rig._box(-10.8,10.8,12.0,13.4,-15.0,5.0,'cloth',dict(piece='top'))
+    b+=rig._mir(10.0,11.4,5.0,12.4,-14.4,4.4,'cloth',dict(piece='drape'))
+    b+=rig._mir(11.2,12.2,4.6,13.0,-2.0,1.5,'leather',dict(strap=1))
+    b+=rig._box(-10.8,10.8,13.2,14.2,-2.0,1.5,'leather',dict(strap=1))
+    b+=rig._mir(12.0,12.8,7.0,10.0,-2.4,1.9,'metal',dict(buckle=1))
+    b+=rig._mir(11.2,12.2,5.2,12.6,-7.6,-5.4,'leather',dict(strap=1))
+    b+=rig._mir(12.0,14.0,4.0,5.2,-9.0,-4.0,'metal',dict(iron=1))
+    b+=rig._box(-7.5,7.5,13.4,15.4,-11.0,3.6,'leather',dict(seat=1))
+    b+=rig._box(-8.2,8.2,13.4,19.0,-12.0,-8.6,'leather',dict(cantle=1))
+    b+=rig._box(-1.8,1.8,13.4,18.0,1.4,3.8,'leather',dict(pommel=1))
+    b+=rig._box(-2.4,2.4,17.8,19.2,1.0,4.2,'metal',dict(cap=1))
+    add('body',b)
+    c=[]
+    c+=rig._box(-10.8,10.8,11.2,12.4,1.5,4.2,'leather',dict(strap=1))
+    c+=rig._mir(10.0,11.0,-10.8,12.4,1.5,4.2,'leather',dict(strap=1))
+    c+=rig._mir(11.0,12.0,1.0,5.6,1.0,5.6,'metal',dict(medal=1))
+    add('chest',c)
+    return A
+def build_saddle():
+    spec,cubes=_stage_spec('chibi',saddle_chibi_geometry(),[])
+    cubes=[c for c in cubes if c['role'] in rig.SADDLE_ROLES]
+    for c in cubes:
+        w,h,d=c['w'],c['h'],c['d']; cw,ch,cd=math.ceil(w-1e-6),math.ceil(h-1e-6),math.ceil(d-1e-6); c['alloc']=(2*(cd+cw)+1,cd+ch+1)
+    x=y=rowh=0
+    for c in sorted(cubes,key=lambda c:-c['alloc'][1]):
+        fw,fh=c['alloc']
+        if x+fw>SW: x=0; y+=rowh; rowh=0
+        c['uv']=(x,y); x+=fw; rowh=max(rowh,fh)
+    H=int(math.ceil((y+rowh)/16.0)*16)
+    return spec,cubes,H
+def make_saddle_atlas(cubes,H):
+    a=np.zeros((H,SW,4),np.uint8)
+    for c in cubes:
+        for face,r in rig.regions(c).items():
+            rect,loc,nl,ii,jj,fu,fv=paint.region_geom(c,face,r)
+            col,m=paint.saddle_tex(c,face,loc,ii,jj,fu,fv)
+            if m.any(): a[jj[m],ii[m],:3]=np.clip(col[m],0,255).astype(np.uint8); a[jj[m],ii[m],3]=255
+    return a
 JAVA_HEAD="""package com.prodigytown.creatures.client;
 
 import net.minecraft.client.model.geom.PartPose;
@@ -254,17 +327,40 @@ final class CarnotaurusArmorLayers {
 %s
         return LayerDefinition.create(mesh, TEX_W, TEX_H);
     }
+
+    static final int SAD_W = %d;
+    static final int SAD_H = %d;
+
+    static LayerDefinition saddleChibi() {
+        MeshDefinition mesh = new MeshDefinition();
+        PartDefinition root = mesh.getRoot();
+%s
+        return LayerDefinition.create(mesh, SAD_W, SAD_H);
+    }
+
+    static LayerDefinition chibi() {
+        MeshDefinition mesh = new MeshDefinition();
+        PartDefinition root = mesh.getRoot();
+%s
+        return LayerDefinition.create(mesh, TEX_W, TEX_H);
+    }
 }
 """
-def java_source(spec,cubes,H):
-    hy=paint.fit_hy('adult')
-    return JAVA_HEAD%(AW,H,'\n'.join(rig.java_lines(spec,cubes,hy)))
+def java_source(out,H):
+    parts=[]
+    for st in ('adult','chibi'):
+        spec,cubes=out[st]; parts.append('\n'.join(rig.java_lines(spec,cubes,paint.fit_hy(st))))
+    sspec,scubes,SH=build_saddle()
+    sad='\n'.join(rig.java_lines(sspec,scubes,paint.fit_hy('chibi')))
+    return JAVA_HEAD%(AW,H,parts[0],SW,SH,sad,parts[1])
 def export(repo):
-    spec,cubes,H=build()
-    open(os.path.join(repo,'src/main/java/com/prodigytown/creatures/client/CarnotaurusArmorLayers.java'),'w').write(java_source(spec,cubes,H))
+    out,H=build_all(); allc=out['adult'][1]+out['chibi'][1]
+    open(os.path.join(repo,'src/main/java/com/prodigytown/creatures/client/CarnotaurusArmorLayers.java'),'w').write(java_source(out,H))
     from PIL import Image
     td=os.path.join(repo,'src/main/resources/assets/prodigycreatures/textures/entity')
-    for t in TIERS: Image.fromarray(make_atlas(t,spec,cubes,H)).save(os.path.join(td,'carnotaurus_armor_%s.png'%t),optimize=True)
-    print('armadura: %d cubos, atlas %dx%d'%(len(cubes),AW,H))
+    for t in TIERS: Image.fromarray(make_atlas(t,None,allc,H)).save(os.path.join(td,'carnotaurus_armor_%s.png'%t),optimize=True)
+    sspec,scubes,SH=build_saddle()
+    Image.fromarray(make_saddle_atlas(scubes,SH)).save(os.path.join(td,'carnotaurus_saddle_chibi.png'),optimize=True)
+    print('armadura: adulto %d + cria %d cubos, atlas %dx%d'%(len(out['adult'][1]),len(out['chibi'][1]),AW,H))
 if __name__=='__main__':
     export(sys.argv[1] if len(sys.argv)>1 else '.')

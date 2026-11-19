@@ -62,7 +62,7 @@ def build_spec(stage='adult'):
             (-2.3, 0, -0.5, 4.6, 5, 1.0, 'frill', dict(k=0, rib=k)),
             (-4.0, 5, -0.5, 8.0, 6, 1.0, 'frill', dict(k=1, rib=k)),
             (-6.5, 11, -0.5, 13.0, 7, 1.0, 'frill', dict(k=2, rib=k))], 'frill')
-    if stage == 'adult': add_gear(P)
+    add_gear(P, chibi=(stage != 'adult'))   # la cria lleva una version simplificada del mismo equipo
     return P
 
 # ---- silla ligera y armadura 3D (solo adulto). Se pintan unicamente en dilophosaurus_saddle.png / dilophosaurus_armor_<nivel>.png:
@@ -73,9 +73,33 @@ GEAR_ROLES = tuple(SADDLE_ROLES) + tuple(ARMOR_ROLES)
 
 def _a(x0, y0, z0, w, h, d, **o): return (x0, y0, z0, w, h, d, 'armor', o)
 
-def add_gear(P):
+def _chibi_fix(cubes, part):
+    """version simplificada para la cria: sin bandas de brazos/metatarsos, sin gema, sin placas de vientre, sin laminas del pie, sin mandibula ni placas laterales del hocico;
+    y las placas finas (< 1,5 unidades) se engrosan hacia fuera para que se vean tras escalar x0.58."""
+    out = []
+    for c in cubes:
+        x0, y0, z0, w, h, d, role, o = c
+        k = o.get('kind'); r2 = o.get('role2')
+        if role == 'armor':
+            if part == 'jaw' or k == 'gem' or r2 == 'belly': continue
+            if k == 'band' and part in ('arm_l', 'arm_r', 'arm2_l', 'arm2_r', 'meta_l', 'meta_r', 'head'): continue
+            if part.startswith('foot_') or (part == 'head' and abs(z0 - 13.5) < 1e-6): continue
+        if min(w, h, d) < 1.5:
+            if w < 1.5:
+                dl = 1.7 - w
+                if x0 + w / 2.0 < 0: x0 -= dl
+                w += dl
+            if h < 1.5:
+                dl = 1.7 - h
+                if y0 + h / 2.0 < 0: y0 -= dl
+                h += dl
+            if d < 1.5: d += 1.7 - d
+        out.append((x0, y0, z0, w, h, d, role, o))
+    return out
+
+def add_gear(P, chibi=False):
     byn = {p['name']: p for p in P}
-    def add(part, cubes): byn[part]['cubes'] += list(cubes)
+    def add(part, cubes): byn[part]['cubes'] += (_chibi_fix(list(cubes), part) if chibi else list(cubes))
     mir, box = crig._mir, crig._box
     # --- silla ligera: manta corta, asiento con borrelete y pomo, cincha por los flancos y estribos
     c = []
