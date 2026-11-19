@@ -363,9 +363,10 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder, Prod
     }
 
     @Override public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty, MobSpawnType reason, @Nullable SpawnGroupData spawnData, @Nullable CompoundTag dataTag) {
-        SpawnGroupData data = super.finalizeSpawn(level, difficulty, reason, spawnData, dataTag);
+        // AgeableMob castea spawnData a AgeableMobGroupData: nunca se le pasa nuestro PackData (crasheaba al generar el segundo miembro de una manada)
+        SpawnGroupData data = super.finalizeSpawn(level, difficulty, reason, spawnData instanceof PackData ? null : spawnData, dataTag);
         PackData pd;
-        if (spawnData instanceof PackData existing) { pd = existing; this.packId = pd.id; this.entityData.set(LEADER, false); }   // el resto de la manada: soldados
+        if (spawnData instanceof PackData existing) { pd = existing; data = existing; this.packId = pd.id; this.entityData.set(LEADER, false); }   // el resto de la manada: soldados
         else { pd = new PackData(baseVariantFor(level.getBiome(this.blockPosition()))); data = pd; this.packId = pd.id; this.entityData.set(LEADER, true); }   // el primero: lider
         if (!variantFixed) setVariant(rareRoll(level, pd.base));
         applyRoleStats(false);
