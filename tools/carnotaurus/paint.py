@@ -390,6 +390,7 @@ def saddle_mask():
 # ---------------------------------------------------------------- armadura 3D del Brutus (se pinta solo en carnotaurus_armor_<nivel>.png)
 ARMOR_TIERS=('iron','gold','diamond','netherite')
 GOLD_T=C(206,152,52)
+SIMPLE=True   # armadura limpia: placas con remaches solo en las esquinas, sin pinchos, bandas ni correa
 APAL={
  # ficha "Armadura de Carnotaurus": placas segmentadas con remaches y ribetes dorados; emb = color del emblema de la placa del muslo
  'iron':     dict(base=C(140,144,158),light=C(206,210,222),dark=C(66,70,84),trim=C(190,142,52),rivet=C(232,196,96),gem=C(232,52,52),gem_d=C(120,16,24),emb=C(216,222,236),tint=(1.0,0.28,0.26)),
@@ -423,6 +424,8 @@ def armor_tex(tier,c,face,loc,ii,jj,fu,fv):
     seed=zlib.crc32(('%s:%d'%(c['part'],c['i'])).encode())%1000
     nz=fbm(loc*0.55+seed*0.37,31+seed%7)
     glow=np.zeros(n); mask=np.ones(n,bool)
+    if SIMPLE and kind in('spike','band'):
+        return np.zeros((n,3)),glow,np.zeros(n,bool)        # v1.13.3: armadura simplificada (sin pinchos ni bandas)
     if kind=='gem':
         d1,d2,rid=voronoi(loc/1.5+seed,77)
         facet=0.55+0.45*rid
@@ -453,7 +456,7 @@ def armor_tex(tier,c,face,loc,ii,jj,fu,fv):
     else:
         flk=ss(0.66,0.78,fbm(loc*0.9+seed,13,2)); col=np.asarray(lerp(col,pal['trim']*0.7,(flk*0.55)[:,None]*np.ones((n,3))))
     # laminas transversales en las placas largas (cuello, flancos, cola, vientre, grupa, muslo)
-    if kind=='plate' and r2 in ('ntop','nside','lame','tail','tailside','belly','rump','thigh','neck') and face in('up','down','xmin','xmax'):
+    if (not SIMPLE) and kind=='plate' and r2 in ('ntop','nside','lame','tail','tailside','belly','rump','thigh','neck') and face in('up','down','xmin','xmax'):
         along=(z-c['z0'])
         seam=((along%6.4)<0.9)&(along>1.0)
         col[seam]*=0.62
@@ -465,22 +468,22 @@ def armor_tex(tier,c,face,loc,ii,jj,fu,fv):
         col[edge<0.7]=pal['dark']
         lit=(face=='up')|((face in('north','xmin') ) & (fu<0.5))
         col[(edge>=0.7)&(edge<1.5)]=np.asarray(pal['light'])*(0.94+0.1*nz[(edge>=0.7)&(edge<1.5)])[:,None] if face=='up' else col[(edge>=0.7)&(edge<1.5)]*1.12
-        if mn>=7.0:
+        if mn>=7.0 and not SIMPLE:
             col[(edge>=2.1)&(edge<2.9)]=pal['trim']*(0.9+0.2*nz[(edge>=2.1)&(edge<2.9)])[:,None]
         # remaches en las esquinas y cada ~7 unidades
-        if mn>=5.0:
+        if mn>=(9.0 if SIMPLE else 5.0):
             for cx in (2.2,fw-2.2):
                 for cy in (2.2,fh-2.2):
                     rv=(np.abs(u-cx)<0.95)&(np.abs(v-cy)<0.95); col[rv]=pal['rivet']; col[rv&(u<cx)&(v<cy)]=pal['rivet']*1.0
-        if fw>=14 and fh>=5.0:
+        if fw>=14 and fh>=5.0 and not SIMPLE:
             for k in range(1,int(fw//7.0)):
                 cx=k*fw/int(fw//7.0); rv=(np.abs(u-cx)<0.8)&(np.abs(v-fh/2)<0.8); col[rv]=pal['rivet']
     # remaches dorados en el centro de cada lamina del lomo (placas dorsales articuladas)
-    if kind=='plate' and r2 in('ntop','tail','rump') and face=='up':
+    if (not SIMPLE) and kind=='plate' and r2 in('ntop','tail','rump') and face=='up':
         along=(z-c['z0']); cxm=c['x0']+c['w']/2.0
         rv=(np.abs(((along%6.4)-3.6))<0.8)&(np.abs(x-cxm)<0.9)&(along>1.0); col[rv]=pal['rivet']
     # correa con hebilla en los flancos (tres laminas contiguas)
-    if kind=='plate' and r2=='lame' and c['part']=='body' and face in('xmin','xmax') and c['y0']<0:
+    if (not SIMPLE) and kind=='plate' and r2=='lame' and c['part']=='body' and face in('xmin','xmax') and c['y0']<0:
         strap=(fv>0.40)&(fv<0.52)
         col[strap]=np.array((98,60,34))*(0.9+0.2*nz[strap])[:,None]
         col[strap&((fv<0.415)|(fv>0.505))]=np.array((60,36,22))
