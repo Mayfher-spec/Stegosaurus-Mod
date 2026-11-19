@@ -20,6 +20,9 @@ import net.minecraft.util.Mth;
 public final class CarnotaurusModel<T extends CarnotaurusEntity> extends EntityModel<T> {
     public static final ModelLayerLocation LAYER_ADULT = new ModelLayerLocation(new ResourceLocation(ProdigyCreatures.MODID, "carnotaurus"), "adult");
     public static final ModelLayerLocation LAYER_CHIBI = new ModelLayerLocation(new ResourceLocation(ProdigyCreatures.MODID, "carnotaurus"), "chibi");
+    /** Armadura ligera (v1.14): mismos huesos que el adulto, con sus propios cubos y atlas (CarnotaurusArmorLayers, generado por tools/carnotaurus/armor2.py). */
+    public static final ModelLayerLocation LAYER_ARMOR = new ModelLayerLocation(new ResourceLocation(ProdigyCreatures.MODID, "carnotaurus"), "armor");
+    public static LayerDefinition createArmorLayer() { return CarnotaurusArmorLayers.adult(); }
     public static LayerDefinition createAdultLayer() { return CarnotaurusLayers.adult(); }
     public static LayerDefinition createChibiLayer() { return CarnotaurusLayers.chibi(); }
 

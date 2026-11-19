@@ -3,7 +3,7 @@ import sys, os, math, numpy as np
 sys.path.insert(0,os.path.dirname(os.path.abspath(__file__)))
 import rig, paint
 from PIL import Image
-def render(atlas,stage='adult',yaw=90.0,elev=12.0,scale=2.6,size=(1000,660),armor=False):
+def render(atlas,stage='adult',yaw=90.0,elev=12.0,scale=2.6,size=(1000,660),armor=False,extra=()):
     out,H=rig.get_all(); spec,cubes=out[stage]; fr=paint.frames(spec)
     ya,ea=math.radians(yaw),math.radians(elev)
     # camara: gira alrededor de Y (yaw=90 => mira desde +x), luego inclina
@@ -17,28 +17,33 @@ def render(atlas,stage='adult',yaw=90.0,elev=12.0,scale=2.6,size=(1000,660),armo
     Wd,Hd=size; img=np.zeros((Hd,Wd,4),np.uint8); zb=np.full((Hd,Wd),-1e9)
     img[...,:3]=(38,40,56); img[...,3]=255
     ctr=np.array([0,82.0,-29.0] if stage=='adult' else [0,90.0,-1.0]); cx=Wd*0.5-(ctr@right)*scale; cy=Hd*0.5+(ctr@up)*scale
-    for c in cubes:
-        if c['role'] in rig.SADDLE_ROLES or (c['role'] in rig.ARMOR_ROLES and not armor): continue
-        R,T=fr[c['part']]
-        for face,r in rig.regions(c).items():
-            rect,loc,nl,ii,jj,fu,fv=paint.region_geom(c,face,r)
-            Nw=R@nl
-            if Nw@to_cam<=-0.05: continue
-            P=loc@R.T+T
-            sx=P@right; sy=P@up; dp=P@to_cam
-            x0,y0,x1,y1=rect; fw,fh=paint.face_dims(c,face)
-            tw=max(fw/max(1,x1-x0),fh/max(1,y1-y0)); sp=int(math.ceil(tw*scale*0.95))+1
-            px=(cx+sx*scale-sp/2).astype(int); py=(cy-sy*scale-sp/2).astype(int)
-            cols=atlas[jj,ii]
-            for k in range(len(px)):
-                if cols[k,3]==0: continue
-                xa,ya_=px[k],py[k]
-                xs=slice(max(0,xa),min(Wd,xa+sp)); ys=slice(max(0,ya_),min(Hd,ya_+sp))
-                if xs.start>=xs.stop or ys.start>=ys.stop: continue
-                m=zb[ys,xs]<dp[k]
-                if m.any():
-                    sh=0.78+0.22*max(0.0,float(Nw@to_cam))   # sombreado simple
-                    blk=img[ys,xs]; blk[m,:3]=(cols[k,:3]*sh).astype(np.uint8); zb[ys,xs][m]=dp[k]
+    def draw(cubes,fr,atlas,use_armor):
+        for c in cubes:
+            if c['role'] in rig.SADDLE_ROLES or (c['role'] in rig.ARMOR_ROLES and not use_armor): continue
+            R,T=fr[c['part']]
+            for face,r in rig.regions(c).items():
+                rect,loc,nl,ii,jj,fu,fv=paint.region_geom(c,face,r)
+                Nw=R@nl
+                if Nw@to_cam<=-0.05: continue
+                P=loc@R.T+T
+                sx=P@right; sy=P@up; dp=P@to_cam
+                x0,y0,x1,y1=rect; fw,fh=paint.face_dims(c,face)
+                tw=max(fw/max(1,x1-x0),fh/max(1,y1-y0)); sp=int(math.ceil(tw*scale*0.95))+1
+                px=(cx+sx*scale-sp/2).astype(int); py=(cy-sy*scale-sp/2).astype(int)
+                cols=atlas[jj,ii]
+                for k in range(len(px)):
+                    if cols[k,3]==0: continue
+                    xa,ya_=px[k],py[k]
+                    xs=slice(max(0,xa),min(Wd,xa+sp)); ys=slice(max(0,ya_),min(Hd,ya_+sp))
+                    if xs.start>=xs.stop or ys.start>=ys.stop: continue
+                    m=zb[ys,xs]<dp[k]
+                    if m.any():
+                        sh=0.78+0.22*max(0.0,float(Nw@to_cam))   # sombreado simple
+                        blk=img[ys,xs]; blk[m,:3]=(cols[k,:3]*sh).astype(np.uint8); zb[ys,xs][m]=dp[k]
+
+    draw(cubes,fr,atlas,armor)
+    for (xc,xs,xa) in extra:
+        draw(xc,paint.frames(xs),xa,True)
     return img
 if __name__=='__main__':
     arm=None

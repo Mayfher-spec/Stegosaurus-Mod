@@ -134,3 +134,6 @@ v1.1.24 - Dormir: cabeza a la vista y sin moverse
   Pose: cuello estirado al frente (sleepNeck1 1.37, sleepNeck2 -0.85, cabeza 0) y girado -0.25 hacia el suelo; ya no se curva bajo el cuerpo.
   Ccuerpo apoyado: sleepDrop adulto 40.33, cria 12.66.
   Entidad: dormido o caido -> congela la orientacion (frozenYaw), anula el movimiento horizontal y no es empujable (isPushable). Solo respira y salen las Zzz.
+
+ARMADURA (v1.14): armor2.py genera CarnotaurusArmorLayers.java y carnotaurus_armor_<nivel>.png (modelo y atlas propios, 256 px de ancho).
+  python3 tools/carnotaurus/armor2.py .      Vista previa: ver preview.py (capas extra). Los cubos de armadura antiguos de rig.py (armor_parts) se conservan, transparentes, para no mover el atlas de las pieles.
