@@ -21,12 +21,30 @@ def geometry():
         add('head',_c(_mx(13.7,1.7,sgn),-2.0,-6.4,1.7,13.0,17.0,'plate',r='temple',side=sgn),
                    _c(_mx(11.0,1.5,sgn),-1.0,25.0,1.5,9.5,15.0,'plate',r='snoutside',side=sgn))
     # ---- tejas dorsales: 3 en el pecho y 2 en el cuerpo, con alas que caen por los flancos (partes hijas con giro)
-    shingles=[('chest',22.2,12.6),('chest',22.5,6.0),('chest',22.8,-0.6),('body',24.4,13.0),('body',24.7,6.4),('body',25.0,-0.2)]
-    for k,(bone,top,z0) in enumerate(shingles):
-        add(bone,_c(-15.6,top,z0,31.2,2.4,9.0,'plate',r='shingle',k=k))
+    def shingle(bone,top,z0,k,hw=15.6,wlen=9.0,d=9.0,wings=True):
+        add(bone,_c(-hw,top,z0,2*hw,2.4,d,'plate',r='shingle',k=k))
+        if not wings: return
         for sgn in (1,-1):
-            extra.append(dict(name='wing%d_%s'%(k,'l' if sgn>0 else 'r'),parent=bone,piv=(sgn*15.6,top+1.2,z0+4.5),rotz=sgn,
-                              cubes=[_c(0 if sgn>0 else -12.0,-2.4,-4.5,12.0,2.4,9.0,'plate',r='wing',k=k,side=sgn)],grp='body'))
+            extra.append(dict(name='wing_%s_%d_%s'%(bone,k,'l' if sgn>0 else 'r'),parent=bone,piv=(sgn*hw,top+1.2,z0+d/2.0),rotz=sgn,
+                              cubes=[_c(0 if sgn>0 else -wlen,-2.4,-d/2.0,wlen,2.4,d,'plate',r='wing',k=k,side=sgn)],grp='body'))
+    # espalda: 3 tejas en el pecho y 8 en el cuerpo (hasta la grupa)
+    for k,z0 in enumerate((12.6,6.0,-0.6)): shingle('chest',22.2+0.3*k,z0,k)
+    for k,z0 in enumerate((13.0,6.4,-0.2,-6.8,-13.4,-20.0,-26.6,-33.2)): shingle('body',24.4+0.1*k,z0,k+3)
+    # cola: tejas con alas en el primer tramo, tejas con costados en el segundo y tercero, remate en el cuarto
+    for k,z0 in enumerate((-4.0,-10.6,-17.2,-23.8)): shingle('tail1',14.3+0.1*k,z0,k+20,hw=15.0,wlen=11.0,d=8.6)
+    for nm,hw,top,zs,sy in (('tail2',11.0,10.3,(-2.0,-8.6,-15.2,-21.8),8.0),('tail3',8.0,7.3,(-4.0,-10.6,-17.2),5.6)):
+        for k,z0 in enumerate(zs): shingle(nm,top+0.1*k,z0,k+30,hw=hw,d=8.4,wings=False)
+        for sgn in (1,-1):
+            add(nm,_c(_mx(hw-0.9,1.4,sgn),-sy,zs[-1],1.4,2*sy,zs[0]+8.4-zs[-1],'plate',r='tailside',side=sgn))
+    add('tail4',_c(-5.6,4.9,-22.0,11.2,1.6,22.0,'plate',r='tail'))
+    # piernas: placa del muslo, grebas por tramos y tobillera
+    for sgn,nn in ((1,'l'),(-1,'r')):
+        add('thigh_'+nn,_c(_mx(12.0,1.6,sgn),-28.0,-12.0,1.6,24.0,24.0,'plate',r='thigh',side=sgn),
+                        _c(_mx(12.4,1.4,sgn),-30.5,-8.0,1.4,3.2,16.0,'plate',r='knee',side=sgn))
+        add('shin_'+nn,_c(-8.8,-8.0,-8.8,17.6,7.0,17.6,'plate',r='greave'),
+                        _c(-8.8,-23.0,-8.8,17.6,6.0,17.6,'plate',r='greave'),
+                        _c(-5.0,-22.0,8.9,10.0,19.0,1.4,'plate',r='shinfront'))
+        add('meta_'+nn,_c(-6.9,-20.0,-6.9,13.8,5.0,13.8,'plate',r='anklet'),_c(-6.9,-8.0,-6.9,13.8,4.0,13.8,'plate',r='anklet'))
     # ---- hombrera octogonal (3 losas escalonadas) en cada costado del pecho
     for sgn in (1,-1):
         add('chest',_c(_mx(19.1,2.6,sgn),-2.0,5.5,2.6,20.0,9.0,'plate',r='pad1',side=sgn),
