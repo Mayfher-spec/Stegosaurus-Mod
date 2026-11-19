@@ -82,6 +82,7 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder, Prod
     private static final EntityDataAccessor<Integer> VARIANT = SynchedEntityData.defineId(CompyEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Integer> ORDER = SynchedEntityData.defineId(CompyEntity.class, EntityDataSerializers.INT);
     /** Lider de su manada (solo uno por manada): mas grande, con distintivos, domable y con interfaz propia. */
+    private static final EntityDataAccessor<Boolean> FALLEN = SynchedEntityData.defineId(CompyEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> LEADER = SynchedEntityData.defineId(CompyEntity.class, EntityDataSerializers.BOOLEAN);
     /** Nivel, XP y talentos del lider (sincronizado para la pantalla del cliente). */
     private static final EntityDataAccessor<CompoundTag> PROGRESS = SynchedEntityData.defineId(CompyEntity.class, EntityDataSerializers.COMPOUND_TAG);
@@ -147,6 +148,7 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder, Prod
         this.entityData.define(VARIANT, VERDE);
         this.entityData.define(ORDER, PetOrders.FOLLOW);
         this.entityData.define(LEADER, Boolean.TRUE);
+        this.entityData.define(FALLEN, Boolean.FALSE);
         this.entityData.define(PROGRESS, ProdigyProgress.atLevel(1, Talents.COMPY).save());
         this.entityData.define(GROUP, new CompoundTag());
     }
@@ -156,6 +158,7 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder, Prod
         tag.putInt("Variant", getVariant());
         tag.putInt("Trust", trust);
         tag.putInt("PetOrder", getOrder());
+        tag.putBoolean("PetFallen", isFallen());
         tag.putBoolean("Leader", isLeader());
         tag.putUUID("PackId", packId);
         tag.putIntArray("Group", new int[]{gFlags, gMode, gForm, gRad, gMax, gPrio, role});
@@ -168,6 +171,7 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder, Prod
         if (tag.contains("Variant")) { setVariant(tag.getInt("Variant")); variantFixed = true; }   // /summon ... {Variant:3} o huevo con variante concreta
         this.trust = tag.getInt("Trust");
         this.entityData.set(ORDER, PetOrders.clamp(tag.getInt("PetOrder")));
+        this.entityData.set(FALLEN, tag.getBoolean("PetFallen"));
         if (tag.contains("Leader")) this.entityData.set(LEADER, tag.getBoolean("Leader"));
         if (tag.hasUUID("PackId")) this.packId = tag.getUUID("PackId");
         int[] gs = tag.getIntArray("Group");
@@ -340,17 +344,21 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder, Prod
         super.die(source);
     }
 
-    // PetOrders.Holder (el Compy no "cae": si muere, muere)
+    // PetOrders.Holder (un Compy domado tampoco muere: queda "caido" y se reanima con carne)
     @Override public int getOrder() { return this.entityData.get(ORDER); }
     @Override public void setOrderRaw(int order) { this.entityData.set(ORDER, order); }
-    @Override public boolean isFallen() { return false; }
-    @Override public void setFallenRaw(boolean fallen) { }
+    @Override public boolean isFallen() { return this.entityData.get(FALLEN); }
+    @Override public void setFallenRaw(boolean fallen) { this.entityData.set(FALLEN, fallen); }
+    @Override public boolean isInvulnerableTo(DamageSource source) {
+        if (isFallen() && !source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) return true;
+        return super.isInvulnerableTo(source);
+    }
     @Nullable @Override public BlockPos orderHome() { return orderHome; }
     @Override public void setOrderHome(@Nullable BlockPos pos) { this.orderHome = pos; }
 
     /** Ojos cerrados: durmiendo, muriendo y en un parpadeo breve cada ~4 s (cada animal en un momento distinto). */
     public boolean eyesClosed() {
-        if (getOrder() == PetOrders.SLEEP && isTame() || this.deathTime > 0) return true;
+        if (isFallen() || getOrder() == PetOrders.SLEEP && isTame() || this.deathTime > 0) return true;
         return (this.tickCount + this.getId() * 17) % 90 < 3;
     }
 
@@ -675,6 +683,19 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder, Prod
     @Override public InteractionResult mobInteract(Player player, InteractionHand hand) {
         ItemStack held = player.getItemInHand(hand);
         boolean client = this.level().isClientSide;
+        if (isFallen()) {   // fuera de combate: cualquier carne del dueno lo reanima
+            if (this.isTame() && this.isOwnedBy(player) && isMeat(held)) {
+                if (!client) {
+                    if (!player.getAbilities().instabuild) held.shrink(1);
+                    PetOrders.revive(this);
+                    this.playSound(ModSounds.COMPY_HAPPY.get(), 1.0F, 1.0F);
+                    this.level().broadcastEntityEvent(this, (byte) 66);
+                }
+            } else if (!client && this.isOwnedBy(player)) {
+                player.displayClientMessage(Component.literal("Esta fuera de combate: reanimalo con carne"), true);
+            }
+            return InteractionResult.sidedSuccess(client);
+        }
         if (!this.isTame()) {
             if (!isMeat(held)) return InteractionResult.PASS;
             if (!isLeader()) {

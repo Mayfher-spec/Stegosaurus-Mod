@@ -204,7 +204,8 @@ public final class PetOrders {
         mob.getNavigation().stop();
         mob.setTarget(null);
         if (mob.getOwner() instanceof Player p) {
-            p.displayClientMessage(Component.literal("Tu dinosaurio quedo fuera de combate: reanimalo con la ensalada de domesticacion"), false);
+            p.displayClientMessage(Component.literal(mob instanceof CompyEntity ? "Tu compy quedo fuera de combate: reanimalo con carne"
+                : "Tu dinosaurio quedo fuera de combate: reanimalo con la ensalada de domesticacion"), false);
         }
     }
 
