@@ -389,12 +389,24 @@ def saddle_mask():
 
 # ---------------------------------------------------------------- armadura 3D del Brutus (se pinta solo en carnotaurus_armor_<nivel>.png)
 ARMOR_TIERS=('iron','gold','diamond','netherite')
+GOLD_T=C(206,152,52)
 APAL={
- 'iron':     dict(base=C(150,155,166),light=C(204,209,220),dark=C(78,82,94),trim=C(98,102,116),rivet=C(222,226,234),gem=C(232,52,52),gem_d=C(120,16,24),tint=(1.0,0.28,0.26)),
- 'gold':     dict(base=C(228,182,54),light=C(255,232,126),dark=C(142,98,22),trim=C(176,122,30),rivet=C(255,240,170),gem=C(64,222,124),gem_d=C(14,100,56),tint=(0.26,1.0,0.50)),
- 'diamond':  dict(base=C(74,198,198),light=C(176,252,244),dark=C(26,104,118),trim=C(38,138,152),rivet=C(220,255,252),gem=C(84,226,255),gem_d=C(16,96,140),tint=(0.34,0.90,1.0)),
- 'netherite':dict(base=C(70,60,76),light=C(122,110,132),dark=C(32,26,38),trim=C(176,132,72),rivet=C(222,184,110),gem=C(196,84,255),gem_d=C(74,20,112),tint=(0.78,0.34,1.0)),
+ # ficha "Armadura de Carnotaurus": placas segmentadas con remaches y ribetes dorados; emb = color del emblema de la placa del muslo
+ 'iron':     dict(base=C(140,144,158),light=C(206,210,222),dark=C(66,70,84),trim=C(190,142,52),rivet=C(232,196,96),gem=C(232,52,52),gem_d=C(120,16,24),emb=C(216,222,236),tint=(1.0,0.28,0.26)),
+ 'gold':     dict(base=C(226,170,40),light=C(255,232,126),dark=C(122,78,18),trim=C(168,112,26),rivet=C(255,240,170),gem=C(64,222,124),gem_d=C(14,100,56),emb=C(255,240,176),tint=(0.26,1.0,0.50)),
+ 'diamond':  dict(base=C(52,176,188),light=C(160,244,244),dark=C(20,84,98),trim=C(204,156,54),rivet=C(238,204,104),gem=C(84,226,255),gem_d=C(16,96,140),emb=C(176,250,250),tint=(0.34,0.90,1.0)),
+ 'netherite':dict(base=C(84,72,98),light=C(142,128,156),dark=C(34,28,42),trim=C(196,146,62),rivet=C(232,196,110),gem=C(196,84,255),gem_d=C(74,20,112),emb=C(190,100,255),tint=(0.78,0.34,1.0)),
 }
+EMBLEM=["......##........",
+        ".....####.......",
+        "..##########....",
+        ".############...",
+        "##############..",
+        "######.#########",
+        "##############..",
+        "#.#.#.#.#.####..",
+        ".###########....",
+        "......####......"]
 def _axis_t(c,loc):
     """posicion 0..1 a lo largo del eje del pincho (0 = base, 1 = punta)."""
     ax=c['opt'].get('ax','y'); x,y,z=loc[:,0],loc[:,1],loc[:,2]
@@ -463,6 +475,36 @@ def armor_tex(tier,c,face,loc,ii,jj,fu,fv):
         if fw>=14 and fh>=5.0:
             for k in range(1,int(fw//7.0)):
                 cx=k*fw/int(fw//7.0); rv=(np.abs(u-cx)<0.8)&(np.abs(v-fh/2)<0.8); col[rv]=pal['rivet']
+    # remaches dorados en el centro de cada lamina del lomo (placas dorsales articuladas)
+    if kind=='plate' and r2 in('ntop','tail','rump') and face=='up':
+        along=(z-c['z0']); cxm=c['x0']+c['w']/2.0
+        rv=(np.abs(((along%6.4)-3.6))<0.8)&(np.abs(x-cxm)<0.9)&(along>1.0); col[rv]=pal['rivet']
+    # correa con hebilla en los flancos (tres laminas contiguas)
+    if kind=='plate' and r2=='lame' and c['part']=='body' and face in('xmin','xmax') and c['y0']<0:
+        strap=(fv>0.40)&(fv<0.52)
+        col[strap]=np.array((98,60,34))*(0.9+0.2*nz[strap])[:,None]
+        col[strap&((fv<0.415)|(fv>0.505))]=np.array((60,36,22))
+        if abs(c['z0']/c['sv'][2]-16.0)<0.3:
+            bk=(fu>0.12)&(fu<0.88)&(fv>0.355)&(fv<0.565)
+            col[bk]=pal['rivet']; ik=(fu>0.30)&(fu<0.70)&(fv>0.40)&(fv<0.52); col[ik]=pal['dark']
+    # placa del muslo: marco dorado y emblema del carnotauro
+    if kind=='plate' and r2=='thigh' and face in('xmin','xmax') and fw>=12 and fh>=12:
+        fr_=(edge>=1.2)&(edge<2.3); col[fr_]=pal['trim']*(0.94+0.12*nz[fr_])[:,None]
+        fr2=(edge>=2.3)&(edge<3.0); col[fr2]=pal['dark']
+        inner=edge>=3.0; col[inner]=np.asarray(lerp(pal['base'],pal['dark'],0.45))*(0.92+0.16*nz[inner])[:,None]
+        cs=min((fw-8.0)/16.0,(fh-8.0)/10.0)
+        if cs>0.3:
+            ex0=(fw-16*cs)/2.0; ey0=(fh-10*cs)/2.0
+            cu=np.floor((u-ex0)/cs).astype(int); cv=np.floor((v-ey0)/cs).astype(int)
+            if face=='xmin': cu=15-cu          # mirar siempre hacia delante
+            ok=(cu>=0)&(cu<16)&(cv>=0)&(cv<10)&inner
+            bits=np.zeros(n,bool)
+            for k in np.where(ok)[0]: bits[k]=EMBLEM[cv[k]][cu[k]]=='#'
+            col[bits]=pal['emb']*(0.94+0.12*nz[bits])[:,None]
+            glow[bits]=np.maximum(glow[bits],0.0)
+        rv=[(3.8,3.8),(fw-3.8,3.8),(3.8,fh-3.8),(fw-3.8,fh-3.8)]
+        for (cx,cy) in rv:
+            rr=(np.abs(u-cx)<0.9)&(np.abs(v-cy)<0.9); col[rr]=pal['rivet']
     if kind=='band':
         col[(edge>=0.7)&(edge<1.4)]=pal['rivet']*0.85
     return np.clip(col,0,255),glow,mask

@@ -4,6 +4,7 @@ HERE=os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0,HERE)
 import rig, paint
 from PIL import Image
 repo=sys.argv[1] if len(sys.argv)>1 else '.'
+ARMOR_ONLY='--armor-only' in sys.argv   # solo texturas de armadura (no pisa pieles ni CarnotaurusLayers.java)
 tex=os.path.join(repo,'src/main/resources/assets/prodigycreatures/textures/entity')
 out,H=rig.get_all()
 hy={st:paint.fit_hy(st) for st in out}
@@ -31,13 +32,13 @@ final class CarnotaurusLayers {
 %s
 %s}
 '''%(H,('%.3f'%hy['adult']),('%.3f'%hy['chibi']),layer('adult'),layer('chibi'))
-open(os.path.join(repo,'src/main/java/com/prodigytown/creatures/client/CarnotaurusLayers.java'),'w').write(src)
-for var,fn in (('scarlet','scarlet'),('green','green'),('steel','steel'),('dark','arena')):   # 'arena' = nombre de archivo heredado del color Oscuro
+if not ARMOR_ONLY: open(os.path.join(repo,'src/main/java/com/prodigytown/creatures/client/CarnotaurusLayers.java'),'w').write(src)
+for var,fn in (() if ARMOR_ONLY else (('scarlet','scarlet'),('green','green'),('steel','steel'),('dark','arena'))):   # 'arena' = nombre de archivo heredado del color Oscuro
     a,g=paint.make_atlas(var)
     a=paint.dilate(a); a[paint.saddle_mask()]=0; a[paint.armor_mask()]=0   # los cubos de la montura y la armadura quedan invisibles sin ella
     Image.fromarray(a).save(os.path.join(tex,'carnotaurus_%s.png'%fn),optimize=True)
     Image.fromarray(g).save(os.path.join(tex,'carnotaurus_%s_glow.png'%fn),optimize=True)
-Image.fromarray(paint.make_saddle()).save(os.path.join(tex,'carnotaurus_saddle.png'),optimize=True)
+if not ARMOR_ONLY: Image.fromarray(paint.make_saddle()).save(os.path.join(tex,'carnotaurus_saddle.png'),optimize=True)
 for tier in paint.ARMOR_TIERS:
     a,g=paint.make_armor(tier)
     Image.fromarray(paint.dilate(a)).save(os.path.join(tex,'carnotaurus_armor_%s.png'%tier),optimize=True)
