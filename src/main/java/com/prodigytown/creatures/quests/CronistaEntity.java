@@ -52,6 +52,10 @@ import java.util.UUID;
 public class CronistaEntity extends PathfinderMob {
     private static final EntityDataAccessor<Boolean> TALKING = SynchedEntityData.defineId(CronistaEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Boolean> WAVING = SynchedEntityData.defineId(CronistaEntity.class, EntityDataSerializers.BOOLEAN);
+    /** Modo de companera (como un aldeano de MCA): 0 libre (rutina normal), 1 te sigue, 2 se queda quieta donde esta. */
+    public static final int MODE_FREE = 0, MODE_FOLLOW = 1, MODE_STAY = 2;
+    private static final EntityDataAccessor<Integer> MODE = SynchedEntityData.defineId(CronistaEntity.class, EntityDataSerializers.INT);
+    @Nullable private UUID followerId;
     private int talkTicks, waveTicks, waveCooldown = 60;
     /** Mezcla suave (0-1) de los gestos para la animacion del cliente: actual y del tick anterior. */
     private float talkBlend, prevTalkBlend, waveBlend, prevWaveBlend;
@@ -79,6 +83,33 @@ public class CronistaEntity extends PathfinderMob {
         super.defineSynchedData();
         this.entityData.define(TALKING, false);
         this.entityData.define(WAVING, false);
+        this.entityData.define(MODE, MODE_FREE);
+    }
+
+    public int getMode() { return this.entityData.get(MODE); }
+
+    /** Solo servidor. Libre: vuelve a su rutina (y a su zona del hogar si ya vive en una); seguir: te acompana; quieta: espera donde esta. */
+    public void setMode(int mode, @Nullable ServerPlayer who) {
+        mode = Mth.clamp(mode, MODE_FREE, MODE_STAY);
+        this.entityData.set(MODE, mode);
+        this.followerId = mode == MODE_FOLLOW && who != null ? who.getUUID() : null;
+        if (mode != MODE_FREE && this.isSleeping()) this.stopSleeping();
+        applyRestriction();
+        this.getNavigation().stop();
+        if (who != null) {
+            who.displayClientMessage(Component.literal(mode == MODE_FOLLOW ? "La Cronista te seguirá" : mode == MODE_STAY ? "La Cronista se quedará aquí" : "La Cronista vuelve a su rutina"), true);
+            this.playSound(com.prodigytown.creatures.ModSounds.CRONISTA_HELLO.get(), 0.8F, this.getVoicePitch());
+        }
+    }
+
+    /** La zona del hogar solo manda cuando esta libre; siguiendote o quieta no tiene correa invisible. */
+    private void applyRestriction() {
+        if (this.settled && this.home != null && getMode() == MODE_FREE) this.restrictTo(this.home, HOME_RADIUS);
+        else this.clearRestriction();
+    }
+
+    @Nullable private Player follower() {
+        return this.followerId == null ? null : this.level().getPlayerByUUID(this.followerId);
     }
 
     public boolean isTalking() { return this.entityData.get(TALKING); }
@@ -91,6 +122,8 @@ public class CronistaEntity extends PathfinderMob {
         this.goalSelector.addGoal(0, new FloatGoal(this));
         this.goalSelector.addGoal(1, new OpenDoorGoal(this, true));
         this.goalSelector.addGoal(2, new SleepAtHomeGoal());
+        this.goalSelector.addGoal(3, new FollowPlayerGoal());
+        this.goalSelector.addGoal(3, new StayStillGoal());
         this.goalSelector.addGoal(4, new MoveTowardsRestrictionGoal(this, 0.7D));
         this.goalSelector.addGoal(5, new WaterAvoidingRandomStrollGoal(this, 0.9D));
         this.goalSelector.addGoal(6, new LookAtPlayerGoal(this, Player.class, 8.0F));
@@ -107,11 +140,11 @@ public class CronistaEntity extends PathfinderMob {
         super.aiStep();
         if (this.level().isClientSide) return;
         if (this.visitTicks > 0 && --this.visitTicks == 0) {   // el visitante se marcha, pero no mientras alguien esta cerca hablando con ella
-            if (this.talkTicks > 0 || this.level().getNearestPlayer(this, 12.0) != null) this.visitTicks = 200;
+            if (this.talkTicks > 0 || getMode() != MODE_FREE || this.level().getNearestPlayer(this, 12.0) != null) this.visitTicks = 200;
             else { farewell(); return; }
         }
         if (this.isSleeping() && !(this.settled && this.home != null && isBedtime(this.level()))) this.stopSleeping();
-        if (this.settled && this.home != null && this.tickCount % 200 == 0 && !this.isSleeping()
+        if (this.settled && this.home != null && getMode() == MODE_FREE && this.tickCount % 200 == 0 && !this.isSleeping()
                 && this.distanceToSqr(this.home.getX() + 0.5, this.home.getY(), this.home.getZ() + 0.5) > 48.0 * 48.0
                 && this.level() instanceof ServerLevel sl && sl.isLoaded(this.home)) {   // lejos de casa: vuelve de golpe
             this.teleportTo(this.home.getX() + 0.5, this.home.getY() + 1.0, this.home.getZ() + 0.5);
@@ -179,7 +212,7 @@ public class CronistaEntity extends PathfinderMob {
         this.settled = true;
         this.home = bed.immutable();
         this.visitTicks = -1;
-        this.restrictTo(this.home, HOME_RADIUS);
+        applyRestriction();
         releaseCompanions(false, owner);
         if (this.level() instanceof ServerLevel sl) {
             sl.sendParticles(ParticleTypes.HAPPY_VILLAGER, this.getX(), this.getY() + 1.2, this.getZ(), 14, 0.4, 0.6, 0.4, 0.02);
@@ -221,7 +254,7 @@ public class CronistaEntity extends PathfinderMob {
     }
 
     private boolean wantsSleep() {
-        return this.settled && this.home != null && this.talkTicks == 0 && isBedtime(this.level()) && this.level().getBlockState(this.home).getBlock() instanceof BedBlock;
+        return this.settled && this.home != null && getMode() == MODE_FREE && this.talkTicks == 0 && isBedtime(this.level()) && this.level().getBlockState(this.home).getBlock() instanceof BedBlock;
     }
 
     @Override
@@ -238,6 +271,8 @@ public class CronistaEntity extends PathfinderMob {
         tag.putBoolean("Settled", this.settled);
         if (this.home != null) tag.putLong("Home", this.home.asLong());
         tag.putInt("VisitTicks", this.visitTicks);
+        tag.putInt("CompanionMode", getMode());
+        if (this.followerId != null) tag.putUUID("Follower", this.followerId);
         ListTag list = new ListTag();
         for (UUID id : this.companions) list.add(NbtUtils.createUUID(id));
         tag.put("Companions", list);
@@ -251,7 +286,9 @@ public class CronistaEntity extends PathfinderMob {
         this.visitTicks = tag.contains("VisitTicks", 3) ? tag.getInt("VisitTicks") : -1;
         this.companions.clear();
         for (Tag t : tag.getList("Companions", 11)) this.companions.add(NbtUtils.loadUUID(t));
-        if (this.settled && this.home != null) this.restrictTo(this.home, HOME_RADIUS);   // la restriccion no se guarda sola
+        this.entityData.set(MODE, Mth.clamp(tag.getInt("CompanionMode"), MODE_FREE, MODE_STAY));
+        this.followerId = tag.hasUUID("Follower") ? tag.getUUID("Follower") : null;
+        applyRestriction();   // la restriccion no se guarda sola
     }
 
     /** Camina hasta su cama al caer la noche y se acuesta; por la manana (o si alguien le habla) se levanta. */
@@ -276,6 +313,61 @@ public class CronistaEntity extends PathfinderMob {
         }
 
         @Override public void stop() { if (isSleeping()) stopSleeping(); }
+    }
+
+    /** Modo "sigueme": camina tras el jugador a distancia prudente y, si se queda muy atras, se reune con el (como una mascota). */
+    private final class FollowPlayerGoal extends Goal {
+        @Nullable private Player target;
+        private int repath;
+        FollowPlayerGoal() { this.setFlags(EnumSet.of(Flag.MOVE, Flag.LOOK)); }
+
+        @Override public boolean canUse() {
+            if (getMode() != MODE_FOLLOW || isSleeping() || talkTicks > 0) return false;
+            Player p = follower();
+            if (p == null || p.isSpectator() || !p.isAlive()) return false;
+            this.target = p;
+            return true;
+        }
+        @Override public boolean canContinueToUse() { return canUse(); }
+        @Override public void stop() { this.target = null; getNavigation().stop(); }
+
+        @Override public void tick() {
+            if (this.target == null) return;
+            getLookControl().setLookAt(this.target, 20.0F, getMaxHeadXRot());
+            double d = distanceTo(this.target);
+            if (d > 24.0) { snapNextTo(this.target); return; }
+            if (d > 3.5) {
+                if (--this.repath <= 0) {
+                    this.repath = 8;
+                    getNavigation().moveTo(this.target, d > 10.0 ? 1.35D : d > 6.0 ? 1.15D : 1.0D);
+                }
+            } else getNavigation().stop();
+        }
+    }
+
+    /** Modo "quedate": espera quieta donde esta (tambien si quien la seguia ya no esta). Sigue mirando a quien pasa. */
+    private final class StayStillGoal extends Goal {
+        StayStillGoal() { this.setFlags(EnumSet.of(Flag.MOVE)); }
+        @Override public boolean canUse() {
+            int m = getMode();
+            return !isSleeping() && (m == MODE_STAY || m == MODE_FOLLOW && follower() == null);
+        }
+        @Override public boolean canContinueToUse() { return canUse(); }
+        @Override public void start() { getNavigation().stop(); }
+        @Override public void tick() { if (!getNavigation().isDone()) getNavigation().stop(); }
+    }
+
+    /** Se coloca junto al jugador en un hueco libre (si esta a mas de 24 bloques). */
+    private void snapNextTo(Player p) {
+        for (int i = 0; i < 12; i++) {
+            double x = p.getX() + (this.random.nextDouble() - 0.5) * 6.0, z = p.getZ() + (this.random.nextDouble() - 0.5) * 6.0, y = p.getY();
+            net.minecraft.world.phys.AABB box = this.getBoundingBox().move(x - this.getX(), y - this.getY(), z - this.getZ());
+            if (this.level().noCollision(this, box) && !this.level().noCollision(this, box.move(0.0, -1.0, 0.0))) {
+                this.getNavigation().stop();
+                this.teleportTo(x, y, z);
+                return;
+            }
+        }
     }
 
     // voz propia (sin sonidos de aldeano): saluda al hablarle, celebra al instalarse, se queja al recibir dano

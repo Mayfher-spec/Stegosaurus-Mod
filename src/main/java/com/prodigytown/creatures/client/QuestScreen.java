@@ -99,6 +99,8 @@ public final class QuestScreen extends Screen {
 
     private void act(int action, String id) { ModNetwork.CHANNEL.sendToServer(new QuestPackets.QuestAction(action, id)); }
 
+    private void setCompanion(int m) { if (npcId >= 0) ModNetwork.CHANNEL.sendToServer(new QuestPackets.CronistaMode(npcId, m)); }
+
     private void click() { Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F)); }
 
     // ------------------------------------------------------------------ entrada
@@ -301,6 +303,11 @@ public final class QuestScreen extends Screen {
         button(g, "Progreso", 270, 184, 130, 24, false, true, stack(Items.EXPERIENCE_BOTTLE), () -> { go(Mode.PROGRESS); progTab = 0; });
         button(g, "Recompensas", 134, 214, 130, 24, false, true, stack(Items.CHEST), () -> go(Mode.REWARDS));
         button(g, "Salir", 270, 214, 130, 24, false, true, stack(Items.BARRIER), this::onClose);
+        // companera: sigueme / quedate / libre (como un aldeano de MCA)
+        int cm = npc instanceof CronistaEntity c ? c.getMode() : 0;
+        button(g, "Sígueme", 134, 244, 86, 20, cm == 1, true, stack(Items.LEAD), () -> setCompanion(1));
+        button(g, "Quédate aquí", 224, 244, 92, 20, cm == 2, true, stack(Items.RED_BED), () -> setCompanion(2));
+        button(g, "Libre", 320, 244, 80, 20, cm == 0, true, stack(Items.OAK_SAPLING), () -> setCompanion(0));
         if (ready > 0) {   // globo con las recompensas por reclamar
             g.fill(250, 211, 264, 223, 0xFF3A0B0B); g.fill(251, 212, 263, 222, 0xFFE24B3B);
             g.drawCenteredString(this.font, String.valueOf(ready), 257, 214, 0xFFFFFFFF);

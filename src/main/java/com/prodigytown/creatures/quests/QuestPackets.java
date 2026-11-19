@@ -77,10 +77,26 @@ public final class QuestPackets {
         }
     }
 
+    /** Modo de companera de la Cronista (0 libre, 1 sigueme, 2 quedate). Solo vale con ella a menos de 12 bloques. */
+    public record CronistaMode(int entityId, int mode) {
+        public static void encode(CronistaMode m, FriendlyByteBuf b) { b.writeVarInt(m.entityId); b.writeByte(m.mode); }
+        public static CronistaMode decode(FriendlyByteBuf b) { return new CronistaMode(b.readVarInt(), b.readByte()); }
+        public static void handle(CronistaMode m, Supplier<NetworkEvent.Context> ctx) {
+            ctx.get().enqueueWork(() -> {
+                ServerPlayer sp = ctx.get().getSender();
+                if (sp == null) return;
+                if (sp.level().getEntity(m.entityId) instanceof CronistaEntity c && c.distanceToSqr(sp) < 12.0 * 12.0) c.setMode(m.mode, sp);
+            });
+            ctx.get().setPacketHandled(true);
+        }
+    }
+
     public static void register() {
         ModNetwork.CHANNEL.registerMessage(5, QuestSync.class, QuestSync::encode, QuestSync::decode, QuestSync::handle,
             java.util.Optional.of(net.minecraftforge.network.NetworkDirection.PLAY_TO_CLIENT));
         ModNetwork.CHANNEL.registerMessage(6, QuestAction.class, QuestAction::encode, QuestAction::decode, QuestAction::handle,
+            java.util.Optional.of(net.minecraftforge.network.NetworkDirection.PLAY_TO_SERVER));
+        ModNetwork.CHANNEL.registerMessage(8, CronistaMode.class, CronistaMode::encode, CronistaMode::decode, CronistaMode::handle,
             java.util.Optional.of(net.minecraftforge.network.NetworkDirection.PLAY_TO_SERVER));
     }
 }
