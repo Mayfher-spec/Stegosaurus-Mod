@@ -125,51 +125,105 @@ def _stamp(bits,u,v,fw,fh,cs,flip):
     ok=(cu>=0)&(cu<bw)&(cv>=0)&(cv<bh); m=np.zeros(len(u),bool)
     for k in np.where(ok)[0]: m[k]=bits[cv[k]][cu[k]]=='#'
     return m
+def _h(a,b,seed): return paint.hsh(np.asarray(a,float),np.asarray(b,float),np.zeros(len(a)),seed)
+def _scratches(u,v,seed,dens=0.22):
+    """aranazos finos en diagonal: cada celda de 7x7 puede traer uno"""
+    cu=np.floor(u/7.0); cv=np.floor(v/7.0); hh=_h(cu,cv,seed)
+    ph=_h(cu,cv,seed+5)*7.0
+    lin=((u*0.85+v*0.55+ph*3.0)%6.0)<0.40
+    seg=_h(cu,cv,seed+9)>0.35
+    return (hh<dens)&lin&seg
 def tex(tier,c,face,loc,ii,jj,fu,fv):
     pal=PLATE[tier]; o=c['opt']; kind=o['kind']; r=o.get('r',''); sgn=o.get('side',0)
     n=len(ii); fw,fh=paint.face_dims(c,face); u=fu*fw; v=fv*fh
     eu=np.minimum(u,fw-u); ev=np.minimum(v,fh-v); edge=np.minimum(eu,ev)
     seed=(zlib.crc32(('%s:%d'%(c['part'],c['i'])).encode())%997)
     nz=paint.fbm(loc*0.6+seed*0.31,19)
+    big=paint.fbm(loc*0.16+seed*0.13,23,3)
+    fine=_h(np.floor(u*1.0),np.floor(v*1.0),seed)               # grano por texel
     mask=np.ones(n,bool)
     outer=True if not sgn else ((face=='xmax' and sgn>0) or (face=='xmin' and sgn<0))
     if kind=='plate':
-        col=np.tile(pal['base'],(n,1))*(0.90+0.20*nz)[:,None]
-        if face=='up': col=col*0.92+pal['light']*0.08
-        col[edge<0.75]=pal['dark']
+        base=pal['base']; dark=pal['dark']; light=pal['light']
+        col=np.asarray(paint.lerp(dark*0.55+base*0.45,base,np.clip(big*1.4,0,1)))   # manchas de brillo grandes
+        # acabado propio de cada material
+        if tier=='iron':
+            streak=_h(np.floor(v*1.0)*0+np.floor(v),np.floor(u*0.12),seed+3)           # acero cepillado: vetas largas
+            col=col*(0.93+0.12*streak)[:,None]
+            rust=paint.ss(0.80,0.93,paint.fbm(loc*0.35+seed,41,3))*paint.ss(2.2,0.8,edge)
+            col=np.asarray(paint.lerp(col,C(112,70,42),(rust*0.55)[:,None]*np.ones((n,3))))
+        elif tier=='gold':
+            band=0.5+0.5*np.sin((u*0.55+v*0.85+seed)*0.9)                                # reflejo diagonal pulido
+            col=col*(0.92+0.10*band)[:,None]+light*(0.07*paint.ss(0.75,1.0,band))[:,None]
+        elif tier=='diamond':
+            d1,d2,rid=paint.voronoi(loc/3.2+seed,91)
+            col=col*(0.82+0.30*rid)[:,None]
+            sm=paint.ss(0.13,0.0,d2-d1); col=np.asarray(paint.lerp(col,light,(sm*0.55)[:,None]*np.ones((n,3))))
+        else:
+            ember=paint.ss(0.93,0.985,paint.fbm(loc*0.5+seed*0.7,57,3))*paint.ss(0.5,2.5,edge)
+            col=col*(0.90+0.18*fine)[:,None]
+            col=np.asarray(paint.lerp(col,C(236,110,40),(ember*0.85)[:,None]*np.ones((n,3))))   # vetas de brasa (netherita)
+        col=col*(0.94+0.12*fine)[:,None]
+        if face=='up': col=col*0.94+light*0.06
+        # aranazos
+        sc=_scratches(u,v,seed)
+        col[sc]=np.asarray(paint.lerp(col[sc],light,0.40))
+        # sombra de oclusion junto al borde y bisel desgastado (metal expuesto)
+        ao=(edge>=1.6)&(edge<3.2); col[ao]*=0.93
+        col[edge<0.75]=dark*0.9
         bv=(edge>=0.75)&(edge<1.6)
-        col[bv]=(pal['light']*(0.92+0.1*nz[bv])[:,None]) if face in('up','north') else col[bv]*1.12
+        chip=_h(np.floor(u*1.0),np.floor(v*1.0),seed+21)<0.30
+        lit_face=face in('up','north')
+        col[bv]=(light*(0.90+0.12*nz[bv])[:,None]) if lit_face else col[bv]*1.10
+        col[bv&chip]=light*1.04
+        # remaches: reflejo arriba-izquierda, sombra abajo-derecha y aro de sombra en la placa
         if min(fw,fh)>=7.0 and face in('up','xmin','xmax'):
             for cx in (2.6,fw-2.6):
                 for cy in (2.6,fh-2.6):
-                    rv=(np.abs(u-cx)<0.95)&(np.abs(v-cy)<0.95); col[rv]=GOLD['light']
-                    col[rv&(u>cx)&(v>cy)]=GOLD['dark']
+                    du=u-cx; dv=v-cy
+                    ring=(np.abs(du)<1.7)&(np.abs(dv)<1.7); col[ring]*=0.78
+                    rv=(np.abs(du)<0.95)&(np.abs(dv)<0.95); col[rv]=GOLD['base']
+                    col[rv&(du<0)&(dv<0)]=GOLD['light']; col[rv&(du>0)&(dv>0)]=GOLD['dark']
         if r=='pad2' and outer and face in('xmin','xmax'):
             fr_=(edge>=2.0)&(edge<2.8); col[fr_]=GOLD['base']*(0.94+0.12*nz[fr_])[:,None]
+            col[(edge>=2.8)&(edge<3.3)]*=0.80
         return np.clip(col,0,255),mask
     if kind=='strap':
-        col=np.tile(LEATHER['base'],(n,1))*(0.88+0.24*nz)[:,None]
+        d1,d2,rid=paint.voronoi(loc/1.7+seed,13)
+        col=np.tile(LEATHER['base'],(n,1))*(0.82+0.30*rid)[:,None]*(0.90+0.16*nz)[:,None]     # grano de cuero
+        crack=paint.ss(0.10,0.0,d2-d1); col*=(1.0-0.22*crack)[:,None]
+        wear=paint.ss(1.6,0.4,edge)*(_h(np.floor(u),np.floor(v),seed+31)<0.5); col[wear>0.5]=np.asarray(paint.lerp(col[wear>0.5],LEATHER['light'],0.55))
         col[edge<0.6]=LEATHER['dark']
         st=(np.abs(edge-1.5)<0.45)&((np.floor(u+v)%3)==0); col[st]=LEATHER['stitch']
         return np.clip(col,0,255),mask
     if kind=='gold':
-        col=np.tile(GOLD['base'],(n,1))*(0.92+0.16*nz)[:,None]
+        col=np.tile(GOLD['base'],(n,1))*(0.90+0.18*nz)[:,None]
+        col=col+GOLD['light']*(0.10*paint.ss(0.6,1.0,0.5+0.5*np.sin((u+v)*0.8)))[:,None]
+        sc=_scratches(u,v,seed+2,0.3); col[sc]=GOLD['light']
         col[edge<0.6]=GOLD['dark']
         if face in('xmin','xmax'):
             hole=(u>fw*0.28)&(u<fw*0.72)&(v>fh*0.26)&(v<fh*0.74); col[hole]=LEATHER['dark']
+            col[hole&(v<fh*0.34)]=LEATHER['dark']*0.6
             bar=(np.abs(u-fw*0.5)<0.7)&(v>fh*0.18)&(v<fh*0.82); col[bar]=GOLD['light']
         return np.clip(col,0,255),mask
+    # estandarte: tejido, pliegues y sombras
     col=np.tile(pal['banner'],(n,1))
-    fold=0.5+0.5*np.sin(u*1.1+0.6*nz); col=col*(0.84+0.22*fold)[:,None]
-    col[(edge<1.2)]=GOLD['base']; col[(edge>=1.2)&(edge<1.9)]=pal['banner_d']
+    weave=0.96+0.08*(((np.floor(u)+np.floor(v))%2)==0)
+    fold=0.5+0.5*np.sin(u*1.15+1.6*nz+0.4*np.sin(v*0.3))
+    col=col*(0.80+0.26*fold)[:,None]*weave[:,None]*(0.94+0.10*fine)[:,None]
+    col[(edge<1.2)]=GOLD['base']*(0.92+0.14*nz[edge<1.2])[:,None]; col[(edge>=1.2)&(edge<1.9)]=pal['banner_d']
     tcut=np.zeros(n,bool)
     if face in('xmin','xmax'):
         cut=fh-7.0*(1.0-np.abs(2*u/fw-1.0)); tcut=v>cut
-        col[(v>cut-1.3)&(v<=cut)]=GOLD['base']
+        # deshilachado irregular en el borde inferior
+        tcut|=(v>cut-0.9)&(_h(np.floor(u),np.floor(v),seed+41)<0.35)
+        col[(v>cut-1.5)&(v<=cut-0.2)&~tcut]=GOLD['base']
         cs=min((fw-5.0)/16.0,(fh-12.0)/9.0)
         if cs>0.3:
             m=_stamp(SKULL,u,v-fh*0.02,fw,fh*0.62,cs,face=='xmin'); mm=m&~tcut
-            col[mm]=GOLD['light']*(0.94+0.1*nz[mm])[:,None]
+            m2=_stamp(SKULL,u+0.9,v-fh*0.02+0.9,fw,fh*0.62,cs,face=='xmin')&~m&~tcut   # sombra proyectada
+            col[m2]*=0.62
+            col[mm]=GOLD['light']*(0.92+0.12*nz[mm])[:,None]
     mask&=~tcut
     return np.clip(col,0,255),mask
 def make_atlas(tier,spec,cubes,H):
