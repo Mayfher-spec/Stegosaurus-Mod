@@ -426,6 +426,12 @@ public final class PetSkinScreen extends Screen {
         renaming = false; nameBox.setFocused(false); nameBox.visible = false; nameBox.active = false;
     }
 
+    /** Al renombrar, las letras van siempre a la caja de texto: el clic en la zona del nombre deja el foco en el boton invisible y la caja no recibia nada. */
+    @Override public boolean charTyped(char c, int mods) {
+        if (renaming && nameBox != null) { nameBox.setFocused(true); return nameBox.charTyped(c, mods); }
+        return super.charTyped(c, mods);
+    }
+
     @Override public boolean keyPressed(int key, int scan, int mods) {
         if (renaming) {
             if (key == 257 || key == 335) { sendName(); return true; }
@@ -447,7 +453,9 @@ public final class PetSkinScreen extends Screen {
                 if (mx >= x && mx < x + ns && my >= y && my < y + ns) { selected = i; ultSel = false; return true; }
             }
         }
-        return super.mouseClicked(mx, my, button);
+        boolean res = super.mouseClicked(mx, my, button);
+        if (renaming && nameBox != null) { setFocused(nameBox); nameBox.setFocused(true); }   // el boton invisible acaba de robar el foco
+        return res;
     }
 
     // ---------------------------------------------------------------- utilidades de dibujo
@@ -600,7 +608,9 @@ public final class PetSkinScreen extends Screen {
     private final List<PkMember> pkMembers = new ArrayList<>();
     private int[] pkSet = {63, 0, 0, 3, 5, 0};
     private java.util.UUID pkSel;
-    private long dissolveConfirmUntil = 0L;
+    private int pkPage = 0;
+    private long dissolveConfirmUntil = 0L, releaseConfirmUntil = 0L;
+    private static final int[] PK_PREV = {896, 146, 944, 174}, PK_NEXT = {986, 146, 1034, 174}, PK_REL = {330, 146, 470, 174};   // pager y "Liberar" (coords. de la maqueta)
     private int pkRefresh = 0;
     private static final int[] ROLE_COL = {0xFF3FB4FF, 0xFFE6B422, 0xFF7CE03C};
     private static final String[] CHECK_BITMAP = {"......X", ".....XX", "X...XX.", "XX.XX..", ".XXX...", "..X...."};
@@ -621,7 +631,7 @@ public final class PetSkinScreen extends Screen {
         "Modo de caza: Coordinado (cazan cerca del líder), Agresivo (cazan más lejos), Defensivo (solo protegen) o Pasivo (nunca atacan).",
         "Formación: el sitio de los soldados alrededor del líder al seguirlo (Abanico, Línea, Círculo o Libre).",
         "Radio: distancia al líder dentro de la cual los soldados buscan presas, protegen y se reagrupan.",
-        "Tamaño máx.: miembros que admite el grupo, líder incluido (de 2 a 5). Si está lleno, nadie más cabe.",
+        "Tamaño máx.: miembros que admite el grupo, líder incluido (de 2 a 10). Si está lleno, nadie más cabe.",
         "Prioridad: qué eligen cazar primero: presas pequeñas, hostiles, lo más cercano o lo más débil."};
     private static final String[] ROLE_HELP = {
         "Explorador: más veloz; marca con brillo a los hostiles cercanos. Clic para cambiar de rol.",
@@ -658,18 +668,27 @@ public final class PetSkinScreen extends Screen {
 
     private void initPack() {
         pkSend(0, 0, 0, null);
-        for (int s = 1; s < 5; s++) {   // las pastillas de rol van primero: ganan el clic sobre la tarjeta
+        for (int s = 0; s < 5; s++) {   // las pastillas de rol van primero: ganan el clic sobre la tarjeta
             final int slot = s;
-            addRenderableWidget(hit(skin.pkChip[s], b -> { if (slot < pkMembers.size()) pkSend(8, 0, 0, pkMembers.get(slot).id); else pkSend(2, 0, 0, null); }));
+            addRenderableWidget(hit(skin.pkChip[s], b -> {
+                int idx = pkPage * 5 + slot;
+                if (idx == 0) { pkSel = null; return; }
+                if (idx > 0 && idx < pkMembers.size()) pkSend(8, 0, 0, pkMembers.get(idx).id);
+                else if (idx >= pkMembers.size() && idx < pkSet[4]) pkSend(2, 0, 0, null);
+            }));
         }
         for (int s = 0; s < 5; s++) {
             final int slot = s;
             addRenderableWidget(hit(skin.pkCards[s], b -> {
-                if (slot == 0) { pkSel = null; return; }
-                if (slot < pkMembers.size()) { java.util.UUID id = pkMembers.get(slot).id; pkSel = id.equals(pkSel) ? null : id; }
-                else pkSend(2, 0, 0, null);
+                int idx = pkPage * 5 + slot;
+                if (idx == 0) { pkSel = null; return; }
+                if (idx < pkMembers.size()) { java.util.UUID id = pkMembers.get(idx).id; pkSel = id.equals(pkSel) ? null : id; }
+                else if (idx < pkSet[4]) pkSend(2, 0, 0, null);
             }));
         }
+        addRenderableWidget(hit(PK_PREV, b -> { if (pkPages() > 1) pkPage = Math.floorMod(pkPage - 1, pkPages()); }));
+        addRenderableWidget(hit(PK_NEXT, b -> { if (pkPages() > 1) pkPage = Math.floorMod(pkPage + 1, pkPages()); }));
+        addRenderableWidget(hit(PK_REL, b -> pkRelease()));
         for (int i = 0; i < 5; i++) { final int k = i; addRenderableWidget(hit(skin.pkButtons[i], b -> pkButton(k))); }
         for (int i = 0; i < 6; i++) {
             final int bit = i;
@@ -680,6 +699,20 @@ public final class PetSkinScreen extends Screen {
             addRenderableWidget(hit(skin.pkSelL[i], b -> pkSend(7, w, -1, null)));
             addRenderableWidget(hit(skin.pkSelR[i], b -> pkSend(7, w, 1, null)));
         }
+    }
+
+    private int pkPages() { return Math.max(1, (Math.max(pkMembers.size(), pkSet[4]) + 4) / 5); }
+
+    /** Liberar: el compy elegido (o el unico del grupo) vuelve a ser salvaje. Pide confirmar con una segunda pulsacion. */
+    private void pkRelease() {
+        java.util.UUID id = pkSel != null ? pkSel : pkMembers.size() == 1 ? compy.getUUID() : null;
+        if (id == null) return;
+        long now = System.currentTimeMillis();
+        if (now < releaseConfirmUntil) {
+            pkSend(9, 0, 0, id);
+            releaseConfirmUntil = 0L; pkSel = null;
+            if (id.equals(compy.getUUID())) this.onClose();
+        } else releaseConfirmUntil = now + 3000L;
     }
 
     private void pkButton(int k) {
@@ -727,7 +760,7 @@ public final class PetSkinScreen extends Screen {
         textC(g, CompyEntity.ROLE_NAMES[r], (c[0] + c[2]) / 2.0F + 5.0F, (c[1] + c[3]) / 2.0F - 3.5F, 0.8F, 0xFFFFFFFF, true);
     }
 
-    private void pkCard(GuiGraphics g, int slot, PkMember m, int mx, int my) {
+    private void pkCard(GuiGraphics g, int slot, int idx, PkMember m, int mx, int my) {
         int[] cr = VR(skin.pkCards[slot]);
         float cx = (cr[0] + cr[2]) / 2.0F;
         int[] ar = VR(skin.pkArt[slot]);
@@ -738,7 +771,7 @@ public final class PetSkinScreen extends Screen {
         g.disableScissor();
         textC(g, shorten(m.name, cr[2] - cr[0] - 8, 1.0F), cx, Y(skin.pkNameY) - 4.0F, 1.0F, 0xFFFFFFFF, true);
         textC(g, m.lv >= 0 ? "Nv. " + m.lv : "PV " + m.hp + "/" + m.mhp, cx, Y(skin.pkLvlY) - 4.0F, 0.95F, CREAM, true);
-        if (slot > 0) pkChip(g, skin.pkChip[slot], m.role);
+        if (idx > 0) pkChip(g, skin.pkChip[slot], m.role);
         if (m.id.equals(pkSel)) {
             g.renderOutline(cr[0] - 1, cr[1] - 1, cr[2] - cr[0] + 2, cr[3] - cr[1] + 2, 0xFFFFFFFF);
             g.renderOutline(cr[0] + 1, cr[1] + 1, cr[2] - cr[0] - 2, cr[3] - cr[1] - 2, 0x88FFFFFF);
@@ -766,26 +799,59 @@ public final class PetSkinScreen extends Screen {
 
     @org.jetbrains.annotations.Nullable private String pkHover(int mx, int my) {
         int n = pkMembers.size();
-        for (int s = 1; s < 5; s++) if (s < n && over(skin.pkChip[s], mx, my)) return ROLE_HELP[Math.max(0, Math.min(2, pkMembers.get(s).role))];
+        if (over(PK_REL, mx, my)) return "Liberar: el compy elegido deja de ser tuyo y vuelve a ser salvaje (sin grupo, sin nombre y sin nivel). Elígelo con un clic en su tarjeta; pulsa dos veces para confirmar.";
+        if (pkPages() > 1 && (over(PK_PREV, mx, my) || over(PK_NEXT, mx, my))) return "Cambia de página: el grupo admite hasta 10 compys (5 por página).";
+        for (int s = 0; s < 5; s++) { int idx = pkPage * 5 + s; if (idx > 0 && idx < n && over(skin.pkChip[s], mx, my)) return ROLE_HELP[Math.max(0, Math.min(2, pkMembers.get(idx).role))]; }
         for (int i = 0; i < 5; i++) if (over(skin.pkButtons[i], mx, my)) return BTN_HELP[i];
         for (int i = 0; i < 6; i++) if (over(skin.pkCheckRow[i], mx, my)) return CHECK_HELP[i];
         for (int i = 0; i < 5; i++) if (over(skin.pkSelRow[i], mx, my)) return SEL_HELP[i];
         for (int s = 0; s < 5; s++) if (over(skin.pkCards[s], mx, my)) {
-            if (s == 0) return "El líder del grupo (el Compy con las marcas rojas en la cola). Sus talentos y habilidades mejoran a todo el grupo.";
-            return s < n ? "Clic para elegir a este compy (luego Expulsar o Nombrar líder); clic en su pastilla para cambiar su rol." : "Hueco libre: clic para invitar al compy tuyo más cercano.";
+            int idx = pkPage * 5 + s;
+            if (idx == 0) return "El líder del grupo (el Compy con las marcas rojas en la cola). Sus talentos y habilidades mejoran a todo el grupo.";
+            if (idx < n) return "Clic para elegir a este compy (luego Expulsar, Liberar o Nombrar líder); clic en su pastilla para cambiar su rol.";
+            return idx < pkSet[4] ? "Hueco libre: clic para invitar al compy tuyo más cercano." : "Hueco cerrado: sube el Tamaño máx. del grupo (hasta 10) para usarlo.";
         }
         return null;
+    }
+
+    /** Pager de paginas (grupos de mas de 5) y boton Liberar, dibujados sobre la maqueta. */
+    private void pkControls(GuiGraphics g, int mx, int my, int n) {
+        int pages = pkPages();
+        if (pages > 1) {
+            for (int[] r : new int[][]{PK_PREV, PK_NEXT}) {
+                int[] b = VR(r);
+                boolean hv = over(r, mx, my);
+                g.fill(b[0], b[1], b[2], b[3], hv ? 0xFF3A2E10 : 0xFF1E1A0C);
+                g.renderOutline(b[0], b[1], b[2] - b[0], b[3] - b[1], hv ? 0xFFFFD35A : 0xFFB8892A);
+                textC(g, r == PK_PREV ? "‹" : "›", (b[0] + b[2]) / 2.0F, (b[1] + b[3]) / 2.0F - 5.0F, 1.6F, 0xFFFFE9A8, true);
+            }
+            int[] p0 = VR(PK_PREV), p1 = VR(PK_NEXT);
+            textC(g, (pkPage + 1) + " / " + pages, (p0[2] + p1[0]) / 2.0F, (p0[1] + p0[3]) / 2.0F - 4.0F, 1.0F, CREAM, true);
+        }
+        boolean can = pkSel != null || n == 1;
+        int[] b = VR(PK_REL);
+        boolean confirm = System.currentTimeMillis() < releaseConfirmUntil && can;
+        g.fill(b[0], b[1], b[2], b[3], confirm ? 0xFF4A1612 : 0xFF2A1210);
+        g.renderOutline(b[0], b[1], b[2] - b[0], b[3] - b[1], can ? (over(PK_REL, mx, my) || confirm ? 0xFFFF6A5A : 0xFFC9453A) : 0xFF5A3A36);
+        textC(g, confirm ? "¿Seguro? Otra vez" : "Liberar", (b[0] + b[2]) / 2.0F, (b[1] + b[3]) / 2.0F - 4.0F, 0.95F, can ? 0xFFFFE0D0 : 0xFF8A7470, true);
     }
 
     private void renderPack(GuiGraphics g, int mx, int my) {
         pkParse();
         int n = pkMembers.size(), max = pkSet[4];
         textC(g, "Miembros del grupo (" + n + " / " + max + ")", X(skin.pkTitle[0]), Y(skin.pkTitle[1]) - 5.5F, 1.4F, CREAM, true);
-        for (int s = 1; s < 5; s++) {   // huecos: libre = el aspecto de "Invitar compy"; el quinto miembro ocupa el hueco estrecho
-            if (s < n) { if (s == 4) blitTex(g, skin.pkCards[3], skin.pkCards[4]); }
-            else if (s < 4) blitTex(g, skin.pkCards[4], skin.pkCards[s]);
+        pkPage = Math.max(0, Math.min(pkPage, pkPages() - 1));
+        if (pkPage > 0) blitTex(new int[]{330, 172, 350, 181}, new int[]{352, 171, 454, 181});   // tapa la etiqueta "Líder" si no estamos en la primera pagina
+        for (int s = 0; s < 5; s++) {   // fondo de cada hueco: lider / miembro / libre ("Invitar compy") / cerrado (sobre el tamaño maximo)
+            int idx = pkPage * 5 + s;
+            int kind = idx == 0 ? 0 : idx < n ? 1 : idx < max ? 2 : 3;
+            int baked = s == 0 ? 0 : s < 4 ? 1 : 2;
+            int eff = kind == 3 ? 2 : kind;
+            if (eff != baked) blitTex(eff == 1 ? skin.pkCards[s == 4 ? 3 : 1] : skin.pkCards[4], skin.pkCards[s]);
+            if (kind == 3) { int[] c = VR(skin.pkCards[s]); g.fill(c[0] + 2, c[1] + 2, c[2] - 2, c[3] - 2, 0xB0101418); }
         }
-        for (int s = 0; s < 5 && s < n; s++) pkCard(g, s, pkMembers.get(s), mx, my);
+        for (int s = 0; s < 5; s++) { int idx = pkPage * 5 + s; if (idx < n) pkCard(g, s, idx, pkMembers.get(idx), mx, my); }
+        pkControls(g, mx, my, n);
         boolean full = n >= max;
         boolean[] off = {full, full, pkSel == null, pkSel == null, n <= 1};
         for (int i = 0; i < 5; i++) if (off[i]) { int[] b = VR(skin.pkButtons[i]); g.fill(b[0] + 2, b[1] + 2, b[2] - 2, b[3] - 2, 0xA0101418); }

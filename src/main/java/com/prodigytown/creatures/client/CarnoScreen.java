@@ -226,6 +226,12 @@ public final class CarnoScreen extends Screen {
         renaming = false; nameBox.setFocused(false); nameBox.visible = false; nameBox.active = false;
     }
 
+    /** Al renombrar, las letras van siempre a la caja de texto: el clic en la zona del nombre deja el foco en el boton invisible y la caja no recibia nada. */
+    @Override public boolean charTyped(char c, int mods) {
+        if (renaming && nameBox != null) { nameBox.setFocused(true); return nameBox.charTyped(c, mods); }
+        return super.charTyped(c, mods);
+    }
+
     @Override public boolean keyPressed(int key, int scan, int mods) {
         if (renaming) {
             if (key == 257 || key == 335) { sendName(); return true; }
@@ -243,7 +249,9 @@ public final class CarnoScreen extends Screen {
                 if (mx >= left + n[0] && mx < left + n[0] + NS && my >= top + n[1] && my < top + n[1] + NS) { selected = i; ultSel = false; return true; }
             }
         }
-        return super.mouseClicked(mx, my, button);
+        boolean res = super.mouseClicked(mx, my, button);
+        if (renaming && nameBox != null) { setFocused(nameBox); nameBox.setFocused(true); }   // el boton invisible acaba de robar el foco
+        return res;
     }
 
     // ---------------------------------------------------------------- utilidades de dibujo

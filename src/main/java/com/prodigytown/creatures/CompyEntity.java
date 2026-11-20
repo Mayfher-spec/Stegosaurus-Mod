@@ -119,10 +119,10 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder, Prod
     public static final int[] G_RADII = {8, 12, 16, 24, 32};
     public static final String[] G_PRIOS = {"Presas pequeñas", "Hostiles", "Más cercano", "Más débil"};
     public static final String[] ROLE_NAMES = {"Explorador", "Rastreador", "Apoyo"};
-    public static final String[] GREEK = {"Alfa", "Beta", "Gamma", "Delta", "Épsilon"};
-    public static final int G_MIN = 2, G_MAX = 5;
+    public static final String[] GREEK = {"Alfa", "Beta", "Gamma", "Delta", "Épsilon", "Zeta", "Eta", "Theta", "Iota", "Kappa"};
+    public static final int G_MIN = 2, G_MAX = 10, G_DEFAULT = 5;
     /** Casillas: 0 seguir al lider, 1 mismo objetivo, 2 cazar en grupo, 3 volver al silbido, 4 proteger al lider, 5 reagruparse si hay peligro. */
-    private int gFlags = 0b111111, gMode = 0, gForm = 0, gRad = 3, gMax = G_MAX, gPrio = 0;
+    private int gFlags = 0b111111, gMode = 0, gForm = 0, gRad = 3, gMax = G_DEFAULT, gPrio = 0;
     private int role = -1, recallUntil = 0, memCacheAt = -100;
     private List<CompyEntity> memCache = java.util.Collections.emptyList();
 
@@ -913,10 +913,41 @@ public class CompyEntity extends TamableAnimal implements PetOrders.Holder, Prod
                     default -> { }
                 }
             }
+            case 9 -> {   // liberar: el compy elegido deja de ser tuyo y vuelve a ser salvaje (el lider solo si no tiene soldados)
+                if (target.equals(this.getUUID())) {
+                    if (!members().isEmpty()) { msg(p, "Nombra otro líder antes de liberar a este compy"); break; }
+                    release(this, p);
+                    return;
+                }
+                for (CompyEntity m : members()) if (m.getUUID().equals(target)) { release(m, p); break; }
+            }
             case 8 -> { for (CompyEntity m : members()) if (m.getUUID().equals(target)) { m.role = Math.floorMod(m.role + 1, 3); m.applyRoleStats(false); break; } }
             default -> { }
         }
         refreshGroup();
+    }
+
+    /** Libera a un compy: ya no es tuyo, vuelve a ser salvaje, sin grupo, sin nombre y sin nivel (se puede volver a domar). */
+    private void release(CompyEntity m, Player p) {
+        String nm = m.getDisplayName().getString();
+        if (!m.isLeader() || m != this) detach(m);
+        m.setTame(false);
+        m.setOwnerUUID(null);
+        m.setOrderedToSit(false);
+        m.setFallenRaw(false);
+        m.setTarget(null);
+        m.getNavigation().stop();
+        m.clearRestriction();
+        m.setCustomName(null);
+        m.trust = 0;
+        m.setOrderRaw(PetOrders.FOLLOW);
+        m.progress = ProdigyProgress.atLevel(1, Talents.COMPY); m.pushProgress();
+        m.bonusB1 = 0; m.bonusP1 = 0; m.role = -1; m.leaderRef = null;
+        m.packId = java.util.UUID.randomUUID();
+        m.applyRoleStats(false);
+        if (m.level() instanceof ServerLevel sl) sl.sendParticles(ParticleTypes.HAPPY_VILLAGER, m.getX(), m.getY() + 0.5, m.getZ(), 10, 0.3, 0.3, 0.3, 0.02);
+        m.playSound(ModSounds.COMPY_HAPPY.get(), 1.0F, 1.3F);
+        msg(p, nm + " fue liberado: vuelve a ser salvaje");
     }
 
     /** El soldado m pasa a ser el lider: hereda nivel, XP y ajustes; yo paso a soldado. */
