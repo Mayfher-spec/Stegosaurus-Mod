@@ -841,13 +841,13 @@ public final class PetSkinScreen extends Screen {
         int n = pkMembers.size(), max = pkSet[4];
         textC(g, "Miembros del grupo (" + n + " / " + max + ")", X(skin.pkTitle[0]), Y(skin.pkTitle[1]) - 5.5F, 1.4F, CREAM, true);
         pkPage = Math.max(0, Math.min(pkPage, pkPages() - 1));
-        if (pkPage > 0) blitTex(new int[]{330, 172, 350, 181}, new int[]{352, 171, 454, 181});   // tapa la etiqueta "Líder" si no estamos en la primera pagina
+        if (pkPage > 0) blitTex(g, new int[]{330, 172, 350, 181}, new int[]{352, 171, 454, 181});   // tapa la etiqueta "Líder" si no estamos en la primera pagina
         for (int s = 0; s < 5; s++) {   // fondo de cada hueco: lider / miembro / libre ("Invitar compy") / cerrado (sobre el tamaño maximo)
             int idx = pkPage * 5 + s;
             int kind = idx == 0 ? 0 : idx < n ? 1 : idx < max ? 2 : 3;
             int baked = s == 0 ? 0 : s < 4 ? 1 : 2;
             int eff = kind == 3 ? 2 : kind;
-            if (eff != baked) blitTex(eff == 1 ? skin.pkCards[s == 4 ? 3 : 1] : skin.pkCards[4], skin.pkCards[s]);
+            if (eff != baked) blitTex(g, eff == 1 ? skin.pkCards[s == 4 ? 3 : 1] : skin.pkCards[4], skin.pkCards[s]);
             if (kind == 3) { int[] c = VR(skin.pkCards[s]); g.fill(c[0] + 2, c[1] + 2, c[2] - 2, c[3] - 2, 0xB0101418); }
         }
         for (int s = 0; s < 5; s++) { int idx = pkPage * 5 + s; if (idx < n) pkCard(g, s, idx, pkMembers.get(idx), mx, my); }
